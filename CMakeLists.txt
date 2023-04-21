@@ -18,8 +18,8 @@ ELSE()
     message(STATUS ${Vulkan_LIBRARY})
 ENDIF()
 
-find_program(Vulkan_GLSLANG_VALIDATOR 
-	NAMES glslangValidator 
+find_program(Vulkan_GLSLC_VALIDATOR 
+	NAMES glslc
 	HINTS ENV VULKAN_SDK 
     PATH_SUFFIXES bin
 )

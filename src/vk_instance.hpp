@@ -12,5 +12,5 @@ VkInstance createNamedVkInstance(char *name, VkAllocationCallbacks *alloc);
 
 std::vector<const char *> getRequiredExtensions();
 
-void cleanupInstance(VkInstance instance, VkAllocationCallbacks *palloc);
+void cleanupInstance(VkInstance &instance, VkAllocationCallbacks *palloc);
 } // namespace vk_instance

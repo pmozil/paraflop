@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.15)
 project(paraflop VERSION 0.1.0)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake_modules")
 set(CMAKE_BINARY_DIR "${PROJECT_SOURCE_DIR}/build")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  ${CMAKE_BINARY_DIR})
@@ -18,14 +20,14 @@ ELSE()
     message(STATUS ${Vulkan_LIBRARY})
 ENDIF()
 
-find_program(Vulkan_GLSLC_VALIDATOR 
+find_program(Vulkan_GLSC_VALIDATOR
 	NAMES glslc
 	HINTS ENV VULKAN_SDK 
     PATH_SUFFIXES bin
 )
 
-if (NOT Vulkan_GLSLANG_VALIDATOR)
-    message(FATAL_ERROR "glslangValidator not found!")
+if (NOT Vulkan_GLSC_VALIDATOR)
+    message(FATAL_ERROR "glslc not found!")
 endif()
 
 add_executable(paraflop src/main.cpp)

@@ -30,7 +30,17 @@ if (NOT Vulkan_GLSC_VALIDATOR)
     message(FATAL_ERROR "glslc not found!")
 endif()
 
-add_executable(paraflop src/main.cpp)
+if(MSVC)
+    add_compile_options(/W4 /Ox)
+else()
+    add_compile_options(-Wall -Wextra -Wpedantic -O3 -ffast-math -march=native)
+endif()
+
+include_directories("${PROJECT_SOURCE_DIR}/src")
+set(APP_SOURCE_FILES src/debug.cpp src/device.cpp src/main.cpp src/surface.cpp src/swap_chain.cpp src/vk_instance.cpp)
+
+
+add_executable(paraflop ${APP_SOURCE_FILES})
 
 target_link_libraries(paraflop PUBLIC Vulkan::Vulkan)
 target_link_libraries(paraflop PUBLIC glfw)

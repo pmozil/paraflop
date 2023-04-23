@@ -5,14 +5,20 @@ namespace device {
 
 class DeviceHandler {
   public:
-    VkPhysicalDevice &getPhysicalDevice() { return physicalDevice; };
-    VkDevice &getLogicalDevice() { return logicalDevice; };
-    QueueFamilyIndices getQueueFamilyIndices();
-    DeviceHandler(VkInstance &inst, VkSurfaceKHR &surf)
-        : instance(inst), surface(surf) {
+    DeviceHandler(VkInstance &instance, VkSurfaceKHR &surface)
+        : instance(instance), surface(surface) {
         pickPhysicalDevice();
         createLogicalDevice(nullptr);
     };
+    VkPhysicalDevice &getPhysicalDevice() { return physicalDevice; };
+    VkDevice &getLogicalDevice() { return logicalDevice; };
+    VkQueue &getGraphicsQueue() { return graphicsQueue; };
+    VkQueue &getPresentQueue() { return presentQueue; };
+    QueueFamilyIndices getQueueFamilyIndices();
+    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+    inline void cleanupDevice(VkAllocationCallbacks *pAllocator) {
+        vkDestroyDevice(logicalDevice, pAllocator);
+    }
 
   private:
     VkInstance &instance;
@@ -26,6 +32,5 @@ class DeviceHandler {
     void pickPhysicalDevice();
     void createLogicalDevice(VkAllocationCallbacks *pAllocator);
     int rateDevice(VkPhysicalDevice device);
-    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 };
 } // namespace device

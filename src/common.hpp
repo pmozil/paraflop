@@ -25,6 +25,9 @@ const std::vector<const char *> validationLayers = {
 const std::vector<const char *> deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
+#define PARAFLOP_VK_API_VERSION VK_API_VERSION_1_2
+#define GLOBAL_VERSION VK_MAKE_VERSION(1, 0, 0)
+
 #define NDEBUG
 
 #ifdef NDEBUG

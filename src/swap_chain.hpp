@@ -10,6 +10,16 @@ class SwapChain {
         createSwapChain();
         createImageViews();
     };
+    VkSwapchainKHR &getSwapChain() { return swapChain; };
+    VkFormat &getSwapChainImageFormat() { return swapChainImageFormat; };
+    VkExtent2D &getSwapChainExtent() { return swapChainExtent; };
+    std::vector<VkImage> &getSwapChainImages() { return swapChainImages; };
+    std::vector<VkImageView> &getSwapChainImageViews() {
+        return swapChainImageViews;
+    };
+    std::vector<VkFramebuffer> &getSwapChainFrameBuffers() {
+        return swapChainFramebuffers;
+    };
 
   private:
     GLFWwindow *window;

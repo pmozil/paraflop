@@ -143,10 +143,10 @@ void device::DeviceHandler::createLogicalDevice(
         static_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
-    if (enableValidationLayers) {
+    if (validationLayers.has_value()) {
         createInfo.enabledLayerCount =
-            static_cast<uint32_t>(validationLayers.size());
-        createInfo.ppEnabledLayerNames = validationLayers.data();
+            static_cast<uint32_t>(validationLayers.value().size());
+        createInfo.ppEnabledLayerNames = validationLayers.value().data();
     } else {
         createInfo.enabledLayerCount = 0;
     }

@@ -19,10 +19,10 @@ const int HEIGHT = 600;
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
-const std::vector<const char *> validationLayers = {
+const std::vector<const char *> VALIDATION_LAYERS = {
     "VK_LAYER_KHRONOS_validation"};
 
-const std::vector<const char *> deviceExtensions = {
+const std::vector<const char *> DEVICE_EXTENSIONS = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
 #define PARAFLOP_VK_API_VERSION VK_API_VERSION_1_2

@@ -9,6 +9,8 @@ class SwapChain {
         : window(window), surface(surface), deviceHandler(deviceHandler) {
         createSwapChain();
         createImageViews();
+        createRenderPass();
+        createFrameBuffers();
     };
     VkSwapchainKHR &getSwapChain() { return swapChain; };
     VkFormat &getSwapChainImageFormat() { return swapChainImageFormat; };
@@ -25,6 +27,7 @@ class SwapChain {
     GLFWwindow *window;
     VkSurfaceKHR &surface;
     device::DeviceHandler &deviceHandler;
+    VkRenderPass renderPass;
     VkSwapchainKHR swapChain;
     VkFormat swapChainImageFormat;
     VkExtent2D swapChainExtent;
@@ -39,5 +42,7 @@ class SwapChain {
     VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
     void createSwapChain();
     void createImageViews();
+    void createRenderPass();
+    void createFrameBuffers();
 };
 } // namespace swap_chain

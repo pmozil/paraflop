@@ -137,8 +137,8 @@ class HelloTriangleApplication {
         createSwapChain();
         createImageViews();
         createRenderPass();
-        createGraphicsPipeline();
         createFramebuffers();
+        createGraphicsPipeline();
         createCommandPool();
         createCommandBuffers();
         createSyncObjects();

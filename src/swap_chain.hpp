@@ -15,6 +15,7 @@ class SwapChain {
     VkSwapchainKHR &getSwapChain() { return swapChain; };
     VkFormat &getSwapChainImageFormat() { return swapChainImageFormat; };
     VkExtent2D &getSwapChainExtent() { return swapChainExtent; };
+    VkRenderPass &getRenderPass() { return renderPass; };
     std::vector<VkImage> &getSwapChainImages() { return swapChainImages; };
     std::vector<VkImageView> &getSwapChainImageViews() {
         return swapChainImageViews;

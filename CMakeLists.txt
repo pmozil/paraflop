@@ -37,7 +37,7 @@ else()
 endif()
 
 include_directories("${PROJECT_SOURCE_DIR}/src")
-set(APP_SOURCE_FILES src/debug.cpp src/device.cpp src/main.cpp src/surface.cpp src/swap_chain.cpp src/vk_instance.cpp)
+set(APP_SOURCE_FILES src/debug.cpp src/device.cpp src/graphics_pipeline.cpp src/main.cpp src/surface.cpp src/swap_chain.cpp src/vk_instance.cpp src/window.cpp)
 
 
 add_executable(paraflop ${APP_SOURCE_FILES})

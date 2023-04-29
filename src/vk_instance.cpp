@@ -25,8 +25,8 @@ VkInstance vk_instance::createDefaultVkInstance(VkAllocationCallbacks *alloc) {
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
     if (enableValidationLayers) {
         createInfo.enabledLayerCount =
-            static_cast<uint32_t>(validationLayers.size());
-        createInfo.ppEnabledLayerNames = validationLayers.data();
+            static_cast<uint32_t>(VALIDATION_LAYERS.size());
+        createInfo.ppEnabledLayerNames = VALIDATION_LAYERS.data();
 
         debug::populateDebugMessengerCreateInfo(debugCreateInfo);
         createInfo.pNext =
@@ -70,8 +70,8 @@ VkInstance vk_instance::createNamedVkInstance(char *name,
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
     if (enableValidationLayers) {
         createInfo.enabledLayerCount =
-            static_cast<uint32_t>(validationLayers.size());
-        createInfo.ppEnabledLayerNames = validationLayers.data();
+            static_cast<uint32_t>(VALIDATION_LAYERS.size());
+        createInfo.ppEnabledLayerNames = VALIDATION_LAYERS.data();
 
         debug::populateDebugMessengerCreateInfo(debugCreateInfo);
         createInfo.pNext =
@@ -111,7 +111,7 @@ bool vk_instance::checkValidationLayerSupport(VkLayerProperties *pProperties) {
     std::vector<VkLayerProperties> availableLayers(layerCount);
     vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-    for (const char *layerName : validationLayers) {
+    for (const char *layerName : VALIDATION_LAYERS) {
         bool layerFound = false;
 
         for (const auto &layerProperties : availableLayers) {

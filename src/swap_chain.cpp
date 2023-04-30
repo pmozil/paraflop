@@ -194,3 +194,19 @@ VkExtent2D swap_chain::SwapChain::chooseSwapExtent(
         return actualExtent;
     }
 }
+
+void swap_chain::SwapChain::cleanup() {
+    for (auto framebuffer : swapChainFramebuffers) {
+        vkDestroyFramebuffer(deviceHandler.getLogicalDevice(), framebuffer,
+                             nullptr);
+    }
+
+    vkDestroyRenderPass(deviceHandler.getLogicalDevice(), renderPass, nullptr);
+
+    for (auto imageView : swapChainImageViews) {
+        vkDestroyImageView(deviceHandler.getLogicalDevice(), imageView,
+                           nullptr);
+    }
+
+    vkDestroySwapchainKHR(deviceHandler.getLogicalDevice(), swapChain, nullptr);
+}

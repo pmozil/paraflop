@@ -4,26 +4,33 @@
 #include "swap_chain.hpp"
 
 namespace graphics_pipeline {
-class GraphicsPipelineProtocol {
+class AbstractGraphicsPipeline {
   public:
-    GraphicsPipelineProtocol(swap_chain::SwapChain &swapChain,
-                             device::DeviceHandler &deviceHandler)
-        : swapChain(swapChain), deviceHandler(deviceHandler) {
-        createGraphicsPipeline();
-    };
+    VkPipeline &getGraphicsPipeline() { return graphicsPipeline; };
+    VkPipelineLayout &getGraphicsPipelineLayout() { return pipelineLayout; };
 
   protected:
+    AbstractGraphicsPipeline(swap_chain::SwapChain &swapChain,
+                             device::DeviceHandler &deviceHandler)
+        : swapChain(swapChain), deviceHandler(deviceHandler){};
     std::vector<char> readFile(const std::string &filename);
     swap_chain::SwapChain &swapChain;
     device::DeviceHandler &deviceHandler;
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
-    virtual void createGraphicsPipeline(){};
+    virtual void createGraphicsPipeline() = 0;
     VkShaderModule createShaderModule(const std::vector<char> &code);
 };
 
-class RasterGraphicsPipeline : GraphicsPipelineProtocol {
+class RasterGraphicsPipeline : public AbstractGraphicsPipeline {
+  public:
+    RasterGraphicsPipeline(swap_chain::SwapChain &swapChain,
+                           device::DeviceHandler &deviceHandler)
+        : AbstractGraphicsPipeline(swapChain, deviceHandler) {
+        createGraphicsPipeline();
+    };
+
   private:
-    void createGraphicsPipeline() override;
+    void createGraphicsPipeline();
 };
 } // namespace graphics_pipeline

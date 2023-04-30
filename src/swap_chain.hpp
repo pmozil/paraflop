@@ -23,6 +23,7 @@ class SwapChain {
     std::vector<VkFramebuffer> &getSwapChainFrameBuffers() {
         return swapChainFramebuffers;
     };
+    void cleanup();
 
   private:
     GLFWwindow *window;

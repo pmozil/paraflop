@@ -1,6 +1,6 @@
 #include "graphics_pipeline.hpp"
 
-std::vector<char> graphics_pipeline::GraphicsPipelineProtocol::readFile(
+std::vector<char> graphics_pipeline::AbstractGraphicsPipeline::readFile(
     const std::string &filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
@@ -19,7 +19,7 @@ std::vector<char> graphics_pipeline::GraphicsPipelineProtocol::readFile(
     return buffer;
 }
 
-VkShaderModule graphics_pipeline::GraphicsPipelineProtocol::createShaderModule(
+VkShaderModule graphics_pipeline::AbstractGraphicsPipeline::createShaderModule(
     const std::vector<char> &code) {
     VkShaderModuleCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;

@@ -1,4 +1,5 @@
 #include "swap_chain.hpp"
+#include <utility>
 
 void swap_chain::SwapChain::createImageViews() {
     swapChainImageViews.resize(swapChainImages.size());
@@ -86,6 +87,7 @@ void swap_chain::SwapChain::createSwapChain() {
 }
 
 void swap_chain::SwapChain::createRenderPass() {
+    VkRenderPass renderPass;
     VkAttachmentDescription colorAttachment = {};
     colorAttachment.format = swapChainImageFormat;
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -127,6 +129,18 @@ void swap_chain::SwapChain::createRenderPass() {
                            nullptr, &renderPass) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass!");
     }
+    renderPasses.push_back(renderPass);
+}
+
+int swap_chain::SwapChain::createRenderPass(
+    VkRenderPassCreateInfo renderPassInfo) {
+    VkRenderPass renderPass;
+    if (vkCreateRenderPass(deviceHandler.getLogicalDevice(), &renderPassInfo,
+                           nullptr, &renderPass) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create render pass!");
+    }
+    renderPasses.push_back(renderPass);
+    return renderPasses.size() - 1;
 }
 
 void swap_chain::SwapChain::createFrameBuffers() {
@@ -137,7 +151,7 @@ void swap_chain::SwapChain::createFrameBuffers() {
 
         VkFramebufferCreateInfo framebufferInfo = {};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = renderPass;
+        framebufferInfo.renderPass = renderPasses[0];
         framebufferInfo.attachmentCount = 1;
         framebufferInfo.pAttachments = attachments;
         framebufferInfo.width = swapChainExtent.width;
@@ -201,7 +215,8 @@ void swap_chain::SwapChain::cleanup() {
                              nullptr);
     }
 
-    vkDestroyRenderPass(deviceHandler.getLogicalDevice(), renderPass, nullptr);
+    vkDestroyRenderPass(deviceHandler.getLogicalDevice(), renderPasses[0],
+                        nullptr);
 
     for (auto imageView : swapChainImageViews) {
         vkDestroyImageView(deviceHandler.getLogicalDevice(), imageView,

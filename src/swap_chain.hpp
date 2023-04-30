@@ -12,27 +12,35 @@ class SwapChain {
         createRenderPass();
         createFrameBuffers();
     };
-    VkSwapchainKHR &getSwapChain() { return swapChain; };
-    VkFormat &getSwapChainImageFormat() { return swapChainImageFormat; };
-    VkExtent2D &getSwapChainExtent() { return swapChainExtent; };
-    VkRenderPass &getRenderPass() { return renderPass; };
-    std::vector<VkImage> &getSwapChainImages() { return swapChainImages; };
-    std::vector<VkImageView> &getSwapChainImageViews() {
+    inline VkSwapchainKHR &getSwapChain() { return swapChain; };
+    inline VkFormat &getSwapChainImageFormat() { return swapChainImageFormat; };
+    inline VkExtent2D &getSwapChainExtent() { return swapChainExtent; };
+    inline VkRenderPass &getRenderPass() { return renderPasses[0]; };
+    inline VkRenderPass &getNthRenderPass(int n) { return renderPasses[n]; };
+    inline int renderPassesLength() { return renderPasses.size(); };
+    inline std::vector<VkRenderPass> &getRenderPasses() {
+        return renderPasses;
+    };
+    inline std::vector<VkImage> &getSwapChainImages() {
+        return swapChainImages;
+    };
+    inline std::vector<VkImageView> &getSwapChainImageViews() {
         return swapChainImageViews;
     };
-    std::vector<VkFramebuffer> &getSwapChainFrameBuffers() {
+    inline std::vector<VkFramebuffer> &getSwapChainFrameBuffers() {
         return swapChainFramebuffers;
     };
+    int createRenderPass(VkRenderPassCreateInfo renderPassInfo);
     void cleanup();
 
   private:
     GLFWwindow *window;
     VkSurfaceKHR &surface;
     device::DeviceHandler &deviceHandler;
-    VkRenderPass renderPass;
     VkSwapchainKHR swapChain;
     VkFormat swapChainImageFormat;
     VkExtent2D swapChainExtent;
+    std::vector<VkRenderPass> renderPasses;
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
     std::vector<VkFramebuffer> swapChainFramebuffers;

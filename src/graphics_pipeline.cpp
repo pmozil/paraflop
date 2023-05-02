@@ -27,7 +27,7 @@ VkShaderModule graphics_pipeline::AbstractGraphicsPipeline::createShaderModule(
     createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
 
     VkShaderModule shaderModule;
-    if (vkCreateShaderModule(deviceHandler.getLogicalDevice(), &createInfo,
+    if (vkCreateShaderModule(deviceHandler->getLogicalDevice(), &createInfo,
                              nullptr, &shaderModule) != VK_SUCCESS) {
         throw std::runtime_error("failed to create shader module!");
     }
@@ -71,7 +71,7 @@ void graphics_pipeline::RasterGraphicsPipeline::createGraphicsPipeline() {
     inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
-    VkExtent2D swapChainExtent = swapChain.getSwapChainExtent();
+    VkExtent2D swapChainExtent = swapChain->getSwapChainExtent();
     VkViewport viewport = {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
@@ -131,7 +131,7 @@ void graphics_pipeline::RasterGraphicsPipeline::createGraphicsPipeline() {
     pipelineLayoutInfo.setLayoutCount = 0;
     pipelineLayoutInfo.pushConstantRangeCount = 0;
 
-    if (vkCreatePipelineLayout(deviceHandler.getLogicalDevice(),
+    if (vkCreatePipelineLayout(deviceHandler->getLogicalDevice(),
                                &pipelineLayoutInfo, nullptr,
                                &pipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
@@ -148,18 +148,18 @@ void graphics_pipeline::RasterGraphicsPipeline::createGraphicsPipeline() {
     pipelineInfo.pMultisampleState = &multisampling;
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.layout = pipelineLayout;
-    pipelineInfo.renderPass = swapChain.getRenderPass();
+    pipelineInfo.renderPass = swapChain->getRenderPass();
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-    if (vkCreateGraphicsPipelines(deviceHandler.getLogicalDevice(),
+    if (vkCreateGraphicsPipelines(deviceHandler->getLogicalDevice(),
                                   VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
                                   &graphicsPipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
-    vkDestroyShaderModule(deviceHandler.getLogicalDevice(), fragShaderModule,
+    vkDestroyShaderModule(deviceHandler->getLogicalDevice(), fragShaderModule,
                           nullptr);
-    vkDestroyShaderModule(deviceHandler.getLogicalDevice(), vertShaderModule,
+    vkDestroyShaderModule(deviceHandler->getLogicalDevice(), vertShaderModule,
                           nullptr);
 }

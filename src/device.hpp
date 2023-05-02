@@ -7,7 +7,7 @@ class DeviceHandler {
   public:
     DeviceHandler(std::vector<const char *> deviceExtensions,
                   std::optional<std::vector<const char *>> validationLayers,
-                  VkInstance &instance, VkSurfaceKHR &surface)
+                  VkInstance *instance, VkSurfaceKHR *surface)
         : deviceExtensions(deviceExtensions),
           validationLayers(validationLayers), instance(instance),
           surface(surface) {
@@ -27,8 +27,8 @@ class DeviceHandler {
   private:
     std::vector<const char *> deviceExtensions;
     std::optional<std::vector<const char *>> validationLayers;
-    VkInstance &instance;
-    VkSurfaceKHR &surface;
+    VkInstance *instance;
+    VkSurfaceKHR *surface;
     VkQueue graphicsQueue;
     VkQueue presentQueue;
     VkPhysicalDevice physicalDevice;

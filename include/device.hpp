@@ -5,15 +5,9 @@ namespace device {
 
 class DeviceHandler {
   public:
-    DeviceHandler(std::vector<const char *> &deviceExtensions,
-                  std::optional<std::vector<const char *>> &validationLayers,
-                  VkInstance *instance, VkSurfaceKHR *surface)
-        : deviceExtensions(deviceExtensions),
-          validationLayers(validationLayers), instance(instance),
-          surface(surface) {
-        pickPhysicalDevice();
-        createLogicalDevice(nullptr);
-    };
+    DeviceHandler(std::vector<const char *>,
+                  std::optional<std::vector<const char *>>, VkInstance *,
+                  VkSurfaceKHR *);
     VkPhysicalDevice &getPhysicalDevice() { return physicalDevice; };
     VkDevice &getLogicalDevice() { return logicalDevice; };
     VkQueue &getGraphicsQueue() { return graphicsQueue; };
@@ -25,8 +19,8 @@ class DeviceHandler {
     }
 
   private:
-    std::vector<const char *> &deviceExtensions;
-    std::optional<std::vector<const char *>> &validationLayers;
+    std::vector<const char *> deviceExtensions;
+    std::optional<std::vector<const char *>> validationLayers;
     VkInstance *instance;
     VkSurfaceKHR *surface;
     VkQueue graphicsQueue;

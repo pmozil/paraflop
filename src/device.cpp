@@ -67,8 +67,9 @@ bool device::DeviceHandler::deviceIsSuitable(VkPhysicalDevice device) {
 }
 
 int device::DeviceHandler::rateDevice(VkPhysicalDevice device) {
-    if (!deviceIsSuitable(device))
+    if (!deviceIsSuitable(device)) {
         return -1;
+    }
 
     int score = 0;
 
@@ -118,7 +119,7 @@ void device::DeviceHandler::createLogicalDevice(
     std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(),
                                               indices.presentFamily.value()};
 
-    float queuePriority = 1.0f;
+    float queuePriority = 1.0F;
     for (uint32_t queueFamily : uniqueQueueFamilies) {
         VkDeviceQueueCreateInfo queueCreateInfo = {};
         queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -195,4 +196,13 @@ QueueFamilyIndices device::DeviceHandler::getQueueFamilyIndices() {
     }
 
     return indices;
+}
+device::DeviceHandler::DeviceHandler(
+    std::vector<const char *> devExt,
+    std::optional<std::vector<const char *>> validations, VkInstance *inst,
+    VkSurfaceKHR *surf)
+    : deviceExtensions(std::move(devExt)),
+      validationLayers(std::move(validations)), instance(inst), surface(surf) {
+    pickPhysicalDevice();
+    createLogicalDevice(nullptr);
 }

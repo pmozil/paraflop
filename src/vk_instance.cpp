@@ -44,7 +44,7 @@ VkInstance vk_instance::createDefaultVkInstance(VkAllocationCallbacks *alloc) {
     return instance;
 }
 
-VkInstance vk_instance::createNamedVkInstance(const char *name,
+VkInstance vk_instance::createNamedVkInstance(char *name,
                                               VkAllocationCallbacks *alloc) {
     VkInstance instance;
     if (enableValidationLayers &&

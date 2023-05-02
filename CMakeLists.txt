@@ -36,9 +36,9 @@ else()
     add_compile_options(-Wall -Wextra -Wpedantic -O3 -ffast-math -march=native)
 endif()
 
-include_directories("${PROJECT_SOURCE_DIR}/src")
-set(APP_SOURCE_FILES src/debug.cpp src/device.cpp src/graphics_pipeline.cpp src/main.cpp src/surface.cpp src/swap_chain.cpp src/vk_instance.cpp src/window.cpp)
-
+include_directories("${CMAKE_SOURCE_DIR}/include")
+file(GLOB SOURCE_FILES "${CMAKE_SOURCE_DIR}/src/*.cpp" "${CMAKE_SOURCE_DIR}/include/*.hpp")
+set(APP_SOURCE_FILES ${SOURCE_FILES} CACHE INTERNAL STRINGS)
 
 add_executable(paraflop ${APP_SOURCE_FILES})
 

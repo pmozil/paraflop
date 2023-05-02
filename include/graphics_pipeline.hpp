@@ -15,7 +15,7 @@ class AbstractGraphicsPipeline {
     AbstractGraphicsPipeline(swap_chain::SwapChain *swapChain,
                              device::DeviceHandler *deviceHandler)
         : swapChain(swapChain), deviceHandler(deviceHandler){};
-    std::vector<char> readFile(const std::string &filename);
+    static std::vector<char> readFile(const std::string &filename);
     swap_chain::SwapChain *swapChain;
     device::DeviceHandler *deviceHandler;
     VkPipelineLayout pipelineLayout;
@@ -33,6 +33,6 @@ class RasterGraphicsPipeline : public AbstractGraphicsPipeline {
     };
 
   private:
-    void createGraphicsPipeline();
+    void createGraphicsPipeline() override;
 };
 } // namespace graphics_pipeline

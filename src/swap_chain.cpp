@@ -182,8 +182,9 @@ VkSurfaceFormatKHR swap_chain::SwapChain::chooseSwapSurfaceFormat(
 VkPresentModeKHR swap_chain::SwapChain::chooseSwapPresentMode(
     const std::vector<VkPresentModeKHR> &availablePresentModes) {
     for (const auto &presentMode : availablePresentModes) {
-        if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+        if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
             return presentMode;
+        }
     }
     return VK_PRESENT_MODE_FIFO_KHR;
 }
@@ -192,26 +193,26 @@ VkExtent2D swap_chain::SwapChain::chooseSwapExtent(
     const VkSurfaceCapabilitiesKHR &capabilities) {
     if (capabilities.currentExtent.width != UINT32_MAX) {
         return capabilities.currentExtent;
-    } else {
-        int width, height;
-        glfwGetFramebufferSize(window, &width, &height);
-
-        VkExtent2D actualExtent = {static_cast<uint32_t>(width),
-                                   static_cast<uint32_t>(height)};
-
-        actualExtent.width = std::max(
-            capabilities.minImageExtent.width,
-            std::min(capabilities.maxImageExtent.width, actualExtent.width));
-        actualExtent.height = std::max(
-            capabilities.minImageExtent.height,
-            std::min(capabilities.maxImageExtent.height, actualExtent.height));
-
-        return actualExtent;
     }
+    int width;
+    int height;
+    glfwGetFramebufferSize(window, &width, &height);
+
+    VkExtent2D actualExtent = {static_cast<uint32_t>(width),
+                               static_cast<uint32_t>(height)};
+
+    actualExtent.width = std::max(
+        capabilities.minImageExtent.width,
+        std::min(capabilities.maxImageExtent.width, actualExtent.width));
+    actualExtent.height = std::max(
+        capabilities.minImageExtent.height,
+        std::min(capabilities.maxImageExtent.height, actualExtent.height));
+
+    return actualExtent;
 }
 
 void swap_chain::SwapChain::cleanup() {
-    for (auto framebuffer : swapChainFramebuffers) {
+    for (auto *framebuffer : swapChainFramebuffers) {
         vkDestroyFramebuffer(deviceHandler->getLogicalDevice(), framebuffer,
                              nullptr);
     }
@@ -219,7 +220,7 @@ void swap_chain::SwapChain::cleanup() {
     vkDestroyRenderPass(deviceHandler->getLogicalDevice(), renderPasses[0],
                         nullptr);
 
-    for (auto imageView : swapChainImageViews) {
+    for (auto *imageView : swapChainImageViews) {
         vkDestroyImageView(deviceHandler->getLogicalDevice(), imageView,
                            nullptr);
     }

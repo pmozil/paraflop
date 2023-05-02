@@ -73,12 +73,12 @@ void graphics_pipeline::RasterGraphicsPipeline::createGraphicsPipeline() {
 
     VkExtent2D swapChainExtent = swapChain->getSwapChainExtent();
     VkViewport viewport = {};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
+    viewport.x = 0.0F;
+    viewport.y = 0.0F;
     viewport.width = (float)swapChainExtent.width;
     viewport.height = (float)swapChainExtent.height;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
+    viewport.minDepth = 0.0F;
+    viewport.maxDepth = 1.0F;
 
     VkRect2D scissor = {};
     scissor.offset = {0, 0};
@@ -97,7 +97,7 @@ void graphics_pipeline::RasterGraphicsPipeline::createGraphicsPipeline() {
     rasterizer.depthClampEnable = VK_FALSE;
     rasterizer.rasterizerDiscardEnable = VK_FALSE;
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-    rasterizer.lineWidth = 1.0f;
+    rasterizer.lineWidth = 1.0F;
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
     rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
     rasterizer.depthBiasEnable = VK_FALSE;
@@ -121,10 +121,10 @@ void graphics_pipeline::RasterGraphicsPipeline::createGraphicsPipeline() {
     colorBlending.logicOp = VK_LOGIC_OP_COPY;
     colorBlending.attachmentCount = 1;
     colorBlending.pAttachments = &colorBlendAttachment;
-    colorBlending.blendConstants[0] = 0.0f;
-    colorBlending.blendConstants[1] = 0.0f;
-    colorBlending.blendConstants[2] = 0.0f;
-    colorBlending.blendConstants[3] = 0.0f;
+    colorBlending.blendConstants[0] = 0.0F;
+    colorBlending.blendConstants[1] = 0.0F;
+    colorBlending.blendConstants[2] = 0.0F;
+    colorBlending.blendConstants[3] = 0.0F;
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;

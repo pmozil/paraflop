@@ -16,7 +16,7 @@ class SwapChain {
     inline VkFormat &getSwapChainImageFormat() { return swapChainImageFormat; };
     inline VkExtent2D &getSwapChainExtent() { return swapChainExtent; };
     inline VkRenderPass &getRenderPass() { return renderPasses[0]; };
-    inline VkRenderPass &getNthRenderPass(int n) { return renderPasses[n]; };
+    inline VkRenderPass &getRenderPass(int n) { return renderPasses[n]; };
     inline int renderPassesLength() { return renderPasses.size(); };
     inline std::vector<VkRenderPass> &getRenderPasses() {
         return renderPasses;
@@ -45,9 +45,9 @@ class SwapChain {
     std::vector<VkImageView> swapChainImageViews;
     std::vector<VkFramebuffer> swapChainFramebuffers;
 
-    VkSurfaceFormatKHR chooseSwapSurfaceFormat(
+    static VkSurfaceFormatKHR chooseSwapSurfaceFormat(
         const std::vector<VkSurfaceFormatKHR> &availableFormats);
-    VkPresentModeKHR chooseSwapPresentMode(
+    static VkPresentModeKHR chooseSwapPresentMode(
         const std::vector<VkPresentModeKHR> &availablePresentModes);
     VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
     void createSwapChain();

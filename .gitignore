@@ -12,6 +12,7 @@ _deps
 build
 external
 .cmake
+.cache
 
 # Prerequisites
 *.d

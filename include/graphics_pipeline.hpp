@@ -4,8 +4,6 @@
 #include "swap_chain.hpp"
 
 namespace graphics_pipeline {
-using pipeline_type = enum { PARAFLOP_GRAPHICS_PIPELINE_RASTER };
-
 class AbstractGraphicsPipeline {
   public:
     inline VkPipeline &getGraphicsPipeline() { return graphicsPipeline; }

@@ -197,6 +197,7 @@ QueueFamilyIndices device::DeviceHandler::getQueueFamilyIndices() {
 
     return indices;
 }
+
 device::DeviceHandler::DeviceHandler(
     std::vector<const char *> devExt,
     std::optional<std::vector<const char *>> validations, VkInstance *inst,

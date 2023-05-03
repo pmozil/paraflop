@@ -1,6 +1,15 @@
 #include "swap_chain.hpp"
 #include <utility>
 
+swap_chain::SwapChain::SwapChain(GLFWwindow *window, VkSurfaceKHR *surface,
+                                 device::DeviceHandler *deviceHandler)
+    : window(window), surface(surface), deviceHandler(deviceHandler) {
+    createSwapChain();
+    createImageViews();
+    createRenderPass();
+    createFrameBuffers();
+};
+
 void swap_chain::SwapChain::createImageViews() {
     swapChainImageViews.resize(swapChainImages.size());
 

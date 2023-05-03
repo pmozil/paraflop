@@ -1,5 +1,12 @@
 #include "command_buffer.hpp"
 
+command_buffer::CommandBuffer::CommandBuffer(
+    device::DeviceHandler *deviceHandler)
+    : deviceHandler(deviceHandler) {
+    createCommandPool();
+    createCommandBuffer();
+}
+
 void command_buffer::CommandBuffer::createCommandPool() {
     QueueFamilyIndices queueFamilyIndices =
         deviceHandler->getQueueFamilyIndices();

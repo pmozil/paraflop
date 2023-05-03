@@ -1,5 +1,11 @@
 #include "graphics_pipeline.hpp"
 
+graphics_pipeline::RasterGraphicsPipeline::RasterGraphicsPipeline(
+    swap_chain::SwapChain *swapChain, device::DeviceHandler *deviceHandler)
+    : graphics_pipeline::AbstractGraphicsPipeline(swapChain, deviceHandler) {
+    createGraphicsPipeline();
+}
+
 std::vector<char> graphics_pipeline::AbstractGraphicsPipeline::readFile(
     const std::string &filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);

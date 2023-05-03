@@ -29,10 +29,7 @@ class AbstractGraphicsPipeline {
 class RasterGraphicsPipeline : public AbstractGraphicsPipeline {
   public:
     RasterGraphicsPipeline(swap_chain::SwapChain *swapChain,
-                           device::DeviceHandler *deviceHandler)
-        : AbstractGraphicsPipeline(swapChain, deviceHandler) {
-        createGraphicsPipeline();
-    };
+                           device::DeviceHandler *deviceHandler);
 
   private:
     void createGraphicsPipeline() override;

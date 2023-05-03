@@ -5,11 +5,7 @@
 namespace command_buffer {
 class CommandBuffer {
   public:
-    CommandBuffer(device::DeviceHandler *deviceHandler)
-        : deviceHandler(deviceHandler) {
-        createCommandPool();
-        createCommandBuffer();
-    }
+    CommandBuffer(device::DeviceHandler *deviceHandler);
     inline VkCommandBuffer &getCommandBuffer() { return commandBuffer; }
 
   private:

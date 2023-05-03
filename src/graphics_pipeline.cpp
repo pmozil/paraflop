@@ -1,9 +1,48 @@
 #include "graphics_pipeline.hpp"
 
+VkShaderModule graphics_pipeline::AbstractGraphicsPipeline::createShaderModule(
+    const std::vector<char> &code) {
+    VkShaderModuleCreateInfo createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.codeSize = code.size();
+    createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
+
+    VkShaderModule shaderModule;
+    if (vkCreateShaderModule(deviceHandler->getLogicalDevice(), &createInfo,
+                             nullptr, &shaderModule) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create shader module!");
+    }
+
+    return shaderModule;
+}
 graphics_pipeline::RasterGraphicsPipeline::RasterGraphicsPipeline(
     swap_chain::SwapChain *swapChain, device::DeviceHandler *deviceHandler)
     : graphics_pipeline::AbstractGraphicsPipeline(swapChain, deviceHandler) {
     createGraphicsPipeline();
+}
+
+graphics_pipeline::CustomGraphicsPipeline::CustomGraphicsPipeline(
+    swap_chain::SwapChain *swapChain, device::DeviceHandler *deviceHandler,
+    VkPipelineLayoutCreateInfo &pipelineLayoutCreateInfo,
+    VkGraphicsPipelineCreateInfo &pipelineCreateInfo)
+    : AbstractGraphicsPipeline(swapChain, deviceHandler),
+      pipelineCreateInfo(pipelineCreateInfo),
+      pipelineLayoutCreateInfo(pipelineLayoutCreateInfo) {
+    createGraphicsPipeline();
+}
+
+void graphics_pipeline::CustomGraphicsPipeline::createGraphicsPipeline() {
+    if (vkCreatePipelineLayout(deviceHandler->getLogicalDevice(),
+                               &pipelineLayoutCreateInfo, nullptr,
+                               &pipelineLayout) != VK_SUCCESS) {
+
+        throw std::runtime_error("failed to create pipeline layout!");
+    }
+    if (vkCreateGraphicsPipelines(deviceHandler->getLogicalDevice(),
+                                  VK_NULL_HANDLE, 1, &pipelineCreateInfo,
+                                  nullptr, &graphicsPipeline) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create graphics pipeline!");
+    }
 }
 
 std::vector<char> graphics_pipeline::AbstractGraphicsPipeline::readFile(
@@ -23,22 +62,6 @@ std::vector<char> graphics_pipeline::AbstractGraphicsPipeline::readFile(
     file.close();
 
     return buffer;
-}
-
-VkShaderModule graphics_pipeline::AbstractGraphicsPipeline::createShaderModule(
-    const std::vector<char> &code) {
-    VkShaderModuleCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.codeSize = code.size();
-    createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
-
-    VkShaderModule shaderModule;
-    if (vkCreateShaderModule(deviceHandler->getLogicalDevice(), &createInfo,
-                             nullptr, &shaderModule) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create shader module!");
-    }
-
-    return shaderModule;
 }
 
 void graphics_pipeline::RasterGraphicsPipeline::createGraphicsPipeline() {
@@ -168,4 +191,18 @@ void graphics_pipeline::RasterGraphicsPipeline::createGraphicsPipeline() {
                           nullptr);
     vkDestroyShaderModule(deviceHandler->getLogicalDevice(), vertShaderModule,
                           nullptr);
+}
+
+graphics_pipeline::RasterGraphicsPipeline::~RasterGraphicsPipeline() {
+    vkDestroyPipeline(deviceHandler->getLogicalDevice(), graphicsPipeline,
+                      nullptr);
+    vkDestroyPipelineLayout(deviceHandler->getLogicalDevice(), pipelineLayout,
+                            nullptr);
+}
+
+graphics_pipeline::CustomGraphicsPipeline::~CustomGraphicsPipeline() {
+    vkDestroyPipeline(deviceHandler->getLogicalDevice(), graphicsPipeline,
+                      nullptr);
+    vkDestroyPipelineLayout(deviceHandler->getLogicalDevice(), pipelineLayout,
+                            nullptr);
 }

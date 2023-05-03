@@ -1,18 +1,30 @@
 #pragma once
 #include "common.hpp"
 #include "device.hpp"
+#include "graphics_pipeline.hpp"
+#include "swap_chain.hpp"
 
 namespace command_buffer {
-class CommandBuffer {
+class CommandBufferHandler {
   public:
-    CommandBuffer(device::DeviceHandler *deviceHandler);
-    inline VkCommandBuffer &getCommandBuffer() { return commandBuffer; }
+    CommandBufferHandler(
+        device::DeviceHandler *deviceHandler, swap_chain::SwapChain *swapChain,
+        graphics_pipeline::AbstractGraphicsPipeline *graphicsPipeline);
+    ~CommandBufferHandler();
+    inline VkCommandBuffer &getCommandBuffer(uint32_t n) {
+        return commandBuffers[n];
+    }
+    inline std::vector<VkCommandBuffer> &getCommandBuffers() {
+        return commandBuffers;
+    }
 
   private:
     VkCommandPool commandPool;
-    VkCommandBuffer commandBuffer;
+    std::vector<VkCommandBuffer> commandBuffers;
     device::DeviceHandler *deviceHandler;
+    swap_chain::SwapChain *swapChain;
+    graphics_pipeline::AbstractGraphicsPipeline *graphicsPipeline;
     void createCommandPool();
-    void createCommandBuffer();
+    void createCommandBuffers();
 };
 } // namespace command_buffer

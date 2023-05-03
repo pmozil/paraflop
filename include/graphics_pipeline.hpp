@@ -8,10 +8,10 @@ using pipeline_type = enum { PARAFLOP_GRAPHICS_PIPELINE_RASTER };
 
 class AbstractGraphicsPipeline {
   public:
-    inline VkPipeline &getGraphicsPipeline() { return graphicsPipeline; };
+    inline VkPipeline &getGraphicsPipeline() { return graphicsPipeline; }
     inline VkPipelineLayout &getGraphicsPipelineLayout() {
         return pipelineLayout;
-    };
+    }
 
   protected:
     AbstractGraphicsPipeline(swap_chain::SwapChain *swapChain,
@@ -22,14 +22,29 @@ class AbstractGraphicsPipeline {
     device::DeviceHandler *deviceHandler;
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
-    virtual void createGraphicsPipeline() = 0;
     VkShaderModule createShaderModule(const std::vector<char> &code);
+    virtual void createGraphicsPipeline() = 0;
+};
+
+class CustomGraphicsPipeline : public AbstractGraphicsPipeline {
+  public:
+    CustomGraphicsPipeline(swap_chain::SwapChain *swapChain,
+                           device::DeviceHandler *deviceHandler,
+                           VkPipelineLayoutCreateInfo &pipelineLayoutCreateInfo,
+                           VkGraphicsPipelineCreateInfo &pipelineCreateInfo);
+    ~CustomGraphicsPipeline();
+
+  private:
+    void createGraphicsPipeline() override;
+    VkGraphicsPipelineCreateInfo &pipelineCreateInfo;
+    VkPipelineLayoutCreateInfo &pipelineLayoutCreateInfo;
 };
 
 class RasterGraphicsPipeline : public AbstractGraphicsPipeline {
   public:
     RasterGraphicsPipeline(swap_chain::SwapChain *swapChain,
                            device::DeviceHandler *deviceHandler);
+    ~RasterGraphicsPipeline();
 
   private:
     void createGraphicsPipeline() override;

@@ -38,6 +38,12 @@ else()
     add_compile_options(-Wall -Wextra -Wpedantic -O3 -ffast-math -march=native)
 endif()
 
+file(COPY 
+    "${CMAKE_SOURCE_DIR}/assets/shaders/frag.spv"
+    "${CMAKE_SOURCE_DIR}/assets/shaders/vert.spv"
+    DESTINATION
+    "${CMAKE_BINARY_DIR}")
+
 include_directories("${CMAKE_SOURCE_DIR}/include")
 file(GLOB SOURCE_FILES "${CMAKE_SOURCE_DIR}/src/*.cpp" "${CMAKE_SOURCE_DIR}/include/*.hpp")
 set(APP_SOURCE_FILES ${SOURCE_FILES} CACHE INTERNAL STRINGS)

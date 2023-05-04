@@ -9,12 +9,12 @@ class DeviceHandler {
   public:
     DeviceHandler(std::vector<const char *> &, std::vector<const char *> &,
                   VkInstance &, VkSurfaceKHR &);
-    VkPhysicalDevice getPhysicalDevice() { return physicalDevice; };
-    VkDevice getLogicalDevice() { return logicalDevice; };
-    VkQueue getGraphicsQueue() { return graphicsQueue; };
-    VkQueue getPresentQueue() { return presentQueue; };
-    QueueFamilyIndices getQueueFamilyIndices(VkPhysicalDevice device);
-    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+    inline VkPhysicalDevice &getPhysicalDevice() { return physicalDevice; };
+    inline VkDevice &getLogicalDevice() { return logicalDevice; };
+    inline VkQueue &getGraphicsQueue() { return graphicsQueue; };
+    inline VkQueue &getPresentQueue() { return presentQueue; };
+    QueueFamilyIndices getQueueFamilyIndices(VkPhysicalDevice &device);
+    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice &device);
     inline void cleanupDevice(VkAllocationCallbacks *pAllocator) {
         vkDestroyDevice(logicalDevice, pAllocator);
     }

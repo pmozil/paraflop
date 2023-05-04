@@ -23,6 +23,7 @@ class CommandBufferHandler {
   private:
     VkCommandPool commandPool;
     std::vector<VkCommandBuffer> commandBuffers;
+    VkCommandBuffer transferBuffer = VK_NULL_HANDLE;
     device::DeviceHandler *deviceHandler;
     swap_chain::SwapChain *swapChain;
     graphics_pipeline::AbstractGraphicsPipeline *graphicsPipeline;

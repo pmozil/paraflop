@@ -32,9 +32,9 @@ class CustomGraphicsPipeline : public AbstractGraphicsPipeline {
                            VkPipelineLayoutCreateInfo &pipelineLayoutCreateInfo,
                            VkGraphicsPipelineCreateInfo &pipelineCreateInfo);
     ~CustomGraphicsPipeline();
+    void createGraphicsPipeline() override;
 
   private:
-    void createGraphicsPipeline() override;
     VkGraphicsPipelineCreateInfo &pipelineCreateInfo;
     VkPipelineLayoutCreateInfo &pipelineLayoutCreateInfo;
 };
@@ -44,8 +44,6 @@ class RasterGraphicsPipeline : public AbstractGraphicsPipeline {
     RasterGraphicsPipeline(swap_chain::SwapChain *swapChain,
                            device::DeviceHandler *deviceHandler);
     ~RasterGraphicsPipeline();
-
-  private:
     void createGraphicsPipeline() override;
 };
 } // namespace graphics_pipeline

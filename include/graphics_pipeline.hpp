@@ -10,6 +10,8 @@ class AbstractGraphicsPipeline {
     inline VkPipelineLayout &getGraphicsPipelineLayout() {
         return pipelineLayout;
     }
+    virtual void createGraphicsPipeline() = 0;
+    void cleanup();
 
   protected:
     AbstractGraphicsPipeline(swap_chain::SwapChain *swapChain,
@@ -21,7 +23,6 @@ class AbstractGraphicsPipeline {
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
     VkShaderModule createShaderModule(const std::vector<char> &code);
-    virtual void createGraphicsPipeline() = 0;
 };
 
 class CustomGraphicsPipeline : public AbstractGraphicsPipeline {

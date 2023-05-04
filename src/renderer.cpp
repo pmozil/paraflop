@@ -7,30 +7,58 @@ renderer::Renderer::Renderer(
     graphics_pipeline::AbstractGraphicsPipeline *graphicsPipeline)
     : window(window), instance(instance), surface(surface),
       deviceHandler(deviceHandler), commandBuffer(commandBuffer),
-      swapChain(swapChain), graphicsPipeline(graphicsPipeline) {}
+      swapChain(swapChain), graphicsPipeline(graphicsPipeline) {
+    createSyncObjects();
+}
 
-void renderer::Renderer::recordCommandBuffer(uint32_t imageIndex) {
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = 0;                  // Optional
-    beginInfo.pInheritanceInfo = nullptr; // Optional
+void renderer::Renderer::createSyncObjects() {
+    imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+    imagesInFlight.resize(swapChain->getSwapChainImages().size(),
+                          VK_NULL_HANDLE);
 
-    if (vkBeginCommandBuffer(commandBuffer->getCommandBuffer(imageIndex),
-                             &beginInfo) != VK_SUCCESS) {
-        throw std::runtime_error("failed to begin recording command buffer!");
+    VkSemaphoreCreateInfo semaphoreInfo = {};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    VkFenceCreateInfo fenceInfo = {};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        if (vkCreateSemaphore(deviceHandler->getLogicalDevice(), &semaphoreInfo,
+                              nullptr,
+                              &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+            vkCreateSemaphore(deviceHandler->getLogicalDevice(), &semaphoreInfo,
+                              nullptr,
+                              &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+            vkCreateFence(deviceHandler->getLogicalDevice(), &fenceInfo,
+                          nullptr, &inFlightFences[i]) != VK_SUCCESS) {
+            throw std::runtime_error(
+                "failed to create synchronization objects for a frame!");
+        }
     }
-    VkRenderPassBeginInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = swapChain->getRenderPass();
-    renderPassInfo.framebuffer =
-        swapChain->getSwapChainFrameBuffers()[imageIndex];
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = swapChain->getSwapChainExtent();
+}
 
-    VkClearValue clearColor = {{{0.0F, 0.0F, 0.0F, 1.0F}}};
-    renderPassInfo.clearValueCount = 1;
-    renderPassInfo.pClearValues = &clearColor;
+void renderer::Renderer::handleWindowUpdate() {
+    int width = 0;
+    int height = 0;
+    glfwGetFramebufferSize(window, &width, &height);
+    while (width == 0 || height == 0) {
+        glfwGetFramebufferSize(window, &width, &height);
+        glfwWaitEvents();
+    }
 
-    vkCmdBeginRenderPass(commandBuffer->getCommandBuffer(imageIndex),
-                         &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkDeviceWaitIdle(deviceHandler->getLogicalDevice());
+
+    swapChain->cleanup();
+    commandBuffer->cleanup();
+    graphicsPipeline->cleanup();
+
+    swapChain->createSwapChain();
+    swapChain->createImageViews();
+    swapChain->createRenderPass();
+    swapChain->createFrameBuffers();
+    graphicsPipeline->createGraphicsPipeline();
+    commandBuffer->createCommandBuffers();
 }

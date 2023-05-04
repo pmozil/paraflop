@@ -13,8 +13,7 @@ class Renderer {
              swap_chain::SwapChain *swapChain,
              command_buffer::CommandBufferHandler *commandBuffer,
              graphics_pipeline::AbstractGraphicsPipeline *graphicsPipeline);
-    void recordCommandBuffer(uint32_t imageIndex);
-    void recordCommandBuffer(uint32_t imageIndex, uint32_t renderPassIndex);
+    void handleWindowUpdate();
 
   private:
     GLFWwindow *window;
@@ -30,5 +29,6 @@ class Renderer {
     std::vector<VkFence> imagesInFlight;
     size_t currentFrame = 0;
     bool framebufferResized = false;
+    void createSyncObjects();
 };
 } // namespace renderer

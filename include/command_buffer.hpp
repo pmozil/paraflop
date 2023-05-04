@@ -17,6 +17,8 @@ class CommandBufferHandler {
     inline std::vector<VkCommandBuffer> &getCommandBuffers() {
         return commandBuffers;
     }
+    void createCommandBuffers();
+    void cleanup();
 
   private:
     VkCommandPool commandPool;
@@ -25,6 +27,5 @@ class CommandBufferHandler {
     swap_chain::SwapChain *swapChain;
     graphics_pipeline::AbstractGraphicsPipeline *graphicsPipeline;
     void createCommandPool();
-    void createCommandBuffers();
 };
 } // namespace command_buffer

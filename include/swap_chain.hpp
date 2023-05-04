@@ -27,6 +27,10 @@ class SwapChain {
     };
     int createRenderPass(VkRenderPassCreateInfo renderPassInfo);
     void cleanup();
+    void createSwapChain();
+    void createImageViews();
+    void createRenderPass();
+    void createFrameBuffers();
 
   private:
     GLFWwindow *window;
@@ -45,9 +49,5 @@ class SwapChain {
     static VkPresentModeKHR chooseSwapPresentMode(
         const std::vector<VkPresentModeKHR> &availablePresentModes);
     VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
-    void createSwapChain();
-    void createImageViews();
-    void createRenderPass();
-    void createFrameBuffers();
 };
 } // namespace swap_chain

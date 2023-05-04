@@ -193,16 +193,17 @@ void graphics_pipeline::RasterGraphicsPipeline::createGraphicsPipeline() {
                           nullptr);
 }
 
-graphics_pipeline::RasterGraphicsPipeline::~RasterGraphicsPipeline() {
+void graphics_pipeline::AbstractGraphicsPipeline::cleanup() {
     vkDestroyPipeline(deviceHandler->getLogicalDevice(), graphicsPipeline,
                       nullptr);
     vkDestroyPipelineLayout(deviceHandler->getLogicalDevice(), pipelineLayout,
                             nullptr);
 }
 
+graphics_pipeline::RasterGraphicsPipeline::~RasterGraphicsPipeline() {
+    cleanup();
+}
+
 graphics_pipeline::CustomGraphicsPipeline::~CustomGraphicsPipeline() {
-    vkDestroyPipeline(deviceHandler->getLogicalDevice(), graphicsPipeline,
-                      nullptr);
-    vkDestroyPipelineLayout(deviceHandler->getLogicalDevice(), pipelineLayout,
-                            nullptr);
+    cleanup();
 }

@@ -21,7 +21,7 @@ bool device::DeviceHandler::checkDeviceExtensionSupport(
 }
 
 SwapChainSupportDetails
-device::DeviceHandler::querySwapChainSupport(VkPhysicalDevice device) {
+device::DeviceHandler::querySwapChainSupport(VkPhysicalDevice &device) {
     SwapChainSupportDetails details;
 
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface,
@@ -183,7 +183,7 @@ void device::DeviceHandler::createLogicalDevice(
 }
 
 QueueFamilyIndices
-device::DeviceHandler::getQueueFamilyIndices(VkPhysicalDevice device) {
+device::DeviceHandler::getQueueFamilyIndices(VkPhysicalDevice &device) {
     QueueFamilyIndices indices;
 
     uint32_t queueFamilyCount = 0;

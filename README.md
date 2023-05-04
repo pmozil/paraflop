@@ -13,7 +13,10 @@ As terrible as this was, I enjoyed it the most out of all the recent projects I 
 ## Dependencies
 
 You need Vulkan, GLM, GLFW, and the LunarG SDK. 
-Here's the packange manager commands.
+Here's the commands to instal them on some systems.
+
+
+I am not doing submodules to compile, because I am too lazy. Sorry
 
 ### Ubuntu
 ```
@@ -55,12 +58,14 @@ I mean, it's a CMake project. I'll still leave the commands here, just in case y
 ```bash
 git clone https://github.com/pmozil/paraflop
 cd paraflop
-cmake .
-cmake --build .
+mkdir build
+cd build
+cmake ..
+cmake --build ..
 ```
 
 Now, to run this just do
 ```bash
-./build/paraflop
+./paraflop
 
 ```

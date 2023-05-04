@@ -6,7 +6,7 @@ namespace device {
 class DeviceHandler {
   public:
     DeviceHandler(std::vector<const char *> &, std::vector<const char *> &,
-                  VkInstance *, VkSurfaceKHR *);
+                  VkInstance &, VkSurfaceKHR &);
     VkPhysicalDevice &getPhysicalDevice() { return physicalDevice; };
     VkDevice &getLogicalDevice() { return logicalDevice; };
     VkQueue &getGraphicsQueue() { return graphicsQueue; };
@@ -20,8 +20,8 @@ class DeviceHandler {
   private:
     std::vector<const char *> &deviceExtensions;
     std::vector<const char *> &validationLayers;
-    VkInstance *instance;
-    VkSurfaceKHR *surface;
+    VkInstance &instance;
+    VkSurfaceKHR &surface;
     VkQueue graphicsQueue;
     VkQueue presentQueue;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;

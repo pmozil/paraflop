@@ -21,12 +21,12 @@ int main() {
     std::cout << "Creating device handler"
               << "\n";
     device::DeviceHandler deviceHandler =
-        device::DeviceHandler(devExt, validation, &instance, &surface);
+        device::DeviceHandler(devExt, validation, instance, surface);
     std::cout << "DEBUG: ";
     std::cout << "Creating swap chain"
               << "\n";
     swap_chain::SwapChain swapChain =
-        swap_chain::SwapChain(window, &surface, &deviceHandler);
+        swap_chain::SwapChain(window, surface, &deviceHandler);
     std::cout << "DEBUG: ";
     std::cout << "Creating pipeline"
               << "\n";
@@ -38,6 +38,14 @@ int main() {
     command_buffer::CommandBufferHandler commandBuffer =
         command_buffer::CommandBufferHandler(&deviceHandler, &swapChain,
                                              &pipeline);
+
+    renderer::Renderer renderer =
+        renderer::Renderer(window, instance, surface, &deviceHandler,
+                           &swapChain, &commandBuffer, &pipeline);
+    while (!glfwWindowShouldClose(window)) {
+        glfwPollEvents();
+        renderer.drawFrame();
+    }
 
     return 0;
 }

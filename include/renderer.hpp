@@ -14,6 +14,7 @@ class Renderer {
              command_buffer::CommandBufferHandler *commandBuffer,
              graphics_pipeline::AbstractGraphicsPipeline *graphicsPipeline);
     void handleWindowUpdate();
+    void drawFrame();
 
   private:
     GLFWwindow *window;

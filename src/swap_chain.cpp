@@ -1,7 +1,7 @@
 #include "swap_chain.hpp"
 #include <utility>
 
-swap_chain::SwapChain::SwapChain(GLFWwindow *window, VkSurfaceKHR *surface,
+swap_chain::SwapChain::SwapChain(GLFWwindow *window, VkSurfaceKHR &surface,
                                  device::DeviceHandler *deviceHandler)
     : window(window), surface(surface), deviceHandler(deviceHandler) {
     createSwapChain();
@@ -56,7 +56,7 @@ void swap_chain::SwapChain::createSwapChain() {
 
     VkSwapchainCreateInfoKHR createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.surface = *surface;
+    createInfo.surface = surface;
 
     createInfo.minImageCount = imageCount;
     createInfo.imageFormat = surfaceFormat.format;

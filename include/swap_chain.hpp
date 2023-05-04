@@ -5,7 +5,7 @@
 namespace swap_chain {
 class SwapChain {
   public:
-    SwapChain(GLFWwindow *window, VkSurfaceKHR *surface,
+    SwapChain(GLFWwindow *window, VkSurfaceKHR &surface,
               device::DeviceHandler *deviceHandler);
     inline VkSwapchainKHR &getSwapChain() { return swapChain; };
     inline VkFormat &getSwapChainImageFormat() { return swapChainImageFormat; };
@@ -34,7 +34,7 @@ class SwapChain {
 
   private:
     GLFWwindow *window;
-    VkSurfaceKHR *surface;
+    VkSurfaceKHR &surface;
     device::DeviceHandler *deviceHandler;
     VkSwapchainKHR swapChain;
     VkFormat swapChainImageFormat;

@@ -11,7 +11,8 @@ command_buffer::CommandBufferHandler::CommandBufferHandler(
 
 void command_buffer::CommandBufferHandler::createCommandPool() {
     QueueFamilyIndices queueFamilyIndices =
-        deviceHandler->getQueueFamilyIndices();
+        deviceHandler->getQueueFamilyIndices(
+            deviceHandler->getPhysicalDevice());
 
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;

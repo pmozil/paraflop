@@ -21,7 +21,7 @@ bool device::DeviceHandler::checkDeviceExtensionSupport(
 }
 
 SwapChainSupportDetails
-device::DeviceHandler::querySwapChainSupport(VkPhysicalDevice device) {
+device::DeviceHandler::querySwapChainSupport(VkPhysicalDevice &device) {
     SwapChainSupportDetails details;
 
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, *surface,
@@ -51,7 +51,7 @@ device::DeviceHandler::querySwapChainSupport(VkPhysicalDevice device) {
 }
 
 bool device::DeviceHandler::deviceIsSuitable(VkPhysicalDevice device) {
-    QueueFamilyIndices indices = getQueueFamilyIndices();
+    QueueFamilyIndices indices = getQueueFamilyIndices(device);
 
     bool extensionsSupported = checkDeviceExtensionSupport(device);
 
@@ -89,7 +89,26 @@ int device::DeviceHandler::rateDevice(VkPhysicalDevice device) {
 }
 
 void device::DeviceHandler::pickPhysicalDevice() {
-    std::multimap<int, VkPhysicalDevice> candidates;
+    // std::multimap<int, VkPhysicalDevice> candidates;
+    // uint32_t deviceCount = 0;
+    // vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+
+    // if (deviceCount == 0) {
+    //     throw std::runtime_error("failed to find GPUs with Vulkan support!");
+    // }
+
+    // std::vector<VkPhysicalDevice> devices(deviceCount);
+    // vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+
+    // for (const auto &device : devices) {
+    //     int score = rateDevice(device);
+    //     candidates.insert(std::make_pair(score, device));
+    // }
+    // if (candidates.rbegin()->first > 0) {
+    //     physicalDevice = candidates.rbegin()->second;
+    // } else {
+    //     throw std::runtime_error("failed to find a suitable GPU!");
+    // }
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(*instance, &deviceCount, nullptr);
 
@@ -101,19 +120,19 @@ void device::DeviceHandler::pickPhysicalDevice() {
     vkEnumeratePhysicalDevices(*instance, &deviceCount, devices.data());
 
     for (const auto &device : devices) {
-        int score = rateDevice(device);
-        candidates.insert(std::make_pair(score, device));
+        if (deviceIsSuitable(device)) {
+            physicalDevice = device;
+            break;
+        }
     }
-    if (candidates.rbegin()->first > 0) {
-        physicalDevice = candidates.rbegin()->second;
-    } else {
+    if (physicalDevice == VK_NULL_HANDLE) {
         throw std::runtime_error("failed to find a suitable GPU!");
     }
 }
 
 void device::DeviceHandler::createLogicalDevice(
     VkAllocationCallbacks *pAllocator) {
-    QueueFamilyIndices indices = getQueueFamilyIndices();
+    QueueFamilyIndices indices = getQueueFamilyIndices(physicalDevice);
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(),
@@ -144,10 +163,10 @@ void device::DeviceHandler::createLogicalDevice(
         static_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
-    if (validationLayers.has_value()) {
+    if (!validationLayers.empty()) {
         createInfo.enabledLayerCount =
-            static_cast<uint32_t>(validationLayers.value().size());
-        createInfo.ppEnabledLayerNames = validationLayers.value().data();
+            static_cast<uint32_t>(validationLayers.size());
+        createInfo.ppEnabledLayerNames = validationLayers.data();
     } else {
         createInfo.enabledLayerCount = 0;
     }
@@ -163,15 +182,16 @@ void device::DeviceHandler::createLogicalDevice(
                      &presentQueue);
 }
 
-QueueFamilyIndices device::DeviceHandler::getQueueFamilyIndices() {
+QueueFamilyIndices
+device::DeviceHandler::getQueueFamilyIndices(VkPhysicalDevice &device) {
     QueueFamilyIndices indices;
 
     uint32_t queueFamilyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount,
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount,
                                              nullptr);
 
     std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount,
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount,
                                              queueFamilies.data());
 
     int i = 0;
@@ -181,7 +201,7 @@ QueueFamilyIndices device::DeviceHandler::getQueueFamilyIndices() {
         }
 
         VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, *surface,
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, *surface,
                                              &presentSupport);
 
         if (presentSupport) {
@@ -198,12 +218,12 @@ QueueFamilyIndices device::DeviceHandler::getQueueFamilyIndices() {
     return indices;
 }
 
-device::DeviceHandler::DeviceHandler(
-    std::vector<const char *> devExt,
-    std::optional<std::vector<const char *>> validations, VkInstance *inst,
-    VkSurfaceKHR *surf)
-    : deviceExtensions(std::move(devExt)),
-      validationLayers(std::move(validations)), instance(inst), surface(surf) {
+device::DeviceHandler::DeviceHandler(std::vector<const char *> &devExt,
+                                     std::vector<const char *> &validations,
+                                     VkInstance *instance,
+                                     VkSurfaceKHR *surface)
+    : deviceExtensions(devExt), validationLayers(validations),
+      instance(instance), surface(surface) {
     pickPhysicalDevice();
     createLogicalDevice(nullptr);
 }

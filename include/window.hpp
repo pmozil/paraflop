@@ -2,6 +2,6 @@
 #include "common.hpp"
 
 namespace window {
-void initWindow(GLFWwindow *window,
-                GLFWframebuffersizefun framebufferResizeCallback);
+GLFWwindow *initWindow(GLFWframebuffersizefun framebufferResizeCallback,
+                       void *pUserData);
 } // namespace window

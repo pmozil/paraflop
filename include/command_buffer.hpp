@@ -10,7 +10,7 @@ class CommandBufferHandler {
     CommandBufferHandler(
         device::DeviceHandler *deviceHandler, swap_chain::SwapChain *swapChain,
         graphics_pipeline::AbstractGraphicsPipeline *graphicsPipeline);
-    ~CommandBufferHandler();
+    // ~CommandBufferHandler();
     inline VkCommandBuffer &getCommandBuffer(uint32_t n) {
         return commandBuffers[n];
     }

@@ -1,7 +1,7 @@
 #include "renderer.hpp"
 
 renderer::Renderer::Renderer(
-    GLFWwindow *window, VkInstance *instance, VkSurfaceKHR *surface,
+    GLFWwindow *window, VkInstance &instance, VkSurfaceKHR &surface,
     device::DeviceHandler *deviceHandler, swap_chain::SwapChain *swapChain,
     command_buffer::CommandBufferHandler *commandBuffer,
     graphics_pipeline::AbstractGraphicsPipeline *graphicsPipeline)

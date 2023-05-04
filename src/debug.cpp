@@ -36,7 +36,7 @@ void debug::populateDebugMessengerCreateInfo(
     createInfo.pfnUserCallback = debug::debugCallback;
 }
 
-VkDebugUtilsMessengerEXT debug::createDebugMessenger(VkInstance instance) {
+VkDebugUtilsMessengerEXT debug::createDebugMessenger(VkInstance &instance) {
     VkDebugUtilsMessengerEXT debugMessenger;
     VkDebugUtilsMessengerCreateInfoEXT createInfo;
     debug::populateDebugMessengerCreateInfo(createInfo);

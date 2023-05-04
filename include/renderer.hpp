@@ -8,7 +8,7 @@
 namespace renderer {
 class Renderer {
   public:
-    Renderer(GLFWwindow *window, VkInstance *instance, VkSurfaceKHR *surface,
+    Renderer(GLFWwindow *window, VkInstance &instance, VkSurfaceKHR &surface,
              device::DeviceHandler *deviceHandler,
              swap_chain::SwapChain *swapChain,
              command_buffer::CommandBufferHandler *commandBuffer,
@@ -18,8 +18,8 @@ class Renderer {
 
   private:
     GLFWwindow *window;
-    VkInstance *instance;
-    VkSurfaceKHR *surface;
+    VkInstance &instance;
+    VkSurfaceKHR &surface;
     device::DeviceHandler *deviceHandler;
     command_buffer::CommandBufferHandler *commandBuffer;
     swap_chain::SwapChain *swapChain;

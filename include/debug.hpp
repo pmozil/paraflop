@@ -15,7 +15,7 @@ void DestroyDebugUtilsMessengerEXT(VkInstance &instance,
 void populateDebugMessengerCreateInfo(
     VkDebugUtilsMessengerCreateInfoEXT &createInfo);
 
-VkDebugUtilsMessengerEXT createDebugMessenger(VkInstance instance);
+VkDebugUtilsMessengerEXT createDebugMessenger(VkInstance &instance);
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL
 debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

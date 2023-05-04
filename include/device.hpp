@@ -5,27 +5,26 @@ namespace device {
 
 class DeviceHandler {
   public:
-    DeviceHandler(std::vector<const char *>,
-                  std::optional<std::vector<const char *>>, VkInstance *,
-                  VkSurfaceKHR *);
+    DeviceHandler(std::vector<const char *> &, std::vector<const char *> &,
+                  VkInstance *, VkSurfaceKHR *);
     VkPhysicalDevice &getPhysicalDevice() { return physicalDevice; };
     VkDevice &getLogicalDevice() { return logicalDevice; };
     VkQueue &getGraphicsQueue() { return graphicsQueue; };
     VkQueue &getPresentQueue() { return presentQueue; };
-    QueueFamilyIndices getQueueFamilyIndices();
-    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+    QueueFamilyIndices getQueueFamilyIndices(VkPhysicalDevice &device);
+    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice &device);
     inline void cleanupDevice(VkAllocationCallbacks *pAllocator) {
         vkDestroyDevice(logicalDevice, pAllocator);
     }
 
   private:
-    std::vector<const char *> deviceExtensions;
-    std::optional<std::vector<const char *>> validationLayers;
+    std::vector<const char *> &deviceExtensions;
+    std::vector<const char *> &validationLayers;
     VkInstance *instance;
     VkSurfaceKHR *surface;
     VkQueue graphicsQueue;
     VkQueue presentQueue;
-    VkPhysicalDevice physicalDevice;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDevice logicalDevice;
     bool checkDeviceExtensionSupport(VkPhysicalDevice device);
     bool deviceIsSuitable(VkPhysicalDevice device);

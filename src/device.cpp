@@ -21,7 +21,7 @@ bool device::DeviceHandler::checkDeviceExtensionSupport(
 }
 
 SwapChainSupportDetails
-device::DeviceHandler::querySwapChainSupport(VkPhysicalDevice &device) {
+device::DeviceHandler::querySwapChainSupport(VkPhysicalDevice device) {
     SwapChainSupportDetails details;
 
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface,
@@ -80,8 +80,8 @@ int device::DeviceHandler::rateDevice(VkPhysicalDevice device) {
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
     score += deviceProps.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
-                 ? 500
-                 : 200;
+                 ? device::DISCRETE_GPU_BONUS
+                 : device::INTEGRATED_GPU_BONUS;
     score += deviceProps.limits.maxImageDimension2D;
     score *= deviceFeatures.geometryShader;
 
@@ -89,26 +89,7 @@ int device::DeviceHandler::rateDevice(VkPhysicalDevice device) {
 }
 
 void device::DeviceHandler::pickPhysicalDevice() {
-    // std::multimap<int, VkPhysicalDevice> candidates;
-    // uint32_t deviceCount = 0;
-    // vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
-
-    // if (deviceCount == 0) {
-    //     throw std::runtime_error("failed to find GPUs with Vulkan support!");
-    // }
-
-    // std::vector<VkPhysicalDevice> devices(deviceCount);
-    // vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
-
-    // for (const auto &device : devices) {
-    //     int score = rateDevice(device);
-    //     candidates.insert(std::make_pair(score, device));
-    // }
-    // if (candidates.rbegin()->first > 0) {
-    //     physicalDevice = candidates.rbegin()->second;
-    // } else {
-    //     throw std::runtime_error("failed to find a suitable GPU!");
-    // }
+    std::multimap<int, VkPhysicalDevice> candidates;
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
@@ -120,14 +101,33 @@ void device::DeviceHandler::pickPhysicalDevice() {
     vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
     for (const auto &device : devices) {
-        if (deviceIsSuitable(device)) {
-            physicalDevice = device;
-            break;
-        }
+        int score = rateDevice(device);
+        candidates.insert(std::make_pair(score, device));
     }
-    if (physicalDevice == VK_NULL_HANDLE) {
+    if (candidates.rbegin()->first > 0) {
+        physicalDevice = candidates.rbegin()->second;
+    } else {
         throw std::runtime_error("failed to find a suitable GPU!");
     }
+    // uint32_t deviceCount = 0;
+    // vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+
+    // if (deviceCount == 0) {
+    //     throw std::runtime_error("failed to find GPUs with Vulkan support!");
+    // }
+
+    // std::vector<VkPhysicalDevice> devices(deviceCount);
+    // vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+
+    // for (const auto &device : devices) {
+    //     if (deviceIsSuitable(device)) {
+    //         physicalDevice = device;
+    //         break;
+    //     }
+    // }
+    // if (physicalDevice == VK_NULL_HANDLE) {
+    //     throw std::runtime_error("failed to find a suitable GPU!");
+    // }
 }
 
 void device::DeviceHandler::createLogicalDevice(
@@ -183,7 +183,7 @@ void device::DeviceHandler::createLogicalDevice(
 }
 
 QueueFamilyIndices
-device::DeviceHandler::getQueueFamilyIndices(VkPhysicalDevice &device) {
+device::DeviceHandler::getQueueFamilyIndices(VkPhysicalDevice device) {
     QueueFamilyIndices indices;
 
     uint32_t queueFamilyCount = 0;

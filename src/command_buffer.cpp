@@ -78,4 +78,5 @@ void command_buffer::CommandBufferHandler::cleanup() {
     vkFreeCommandBuffers(deviceHandler->getLogicalDevice(), commandPool,
                          static_cast<uint32_t>(commandBuffers.size()),
                          commandBuffers.data());
+    commandBuffers.clear();
 }

@@ -226,14 +226,19 @@ void swap_chain::SwapChain::cleanup() {
         vkDestroyFramebuffer(deviceHandler->getLogicalDevice(), framebuffer,
                              nullptr);
     }
+    swapChainFramebuffers.clear();
 
-    vkDestroyRenderPass(deviceHandler->getLogicalDevice(), renderPasses[0],
-                        nullptr);
+    for (auto *renderPass : renderPasses) {
+        vkDestroyRenderPass(deviceHandler->getLogicalDevice(), renderPass,
+                            nullptr);
+    }
+    renderPasses.clear();
 
     for (auto *imageView : swapChainImageViews) {
         vkDestroyImageView(deviceHandler->getLogicalDevice(), imageView,
                            nullptr);
     }
+    swapChainImageViews.clear();
 
     vkDestroySwapchainKHR(deviceHandler->getLogicalDevice(), swapChain,
                           nullptr);

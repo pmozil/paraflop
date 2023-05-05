@@ -39,7 +39,7 @@ int main() {
         command_buffer::CommandBufferHandler(&deviceHandler, &swapChain,
                                              &pipeline);
 
-    renderer::Renderer renderer =
+    renderer::Renderer<graphics_pipeline::RasterGraphicsPipeline> renderer =
         renderer::Renderer(window, instance, surface, &deviceHandler,
                            &swapChain, &commandBuffer, &pipeline);
     while (!glfwWindowShouldClose(window)) {

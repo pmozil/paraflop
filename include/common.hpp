@@ -19,6 +19,7 @@
 #include <optional>
 #include <set>
 #include <stdexcept>
+#include <type_traits>
 #include <vector>
 
 const int WIDTH = 800;

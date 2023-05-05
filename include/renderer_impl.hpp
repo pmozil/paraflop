@@ -1,17 +1,8 @@
 #include "renderer.hpp"
 
-renderer::Renderer::Renderer(
-    GLFWwindow *window, VkInstance &instance, VkSurfaceKHR &surface,
-    device::DeviceHandler *deviceHandler, swap_chain::SwapChain *swapChain,
-    command_buffer::CommandBufferHandler *commandBuffer,
-    graphics_pipeline::AbstractGraphicsPipeline *graphicsPipeline)
-    : window(window), instance(instance), surface(surface),
-      deviceHandler(deviceHandler), commandBuffer(commandBuffer),
-      swapChain(swapChain), graphicsPipeline(graphicsPipeline) {
-    createSyncObjects();
-}
-
-void renderer::Renderer::createSyncObjects() {
+namespace renderer {
+template <typename GraphicsPipeline>
+void Renderer<GraphicsPipeline>::createSyncObjects() {
     imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
@@ -40,7 +31,8 @@ void renderer::Renderer::createSyncObjects() {
     }
 }
 
-void renderer::Renderer::handleWindowUpdate() {
+template <typename GraphicsPipeline>
+void Renderer<GraphicsPipeline>::handleWindowUpdate() {
     int width = 0;
     int height = 0;
     glfwGetFramebufferSize(window, &width, &height);
@@ -63,7 +55,8 @@ void renderer::Renderer::handleWindowUpdate() {
     commandBuffer->createCommandBuffers();
 }
 
-void renderer::Renderer::drawFrame() {
+template <typename GraphicsPipeline>
+void Renderer<GraphicsPipeline>::drawFrame() {
     vkWaitForFences(deviceHandler->getLogicalDevice(), 1,
                     &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
@@ -137,3 +130,4 @@ void renderer::Renderer::drawFrame() {
 
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
+} // namespace renderer

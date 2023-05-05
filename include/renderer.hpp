@@ -6,13 +6,23 @@
 #include "swap_chain.hpp"
 
 namespace renderer {
-class Renderer {
+template <typename GraphicsPipeline> class Renderer {
+    static_assert(
+        std::is_base_of<graphics_pipeline::AbstractGraphicsPipeline,
+                        GraphicsPipeline>::value,
+        "The graphics pipeline type must inherit for AbstractGraphicsPipeline");
+
   public:
     Renderer(GLFWwindow *window, VkInstance &instance, VkSurfaceKHR &surface,
              device::DeviceHandler *deviceHandler,
              swap_chain::SwapChain *swapChain,
              command_buffer::CommandBufferHandler *commandBuffer,
-             graphics_pipeline::AbstractGraphicsPipeline *graphicsPipeline);
+             GraphicsPipeline *graphicsPipeline)
+        : window(window), instance(instance), surface(surface),
+          deviceHandler(deviceHandler), commandBuffer(commandBuffer),
+          swapChain(swapChain), graphicsPipeline(graphicsPipeline) {
+        createSyncObjects();
+    }
     void handleWindowUpdate();
     void drawFrame();
 
@@ -23,7 +33,7 @@ class Renderer {
     device::DeviceHandler *deviceHandler;
     command_buffer::CommandBufferHandler *commandBuffer;
     swap_chain::SwapChain *swapChain;
-    graphics_pipeline::AbstractGraphicsPipeline *graphicsPipeline;
+    GraphicsPipeline *graphicsPipeline;
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
@@ -33,3 +43,4 @@ class Renderer {
     void createSyncObjects();
 };
 } // namespace renderer
+#include "renderer_impl.hpp"

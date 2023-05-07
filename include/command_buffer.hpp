@@ -11,19 +11,13 @@ class CommandBufferHandler {
         device::DeviceHandler *deviceHandler, swap_chain::SwapChain *swapChain,
         graphics_pipeline::AbstractGraphicsPipeline *graphicsPipeline);
     // ~CommandBufferHandler();
-    inline VkCommandBuffer &getCommandBuffer(uint32_t n) {
-        return commandBuffers[n];
-    }
-    inline std::vector<VkCommandBuffer> &getCommandBuffers() {
-        return commandBuffers;
-    }
+    VkCommandPool commandPool;
+    std::vector<VkCommandBuffer> commandBuffers;
+    VkCommandBuffer transferBuffer = VK_NULL_HANDLE;
     void createCommandBuffers();
     void cleanup();
 
   private:
-    VkCommandPool commandPool;
-    std::vector<VkCommandBuffer> commandBuffers;
-    VkCommandBuffer transferBuffer = VK_NULL_HANDLE;
     device::DeviceHandler *deviceHandler;
     swap_chain::SwapChain *swapChain;
     graphics_pipeline::AbstractGraphicsPipeline *graphicsPipeline;

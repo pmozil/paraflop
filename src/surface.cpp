@@ -3,10 +3,7 @@
 VkSurfaceKHR surface::createSurface(VkInstance &instance, GLFWwindow *window,
                                     VkAllocationCallbacks *allocator) {
     VkSurfaceKHR surface;
-    if (glfwCreateWindowSurface(instance, window, allocator, &surface) !=
-        VK_SUCCESS) {
-        throw std::runtime_error("failed to create window surface!");
-    }
+    VK_CHECK(glfwCreateWindowSurface(instance, window, allocator, &surface));
     return surface;
 }
 

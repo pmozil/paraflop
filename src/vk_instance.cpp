@@ -37,9 +37,7 @@ VkInstance vk_instance::createDefaultVkInstance(VkAllocationCallbacks *alloc) {
         createInfo.pNext = nullptr;
     }
 
-    if (vkCreateInstance(&createInfo, alloc, &instance) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create instance!");
-    }
+    VK_CHECK(vkCreateInstance(&createInfo, alloc, &instance));
 
     return instance;
 }
@@ -82,9 +80,7 @@ VkInstance vk_instance::createNamedVkInstance(char *name,
         createInfo.pNext = nullptr;
     }
 
-    if (vkCreateInstance(&createInfo, alloc, &instance) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create instance!");
-    }
+    VK_CHECK(vkCreateInstance(&createInfo, alloc, &instance));
 
     return instance;
 }

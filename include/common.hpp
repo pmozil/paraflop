@@ -60,3 +60,13 @@ struct SwapChainSupportDetails {
     std::vector<VkSurfaceFormatKHR> formats;
     std::vector<VkPresentModeKHR> presentModes;
 };
+
+#define VK_CHECK(f)                                                            \
+    {                                                                          \
+        VkResult res = (f);                                                    \
+        if (res != VK_SUCCESS) {                                               \
+            std::cout << "Fatal : VkResult is \"" << res << "\" in "           \
+                      << __FILE__ << " at line " << __LINE__ << "\n";          \
+            assert(res == VK_SUCCESS);                                         \
+        }                                                                      \
+    }

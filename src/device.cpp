@@ -151,10 +151,8 @@ void DeviceHandler::createLogicalDevice(VkAllocationCallbacks *pAllocator) {
         createInfo.enabledLayerCount = 0;
     }
 
-    if (vkCreateDevice(physicalDevice, &createInfo, pAllocator,
-                       &logicalDevice) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create logical device!");
-    }
+    VK_CHECK(vkCreateDevice(physicalDevice, &createInfo, pAllocator,
+                            &logicalDevice));
 
     vkGetDeviceQueue(logicalDevice, indices.graphicsFamily.value(), 0,
                      &graphicsQueue);
@@ -215,10 +213,8 @@ DeviceHandler::createCommandPool(uint32_t queueFamilyIndex,
     commandPoolCreateInfo.queueFamilyIndex = queueFamilyIndex;
     commandPoolCreateInfo.flags = createFlags;
     VkCommandPool commandPool;
-    if (vkCreateCommandPool(logicalDevice, &commandPoolCreateInfo, nullptr,
-                            &commandPool) != VK_SUCCESS) {
-        throw std::runtime_error("Could not create command pool");
-    }
+    VK_CHECK(vkCreateCommandPool(logicalDevice, &commandPoolCreateInfo, nullptr,
+                                 &commandPool));
     return commandPool;
 }
 
@@ -232,17 +228,12 @@ VkCommandBuffer DeviceHandler::createCommandBuffer(VkCommandBufferLevel level,
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer cmdBuffer;
-    if (vkAllocateCommandBuffers(logicalDevice, &allocInfo, &cmdBuffer) !=
-        VK_SUCCESS) {
-        throw std::runtime_error("Could not allocate command buffer");
-    }
+    VK_CHECK(vkAllocateCommandBuffers(logicalDevice, &allocInfo, &cmdBuffer));
     // If requested, also start recording for the new command buffer
     if (begin) {
         VkCommandBufferBeginInfo bufferBeginInfo{};
         bufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        if (vkBeginCommandBuffer(cmdBuffer, &bufferBeginInfo) != VK_SUCCESS) {
-            throw std::runtime_error("Could not create command buffer");
-        }
+        VK_CHECK(vkBeginCommandBuffer(cmdBuffer, &bufferBeginInfo));
     }
     return cmdBuffer;
 }

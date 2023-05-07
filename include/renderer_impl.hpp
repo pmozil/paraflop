@@ -7,8 +7,7 @@ void Renderer<GraphicsPipeline>::createSyncObjects() {
     imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
-    imagesInFlight.resize(swapChain->getSwapChainImages().size(),
-                          VK_NULL_HANDLE);
+    imagesInFlight.resize(swapChain->swapChainImages.size(), VK_NULL_HANDLE);
 
     VkSemaphoreCreateInfo semaphoreInfo = {};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -18,14 +17,14 @@ void Renderer<GraphicsPipeline>::createSyncObjects() {
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        if (vkCreateSemaphore(deviceHandler->getLogicalDevice(), &semaphoreInfo,
+        if (vkCreateSemaphore(deviceHandler->logicalDevice, &semaphoreInfo,
                               nullptr,
                               &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-            vkCreateSemaphore(deviceHandler->getLogicalDevice(), &semaphoreInfo,
+            vkCreateSemaphore(deviceHandler->logicalDevice, &semaphoreInfo,
                               nullptr,
                               &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-            vkCreateFence(deviceHandler->getLogicalDevice(), &fenceInfo,
-                          nullptr, &inFlightFences[i]) != VK_SUCCESS) {
+            vkCreateFence(deviceHandler->logicalDevice, &fenceInfo, nullptr,
+                          &inFlightFences[i]) != VK_SUCCESS) {
             throw std::runtime_error(
                 "failed to create synchronization objects for a frame!");
         }
@@ -42,7 +41,7 @@ void Renderer<GraphicsPipeline>::handleWindowUpdate() {
         glfwWaitEvents();
     }
 
-    vkDeviceWaitIdle(deviceHandler->getLogicalDevice());
+    vkDeviceWaitIdle(deviceHandler->logicalDevice);
 
     swapChain->cleanup();
     commandBuffer->cleanup();
@@ -58,14 +57,13 @@ void Renderer<GraphicsPipeline>::handleWindowUpdate() {
 
 template <typename GraphicsPipeline>
 void Renderer<GraphicsPipeline>::drawFrame() {
-    vkWaitForFences(deviceHandler->getLogicalDevice(), 1,
+    vkWaitForFences(deviceHandler->logicalDevice, 1,
                     &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
     uint32_t imageIndex;
     VkResult result = vkAcquireNextImageKHR(
-        deviceHandler->getLogicalDevice(), swapChain->getSwapChain(),
-        UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE,
-        &imageIndex);
+        deviceHandler->logicalDevice, swapChain->swapChain, UINT64_MAX,
+        imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         handleWindowUpdate();
@@ -76,7 +74,7 @@ void Renderer<GraphicsPipeline>::drawFrame() {
     }
 
     if (imagesInFlight[imageIndex] != VK_NULL_HANDLE) {
-        vkWaitForFences(deviceHandler->getLogicalDevice(), 1,
+        vkWaitForFences(deviceHandler->logicalDevice, 1,
                         &imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
     }
     imagesInFlight[imageIndex] = inFlightFences[currentFrame];
@@ -92,17 +90,16 @@ void Renderer<GraphicsPipeline>::drawFrame() {
     submitInfo.pWaitDstStageMask = waitStages;
 
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers =
-        &commandBuffer->getCommandBuffers()[imageIndex];
+    submitInfo.pCommandBuffers = &commandBuffer->commandBuffers[imageIndex];
 
     VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    vkResetFences(deviceHandler->getLogicalDevice(), 1,
+    vkResetFences(deviceHandler->logicalDevice, 1,
                   &inFlightFences[currentFrame]);
 
-    if (vkQueueSubmit(deviceHandler->getGraphicsQueue(), 1, &submitInfo,
+    if (vkQueueSubmit(deviceHandler->graphicsQueue, 1, &submitInfo,
                       inFlightFences[currentFrame]) != VK_SUCCESS) {
         throw std::runtime_error("failed to submit draw command buffer!");
     }
@@ -113,13 +110,13 @@ void Renderer<GraphicsPipeline>::drawFrame() {
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores = signalSemaphores;
 
-    VkSwapchainKHR swapChains[] = {swapChain->getSwapChain()};
+    VkSwapchainKHR swapChains[] = {swapChain->swapChain};
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapChains;
 
     presentInfo.pImageIndices = &imageIndex;
 
-    result = vkQueuePresentKHR(deviceHandler->getPresentQueue(), &presentInfo);
+    result = vkQueuePresentKHR(deviceHandler->presentQueue, &presentInfo);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
         framebufferResized) {

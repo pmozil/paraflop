@@ -9,31 +9,27 @@ class DeviceHandler {
   public:
     DeviceHandler(std::vector<const char *> &, std::vector<const char *> &,
                   VkInstance &, VkSurfaceKHR &);
-    inline VkPhysicalDevice &getPhysicalDevice() { return physicalDevice; };
-    inline VkDevice &getLogicalDevice() { return logicalDevice; };
-    inline VkQueue &getGraphicsQueue() { return graphicsQueue; };
-    inline VkQueue &getPresentQueue() { return presentQueue; };
     QueueFamilyIndices getQueueFamilyIndices(VkPhysicalDevice &device);
     SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice &device);
-    inline void cleanupDevice(VkAllocationCallbacks *pAllocator) {
-        vkDestroyDevice(logicalDevice, pAllocator);
-    }
+    VkQueue graphicsQueue = VK_NULL_HANDLE;
+    VkQueue presentQueue = VK_NULL_HANDLE;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkDevice logicalDevice = VK_NULL_HANDLE;
     VkCommandPool
     createCommandPool(uint32_t queueFamilyIndex,
                       VkCommandPoolCreateFlags createFlags =
                           VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level,
                                         VkCommandPool pool, bool begin = false);
+    inline void cleanupDevice(VkAllocationCallbacks *pAllocator) {
+        vkDestroyDevice(logicalDevice, pAllocator);
+    }
 
   private:
     std::vector<const char *> &deviceExtensions;
     std::vector<const char *> &validationLayers;
     VkInstance &instance;
     VkSurfaceKHR &surface;
-    VkQueue graphicsQueue;
-    VkQueue presentQueue;
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    VkDevice logicalDevice;
     bool checkDeviceExtensionSupport(VkPhysicalDevice device);
     bool deviceIsSuitable(VkPhysicalDevice device);
     void pickPhysicalDevice();

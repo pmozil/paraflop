@@ -8,10 +8,8 @@ VkShaderModule graphics_pipeline::AbstractGraphicsPipeline::createShaderModule(
     createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
 
     VkShaderModule shaderModule;
-    if (vkCreateShaderModule(deviceHandler->getLogicalDevice(), &createInfo,
-                             nullptr, &shaderModule) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create shader module!");
-    }
+    VK_CHECK(vkCreateShaderModule(deviceHandler->logicalDevice, &createInfo,
+                                  nullptr, &shaderModule));
 
     return shaderModule;
 }
@@ -32,17 +30,12 @@ graphics_pipeline::CustomGraphicsPipeline::CustomGraphicsPipeline(
 }
 
 void graphics_pipeline::CustomGraphicsPipeline::createGraphicsPipeline() {
-    if (vkCreatePipelineLayout(deviceHandler->getLogicalDevice(),
-                               &pipelineLayoutCreateInfo, nullptr,
-                               &pipelineLayout) != VK_SUCCESS) {
-
-        throw std::runtime_error("failed to create pipeline layout!");
-    }
-    if (vkCreateGraphicsPipelines(deviceHandler->getLogicalDevice(),
-                                  VK_NULL_HANDLE, 1, &pipelineCreateInfo,
-                                  nullptr, &graphicsPipeline) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create graphics pipeline!");
-    }
+    VK_CHECK(vkCreatePipelineLayout(deviceHandler->logicalDevice,
+                                    &pipelineLayoutCreateInfo, nullptr,
+                                    &pipelineLayout));
+    VK_CHECK(vkCreateGraphicsPipelines(deviceHandler->logicalDevice,
+                                       VK_NULL_HANDLE, 1, &pipelineCreateInfo,
+                                       nullptr, &graphicsPipeline));
 }
 
 std::vector<char> graphics_pipeline::AbstractGraphicsPipeline::readFile(
@@ -100,7 +93,7 @@ void graphics_pipeline::RasterGraphicsPipeline::createGraphicsPipeline() {
     inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
-    VkExtent2D swapChainExtent = swapChain->getSwapChainExtent();
+    VkExtent2D swapChainExtent = swapChain->swapChainExtent;
     VkViewport viewport = {};
     viewport.x = 0.0F;
     viewport.y = 0.0F;
@@ -160,11 +153,9 @@ void graphics_pipeline::RasterGraphicsPipeline::createGraphicsPipeline() {
     pipelineLayoutInfo.setLayoutCount = 0;
     pipelineLayoutInfo.pushConstantRangeCount = 0;
 
-    if (vkCreatePipelineLayout(deviceHandler->getLogicalDevice(),
-                               &pipelineLayoutInfo, nullptr,
-                               &pipelineLayout) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create pipeline layout!");
-    }
+    VK_CHECK(vkCreatePipelineLayout(deviceHandler->logicalDevice,
+                                    &pipelineLayoutInfo, nullptr,
+                                    &pipelineLayout));
 
     VkGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -181,22 +172,19 @@ void graphics_pipeline::RasterGraphicsPipeline::createGraphicsPipeline() {
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-    if (vkCreateGraphicsPipelines(deviceHandler->getLogicalDevice(),
-                                  VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
-                                  &graphicsPipeline) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create graphics pipeline!");
-    }
+    VK_CHECK(vkCreateGraphicsPipelines(deviceHandler->logicalDevice,
+                                       VK_NULL_HANDLE, 1, &pipelineInfo,
+                                       nullptr, &graphicsPipeline));
 
-    vkDestroyShaderModule(deviceHandler->getLogicalDevice(), fragShaderModule,
+    vkDestroyShaderModule(deviceHandler->logicalDevice, fragShaderModule,
                           nullptr);
-    vkDestroyShaderModule(deviceHandler->getLogicalDevice(), vertShaderModule,
+    vkDestroyShaderModule(deviceHandler->logicalDevice, vertShaderModule,
                           nullptr);
 }
 
 void graphics_pipeline::AbstractGraphicsPipeline::cleanup() {
-    vkDestroyPipeline(deviceHandler->getLogicalDevice(), graphicsPipeline,
-                      nullptr);
-    vkDestroyPipelineLayout(deviceHandler->getLogicalDevice(), pipelineLayout,
+    vkDestroyPipeline(deviceHandler->logicalDevice, graphicsPipeline, nullptr);
+    vkDestroyPipelineLayout(deviceHandler->logicalDevice, pipelineLayout,
                             nullptr);
 }
 

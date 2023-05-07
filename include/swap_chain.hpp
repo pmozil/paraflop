@@ -7,24 +7,16 @@ class SwapChain {
   public:
     SwapChain(GLFWwindow *window, VkSurfaceKHR &surface,
               device::DeviceHandler *deviceHandler);
-    inline VkSwapchainKHR &getSwapChain() { return swapChain; };
-    inline VkFormat &getSwapChainImageFormat() { return swapChainImageFormat; };
-    inline VkExtent2D &getSwapChainExtent() { return swapChainExtent; };
-    inline VkRenderPass &getRenderPass() { return renderPasses[0]; };
-    inline VkRenderPass &getRenderPass(int n) { return renderPasses[n]; };
+    VkSwapchainKHR swapChain;
+    VkFormat swapChainImageFormat;
+    VkExtent2D swapChainExtent;
+    std::vector<VkRenderPass> renderPasses;
+    std::vector<VkImage> swapChainImages;
+    std::vector<VkImageView> swapChainImageViews;
+    std::vector<VkFramebuffer> swapChainFramebuffers;
+    inline VkRenderPass getRenderPass() { return renderPasses[0]; };
+    inline VkRenderPass getRenderPass(int n) { return renderPasses[n]; };
     inline int renderPassesLength() { return renderPasses.size(); };
-    inline std::vector<VkRenderPass> &getRenderPasses() {
-        return renderPasses;
-    };
-    inline std::vector<VkImage> &getSwapChainImages() {
-        return swapChainImages;
-    };
-    inline std::vector<VkImageView> &getSwapChainImageViews() {
-        return swapChainImageViews;
-    };
-    inline std::vector<VkFramebuffer> &getSwapChainFrameBuffers() {
-        return swapChainFramebuffers;
-    };
     int createRenderPass(VkRenderPassCreateInfo renderPassInfo);
     void cleanup();
     void createSwapChain();
@@ -36,13 +28,6 @@ class SwapChain {
     GLFWwindow *window;
     VkSurfaceKHR &surface;
     device::DeviceHandler *deviceHandler;
-    VkSwapchainKHR swapChain;
-    VkFormat swapChainImageFormat;
-    VkExtent2D swapChainExtent;
-    std::vector<VkRenderPass> renderPasses;
-    std::vector<VkImage> swapChainImages;
-    std::vector<VkImageView> swapChainImageViews;
-    std::vector<VkFramebuffer> swapChainFramebuffers;
 
     static VkSurfaceFormatKHR chooseSwapSurfaceFormat(
         const std::vector<VkSurfaceFormatKHR> &availableFormats);

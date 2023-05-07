@@ -18,6 +18,12 @@ class DeviceHandler {
     inline void cleanupDevice(VkAllocationCallbacks *pAllocator) {
         vkDestroyDevice(logicalDevice, pAllocator);
     }
+    VkCommandPool
+    createCommandPool(uint32_t queueFamilyIndex,
+                      VkCommandPoolCreateFlags createFlags =
+                          VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level,
+                                        VkCommandPool pool, bool begin = false);
 
   private:
     std::vector<const char *> &deviceExtensions;

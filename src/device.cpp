@@ -1,7 +1,7 @@
 #include "device.hpp"
 
-bool device::DeviceHandler::checkDeviceExtensionSupport(
-    VkPhysicalDevice device) {
+namespace device {
+bool DeviceHandler::checkDeviceExtensionSupport(VkPhysicalDevice device) {
     uint32_t extensionCount;
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount,
                                          nullptr);
@@ -21,7 +21,7 @@ bool device::DeviceHandler::checkDeviceExtensionSupport(
 }
 
 SwapChainSupportDetails
-device::DeviceHandler::querySwapChainSupport(VkPhysicalDevice &device) {
+DeviceHandler::querySwapChainSupport(VkPhysicalDevice &device) {
     SwapChainSupportDetails details;
 
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface,
@@ -50,7 +50,7 @@ device::DeviceHandler::querySwapChainSupport(VkPhysicalDevice &device) {
     return details;
 }
 
-bool device::DeviceHandler::deviceIsSuitable(VkPhysicalDevice device) {
+bool DeviceHandler::deviceIsSuitable(VkPhysicalDevice device) {
     QueueFamilyIndices indices = getQueueFamilyIndices(device);
 
     bool extensionsSupported = checkDeviceExtensionSupport(device);
@@ -66,7 +66,7 @@ bool device::DeviceHandler::deviceIsSuitable(VkPhysicalDevice device) {
     return indices.isComplete() && extensionsSupported && swapChainAdequate;
 }
 
-int device::DeviceHandler::rateDevice(VkPhysicalDevice device) {
+int DeviceHandler::rateDevice(VkPhysicalDevice device) {
     if (!deviceIsSuitable(device)) {
         return -1;
     }
@@ -80,15 +80,15 @@ int device::DeviceHandler::rateDevice(VkPhysicalDevice device) {
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
     score += deviceProps.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
-                 ? device::DISCRETE_GPU_BONUS
-                 : device::INTEGRATED_GPU_BONUS;
+                 ? DISCRETE_GPU_BONUS
+                 : INTEGRATED_GPU_BONUS;
     score += deviceProps.limits.maxImageDimension2D;
     score *= deviceFeatures.geometryShader;
 
     return score;
 }
 
-void device::DeviceHandler::pickPhysicalDevice() {
+void DeviceHandler::pickPhysicalDevice() {
     std::multimap<int, VkPhysicalDevice> candidates;
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
@@ -109,29 +109,9 @@ void device::DeviceHandler::pickPhysicalDevice() {
     } else {
         throw std::runtime_error("failed to find a suitable GPU!");
     }
-    // uint32_t deviceCount = 0;
-    // vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
-
-    // if (deviceCount == 0) {
-    //     throw std::runtime_error("failed to find GPUs with Vulkan support!");
-    // }
-
-    // std::vector<VkPhysicalDevice> devices(deviceCount);
-    // vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
-
-    // for (const auto &device : devices) {
-    //     if (deviceIsSuitable(device)) {
-    //         physicalDevice = device;
-    //         break;
-    //     }
-    // }
-    // if (physicalDevice == VK_NULL_HANDLE) {
-    //     throw std::runtime_error("failed to find a suitable GPU!");
-    // }
 }
 
-void device::DeviceHandler::createLogicalDevice(
-    VkAllocationCallbacks *pAllocator) {
+void DeviceHandler::createLogicalDevice(VkAllocationCallbacks *pAllocator) {
     QueueFamilyIndices indices = getQueueFamilyIndices(physicalDevice);
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -183,7 +163,7 @@ void device::DeviceHandler::createLogicalDevice(
 }
 
 QueueFamilyIndices
-device::DeviceHandler::getQueueFamilyIndices(VkPhysicalDevice &device) {
+DeviceHandler::getQueueFamilyIndices(VkPhysicalDevice &device) {
     QueueFamilyIndices indices;
 
     uint32_t queueFamilyCount = 0;
@@ -218,12 +198,52 @@ device::DeviceHandler::getQueueFamilyIndices(VkPhysicalDevice &device) {
     return indices;
 }
 
-device::DeviceHandler::DeviceHandler(std::vector<const char *> &devExt,
-                                     std::vector<const char *> &validations,
-                                     VkInstance &instance,
-                                     VkSurfaceKHR &surface)
+DeviceHandler::DeviceHandler(std::vector<const char *> &devExt,
+                             std::vector<const char *> &validations,
+                             VkInstance &instance, VkSurfaceKHR &surface)
     : deviceExtensions(devExt), validationLayers(validations),
       instance(instance), surface(surface) {
     pickPhysicalDevice();
     createLogicalDevice(nullptr);
 }
+
+VkCommandPool
+DeviceHandler::createCommandPool(uint32_t queueFamilyIndex,
+                                 VkCommandPoolCreateFlags createFlags) {
+    VkCommandPoolCreateInfo commandPoolCreateInfo = {};
+    commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    commandPoolCreateInfo.queueFamilyIndex = queueFamilyIndex;
+    commandPoolCreateInfo.flags = createFlags;
+    VkCommandPool commandPool;
+    if (vkCreateCommandPool(logicalDevice, &commandPoolCreateInfo, nullptr,
+                            &commandPool) != VK_SUCCESS) {
+        throw std::runtime_error("Could not create command pool");
+    }
+    return commandPool;
+}
+
+VkCommandBuffer DeviceHandler::createCommandBuffer(VkCommandBufferLevel level,
+                                                   VkCommandPool pool,
+                                                   bool begin) {
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = pool;
+    allocInfo.level = level;
+    allocInfo.commandBufferCount = 1;
+
+    VkCommandBuffer cmdBuffer;
+    if (vkAllocateCommandBuffers(logicalDevice, &allocInfo, &cmdBuffer) !=
+        VK_SUCCESS) {
+        throw std::runtime_error("Could not allocate command buffer");
+    }
+    // If requested, also start recording for the new command buffer
+    if (begin) {
+        VkCommandBufferBeginInfo bufferBeginInfo{};
+        bufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        if (vkBeginCommandBuffer(cmdBuffer, &bufferBeginInfo) != VK_SUCCESS) {
+            throw std::runtime_error("Could not create command buffer");
+        }
+    }
+    return cmdBuffer;
+}
+} // namespace device

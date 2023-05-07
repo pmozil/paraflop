@@ -43,4 +43,5 @@ template <typename GraphicsPipeline> class Renderer {
     void createSyncObjects();
 };
 } // namespace renderer
+
 #include "renderer_impl.hpp"

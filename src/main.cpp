@@ -17,24 +17,12 @@ int main() {
     VkInstance instance = vk_instance::createDefaultVkInstance(nullptr);
     debug::createDebugMessenger(instance);
     VkSurfaceKHR surface = surface::createSurface(instance, window, nullptr);
-    std::cout << "DEBUG: ";
-    std::cout << "Creating device handler"
-              << "\n";
     device::DeviceHandler deviceHandler =
         device::DeviceHandler(devExt, validation, instance, surface);
-    std::cout << "DEBUG: ";
-    std::cout << "Creating swap chain"
-              << "\n";
     swap_chain::SwapChain swapChain =
         swap_chain::SwapChain(window, surface, &deviceHandler);
-    std::cout << "DEBUG: ";
-    std::cout << "Creating pipeline"
-              << "\n";
     graphics_pipeline::RasterGraphicsPipeline pipeline =
         graphics_pipeline::RasterGraphicsPipeline(&swapChain, &deviceHandler);
-    std::cout << "DEBUG: ";
-    std::cout << "Creating command buffer"
-              << "\n";
     command_buffer::CommandBufferHandler commandBuffer =
         command_buffer::CommandBufferHandler(&deviceHandler, &swapChain,
                                              &pipeline);
@@ -46,6 +34,10 @@ int main() {
         glfwPollEvents();
         renderer.drawFrame();
     }
+
+    swapChain.cleanup();
+    commandBuffer.cleanup();
+    pipeline.cleanup();
 
     return 0;
 }

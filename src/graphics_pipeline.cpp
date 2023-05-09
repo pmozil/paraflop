@@ -1,7 +1,8 @@
 #include "graphics_pipeline.hpp"
 
-VkShaderModule graphics_pipeline::AbstractGraphicsPipeline::createShaderModule(
-    const std::vector<char> &code) {
+namespace graphics_pipeline {
+VkShaderModule
+AbstractGraphicsPipeline::createShaderModule(const std::vector<char> &code) {
     VkShaderModuleCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = code.size();
@@ -13,13 +14,13 @@ VkShaderModule graphics_pipeline::AbstractGraphicsPipeline::createShaderModule(
 
     return shaderModule;
 }
-graphics_pipeline::RasterGraphicsPipeline::RasterGraphicsPipeline(
+RasterGraphicsPipeline::RasterGraphicsPipeline(
     swap_chain::SwapChain *swapChain, device::DeviceHandler *deviceHandler)
-    : graphics_pipeline::AbstractGraphicsPipeline(swapChain, deviceHandler) {
+    : AbstractGraphicsPipeline(swapChain, deviceHandler) {
     createGraphicsPipeline();
 }
 
-graphics_pipeline::CustomGraphicsPipeline::CustomGraphicsPipeline(
+CustomGraphicsPipeline::CustomGraphicsPipeline(
     swap_chain::SwapChain *swapChain, device::DeviceHandler *deviceHandler,
     VkPipelineLayoutCreateInfo &pipelineLayoutCreateInfo,
     VkGraphicsPipelineCreateInfo &pipelineCreateInfo)
@@ -29,7 +30,7 @@ graphics_pipeline::CustomGraphicsPipeline::CustomGraphicsPipeline(
     createGraphicsPipeline();
 }
 
-void graphics_pipeline::CustomGraphicsPipeline::createGraphicsPipeline() {
+void CustomGraphicsPipeline::createGraphicsPipeline() {
     VK_CHECK(vkCreatePipelineLayout(deviceHandler->logicalDevice,
                                     &pipelineLayoutCreateInfo, nullptr,
                                     &pipelineLayout));
@@ -38,8 +39,8 @@ void graphics_pipeline::CustomGraphicsPipeline::createGraphicsPipeline() {
                                        nullptr, &graphicsPipeline));
 }
 
-std::vector<char> graphics_pipeline::AbstractGraphicsPipeline::readFile(
-    const std::string &filename) {
+std::vector<char>
+AbstractGraphicsPipeline::readFile(const std::string &filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
     if (!file.is_open()) {
@@ -57,7 +58,7 @@ std::vector<char> graphics_pipeline::AbstractGraphicsPipeline::readFile(
     return buffer;
 }
 
-void graphics_pipeline::RasterGraphicsPipeline::createGraphicsPipeline() {
+void RasterGraphicsPipeline::createGraphicsPipeline() {
     auto vertShaderCode = readFile("vert.spv");
     auto fragShaderCode = readFile("frag.spv");
 
@@ -182,16 +183,13 @@ void graphics_pipeline::RasterGraphicsPipeline::createGraphicsPipeline() {
                           nullptr);
 }
 
-void graphics_pipeline::AbstractGraphicsPipeline::cleanup() {
+void AbstractGraphicsPipeline::cleanup() {
     vkDestroyPipeline(deviceHandler->logicalDevice, graphicsPipeline, nullptr);
     vkDestroyPipelineLayout(deviceHandler->logicalDevice, pipelineLayout,
                             nullptr);
 }
 
-graphics_pipeline::RasterGraphicsPipeline::~RasterGraphicsPipeline() {
-    cleanup();
-}
+RasterGraphicsPipeline::~RasterGraphicsPipeline() { cleanup(); }
 
-graphics_pipeline::CustomGraphicsPipeline::~CustomGraphicsPipeline() {
-    cleanup();
-}
+CustomGraphicsPipeline::~CustomGraphicsPipeline() { cleanup(); }
+} // namespace graphics_pipeline

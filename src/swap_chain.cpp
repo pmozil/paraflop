@@ -1,8 +1,9 @@
 #include "swap_chain.hpp"
 #include <utility>
 
-swap_chain::SwapChain::SwapChain(GLFWwindow *window, VkSurfaceKHR &surface,
-                                 device::DeviceHandler *deviceHandler)
+namespace swap_chain {
+SwapChain::SwapChain(GLFWwindow *window, VkSurfaceKHR &surface,
+                     device::DeviceHandler *deviceHandler)
     : window(window), surface(surface), deviceHandler(deviceHandler) {
     createSwapChain();
     createImageViews();
@@ -10,7 +11,7 @@ swap_chain::SwapChain::SwapChain(GLFWwindow *window, VkSurfaceKHR &surface,
     createFrameBuffers();
 };
 
-void swap_chain::SwapChain::createImageViews() {
+void SwapChain::createImageViews() {
     swapChainImageViews.resize(swapChainImages.size());
 
     for (size_t i = 0; i < swapChainImages.size(); i++) {
@@ -35,7 +36,7 @@ void swap_chain::SwapChain::createImageViews() {
     }
 }
 
-void swap_chain::SwapChain::createSwapChain() {
+void SwapChain::createSwapChain() {
     SwapChainSupportDetails swapChainSupport =
         deviceHandler->querySwapChainSupport(deviceHandler->physicalDevice);
 
@@ -92,7 +93,7 @@ void swap_chain::SwapChain::createSwapChain() {
     swapChainExtent = extent;
 }
 
-void swap_chain::SwapChain::createRenderPass() {
+void SwapChain::createRenderPass() {
     VkRenderPass renderPass;
     VkAttachmentDescription colorAttachment = {};
     colorAttachment.format = swapChainImageFormat;
@@ -136,8 +137,7 @@ void swap_chain::SwapChain::createRenderPass() {
     renderPasses.push_back(renderPass);
 }
 
-int swap_chain::SwapChain::createRenderPass(
-    VkRenderPassCreateInfo renderPassInfo) {
+int SwapChain::createRenderPass(VkRenderPassCreateInfo renderPassInfo) {
     VkRenderPass renderPass;
     VK_CHECK(vkCreateRenderPass(deviceHandler->logicalDevice, &renderPassInfo,
                                 nullptr, &renderPass));
@@ -145,7 +145,7 @@ int swap_chain::SwapChain::createRenderPass(
     return renderPasses.size() - 1;
 }
 
-void swap_chain::SwapChain::createFrameBuffers() {
+void SwapChain::createFrameBuffers() {
     swapChainFramebuffers.resize(swapChainImageViews.size());
 
     for (size_t i = 0; i < swapChainImageViews.size(); i++) {
@@ -166,7 +166,7 @@ void swap_chain::SwapChain::createFrameBuffers() {
     }
 }
 
-VkSurfaceFormatKHR swap_chain::SwapChain::chooseSwapSurfaceFormat(
+VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(
     const std::vector<VkSurfaceFormatKHR> &availableFormats) {
     for (const auto &availableFormat : availableFormats) {
         if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
@@ -178,7 +178,7 @@ VkSurfaceFormatKHR swap_chain::SwapChain::chooseSwapSurfaceFormat(
     return availableFormats[0];
 }
 
-VkPresentModeKHR swap_chain::SwapChain::chooseSwapPresentMode(
+VkPresentModeKHR SwapChain::chooseSwapPresentMode(
     const std::vector<VkPresentModeKHR> &availablePresentModes) {
     for (const auto &presentMode : availablePresentModes) {
         if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
@@ -188,8 +188,8 @@ VkPresentModeKHR swap_chain::SwapChain::chooseSwapPresentMode(
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D swap_chain::SwapChain::chooseSwapExtent(
-    const VkSurfaceCapabilitiesKHR &capabilities) {
+VkExtent2D
+SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) {
     if (capabilities.currentExtent.width != UINT32_MAX) {
         return capabilities.currentExtent;
     }
@@ -210,7 +210,7 @@ VkExtent2D swap_chain::SwapChain::chooseSwapExtent(
     return actualExtent;
 }
 
-void swap_chain::SwapChain::cleanup() {
+void SwapChain::cleanup() {
     for (auto *framebuffer : swapChainFramebuffers) {
         vkDestroyFramebuffer(deviceHandler->logicalDevice, framebuffer,
                              nullptr);
@@ -229,3 +229,4 @@ void swap_chain::SwapChain::cleanup() {
 
     vkDestroySwapchainKHR(deviceHandler->logicalDevice, swapChain, nullptr);
 }
+} // namespace swap_chain

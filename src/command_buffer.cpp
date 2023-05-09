@@ -1,6 +1,7 @@
 #include "command_buffer.hpp"
 
-command_buffer::CommandBufferHandler::CommandBufferHandler(
+namespace command_buffer {
+CommandBufferHandler::CommandBufferHandler(
     device::DeviceHandler *deviceHandler, swap_chain::SwapChain *swapChain,
     graphics_pipeline::AbstractGraphicsPipeline *graphicsPipeline)
     : deviceHandler(deviceHandler), swapChain(swapChain),
@@ -9,7 +10,7 @@ command_buffer::CommandBufferHandler::CommandBufferHandler(
     createCommandBuffers();
 }
 
-void command_buffer::CommandBufferHandler::createCommandPool() {
+void CommandBufferHandler::createCommandPool() {
     QueueFamilyIndices queueFamilyIndices =
         deviceHandler->getQueueFamilyIndices(deviceHandler->physicalDevice);
 
@@ -21,7 +22,7 @@ void command_buffer::CommandBufferHandler::createCommandPool() {
                                  nullptr, &commandPool));
 }
 
-void command_buffer::CommandBufferHandler::createCommandBuffers() {
+void CommandBufferHandler::createCommandBuffers() {
     commandBuffers.resize(swapChain->swapChainFramebuffers.size());
 
     VkCommandBufferAllocateInfo allocInfo = {};
@@ -64,9 +65,10 @@ void command_buffer::CommandBufferHandler::createCommandBuffers() {
     }
 }
 
-void command_buffer::CommandBufferHandler::cleanup() {
+void CommandBufferHandler::cleanup() {
     vkFreeCommandBuffers(deviceHandler->logicalDevice, commandPool,
                          static_cast<uint32_t>(commandBuffers.size()),
                          commandBuffers.data());
     commandBuffers.clear();
 }
+} // namespace command_buffer

@@ -2,10 +2,11 @@
 
 namespace buffer {
 Buffer::Buffer(device::DeviceHandler *deviceHandler,
+               command_buffer::CommandBufferHandler *commandBuffer,
                VkBufferUsageFlags usageFlags,
                VkMemoryPropertyFlags memoryPropertyFlags)
     : usageFlags(usageFlags), memoryPropertyFlags(memoryPropertyFlags),
-      deviceHandler(deviceHandler) {
+      commandBuffer(commandBuffer), deviceHandler(deviceHandler) {
     createBuffer();
 }
 
@@ -112,5 +113,40 @@ void Buffer::destroy() {
     if (memory != nullptr) {
         vkFreeMemory(deviceHandler->logicalDevice, memory, nullptr);
     }
+}
+void Buffer::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer,
+                        VkDeviceSize size) {
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool = commandBuffer->commandPool;
+    allocInfo.commandBufferCount = 1;
+
+    VkCommandBuffer cmdBuffer;
+    vkAllocateCommandBuffers(deviceHandler->logicalDevice, &allocInfo,
+                             &cmdBuffer);
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(cmdBuffer, &beginInfo);
+
+    VkBufferCopy copyRegion{};
+    copyRegion.size = size;
+    vkCmdCopyBuffer(cmdBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+    vkEndCommandBuffer(cmdBuffer);
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &cmdBuffer;
+
+    vkQueueSubmit(deviceHandler->graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(deviceHandler->graphicsQueue);
+
+    vkFreeCommandBuffers(deviceHandler->logicalDevice,
+                         commandBuffer->commandPool, 1, &cmdBuffer);
 }
 } // namespace buffer

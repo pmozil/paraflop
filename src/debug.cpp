@@ -1,6 +1,7 @@
 #include "debug.hpp"
 
-VkResult debug::CreateDebugUtilsMessengerEXT(
+namespace debug {
+VkResult CreateDebugUtilsMessengerEXT(
     VkInstance &instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
     const VkAllocationCallbacks *pAllocator,
     VkDebugUtilsMessengerEXT *pDebugMessenger) {
@@ -12,9 +13,9 @@ VkResult debug::CreateDebugUtilsMessengerEXT(
     return VK_ERROR_EXTENSION_NOT_PRESENT;
 }
 
-void debug::DestroyDebugUtilsMessengerEXT(
-    VkInstance &instance, VkDebugUtilsMessengerEXT &debugMessenger,
-    const VkAllocationCallbacks *pAllocator) {
+void DestroyDebugUtilsMessengerEXT(VkInstance &instance,
+                                   VkDebugUtilsMessengerEXT &debugMessenger,
+                                   const VkAllocationCallbacks *pAllocator) {
     auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
         instance, "vkDestroyDebugUtilsMessengerEXT");
     if (func != nullptr) {
@@ -22,7 +23,7 @@ void debug::DestroyDebugUtilsMessengerEXT(
     }
 }
 
-void debug::populateDebugMessengerCreateInfo(
+void populateDebugMessengerCreateInfo(
     VkDebugUtilsMessengerCreateInfoEXT &createInfo) {
     createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -33,15 +34,16 @@ void debug::populateDebugMessengerCreateInfo(
     createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
                              VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
                              VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    createInfo.pfnUserCallback = debug::debugCallback;
+    createInfo.pfnUserCallback = debugCallback;
 }
 
-VkDebugUtilsMessengerEXT debug::createDebugMessenger(VkInstance &instance) {
+VkDebugUtilsMessengerEXT createDebugMessenger(VkInstance &instance) {
     VkDebugUtilsMessengerEXT debugMessenger;
     VkDebugUtilsMessengerCreateInfoEXT createInfo;
-    debug::populateDebugMessengerCreateInfo(createInfo);
+    populateDebugMessengerCreateInfo(createInfo);
 
-    VK_CHECK(debug::CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr,
-                                                 &debugMessenger));
+    VK_CHECK(CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr,
+                                          &debugMessenger));
     return debugMessenger;
 }
+} // namespace debug

@@ -1,3 +1,4 @@
+#include "buffer.hpp"
 #include "command_buffer.hpp"
 #include "common.hpp"
 #include "debug.hpp"

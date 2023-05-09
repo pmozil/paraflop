@@ -1,9 +1,9 @@
 #include "vk_instance.hpp"
 
-VkInstance vk_instance::createDefaultVkInstance(VkAllocationCallbacks *alloc) {
+namespace vk_instance {
+VkInstance createDefaultVkInstance(VkAllocationCallbacks *alloc) {
     VkInstance instance;
-    if (enableValidationLayers &&
-        !vk_instance::checkValidationLayerSupport(nullptr)) {
+    if (enableValidationLayers && !checkValidationLayerSupport(nullptr)) {
         throw std::runtime_error(
             "validation layers requested, but not available!");
     }
@@ -18,7 +18,7 @@ VkInstance vk_instance::createDefaultVkInstance(VkAllocationCallbacks *alloc) {
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pApplicationInfo = &appInfo;
 
-    auto extensions = vk_instance::getRequiredExtensions();
+    auto extensions = getRequiredExtensions();
     createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     createInfo.ppEnabledExtensionNames = extensions.data();
 
@@ -42,11 +42,9 @@ VkInstance vk_instance::createDefaultVkInstance(VkAllocationCallbacks *alloc) {
     return instance;
 }
 
-VkInstance vk_instance::createNamedVkInstance(char *name,
-                                              VkAllocationCallbacks *alloc) {
+VkInstance createNamedVkInstance(char *name, VkAllocationCallbacks *alloc) {
     VkInstance instance;
-    if (enableValidationLayers &&
-        !vk_instance::checkValidationLayerSupport(nullptr)) {
+    if (enableValidationLayers && !checkValidationLayerSupport(nullptr)) {
         throw std::runtime_error(
             "validation layers requested, but not available!");
     }
@@ -61,7 +59,7 @@ VkInstance vk_instance::createNamedVkInstance(char *name,
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pApplicationInfo = &appInfo;
 
-    auto extensions = vk_instance::getRequiredExtensions();
+    auto extensions = getRequiredExtensions();
     createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     createInfo.ppEnabledExtensionNames = extensions.data();
 
@@ -85,7 +83,7 @@ VkInstance vk_instance::createNamedVkInstance(char *name,
     return instance;
 }
 
-std::vector<const char *> vk_instance::getRequiredExtensions() {
+std::vector<const char *> getRequiredExtensions() {
     uint32_t glfwExtensionCount = 0;
     const char **glfwExtensions;
     glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
@@ -100,7 +98,7 @@ std::vector<const char *> vk_instance::getRequiredExtensions() {
     return extensions;
 }
 
-bool vk_instance::checkValidationLayerSupport(VkLayerProperties *pProperties) {
+bool checkValidationLayerSupport(VkLayerProperties *pProperties) {
     uint32_t layerCount;
     vkEnumerateInstanceLayerProperties(&layerCount, pProperties);
 
@@ -124,3 +122,4 @@ bool vk_instance::checkValidationLayerSupport(VkLayerProperties *pProperties) {
 
     return true;
 }
+} // namespace vk_instance

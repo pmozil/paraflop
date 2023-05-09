@@ -1,13 +1,15 @@
 #include "surface.hpp"
 
-VkSurfaceKHR surface::createSurface(VkInstance &instance, GLFWwindow *window,
-                                    VkAllocationCallbacks *allocator) {
+namespace surface {
+VkSurfaceKHR createSurface(VkInstance &instance, GLFWwindow *window,
+                           VkAllocationCallbacks *allocator) {
     VkSurfaceKHR surface;
     VK_CHECK(glfwCreateWindowSurface(instance, window, allocator, &surface));
     return surface;
 }
 
-void surface::cleanupSurface(VkInstance &instance, VkSurfaceKHR &surface,
-                             VkAllocationCallbacks *palloc) {
+void cleanupSurface(VkInstance &instance, VkSurfaceKHR &surface,
+                    VkAllocationCallbacks *palloc) {
     vkDestroySurfaceKHR(instance, surface, palloc);
 }
+} // namespace surface

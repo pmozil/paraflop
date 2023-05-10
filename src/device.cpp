@@ -1,4 +1,5 @@
 #include "device.hpp"
+#include "create_info.hpp"
 
 namespace device {
 bool DeviceHandler::checkDeviceExtensionSupport(VkPhysicalDevice device) {
@@ -120,36 +121,15 @@ void DeviceHandler::createLogicalDevice(VkAllocationCallbacks *pAllocator) {
 
     float queuePriority = 1.0F;
     for (uint32_t queueFamily : uniqueQueueFamilies) {
-        VkDeviceQueueCreateInfo queueCreateInfo = {};
-        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queueCreateInfo.queueFamilyIndex = queueFamily;
-        queueCreateInfo.queueCount = 1;
-        queueCreateInfo.pQueuePriorities = &queuePriority;
+        VkDeviceQueueCreateInfo queueCreateInfo =
+            create_info::queueCreateInfo(queueFamily, &queuePriority);
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
     VkPhysicalDeviceFeatures deviceFeatures = {};
 
-    VkDeviceCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-
-    createInfo.queueCreateInfoCount =
-        static_cast<uint32_t>(queueCreateInfos.size());
-    createInfo.pQueueCreateInfos = queueCreateInfos.data();
-
-    createInfo.pEnabledFeatures = &deviceFeatures;
-
-    createInfo.enabledExtensionCount =
-        static_cast<uint32_t>(deviceExtensions.size());
-    createInfo.ppEnabledExtensionNames = deviceExtensions.data();
-
-    if (!validationLayers.empty()) {
-        createInfo.enabledLayerCount =
-            static_cast<uint32_t>(validationLayers.size());
-        createInfo.ppEnabledLayerNames = validationLayers.data();
-    } else {
-        createInfo.enabledLayerCount = 0;
-    }
+    VkDeviceCreateInfo createInfo = create_info::deviceCreateInfo(
+        queueCreateInfos, deviceExtensions, validationLayers, &deviceFeatures);
 
     VK_CHECK(vkCreateDevice(physicalDevice, &createInfo, pAllocator,
                             &logicalDevice));
@@ -208,9 +188,8 @@ DeviceHandler::DeviceHandler(std::vector<const char *> &devExt,
 VkCommandPool
 DeviceHandler::createCommandPool(uint32_t queueFamilyIndex,
                                  VkCommandPoolCreateFlags createFlags) {
-    VkCommandPoolCreateInfo commandPoolCreateInfo = {};
-    commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    commandPoolCreateInfo.queueFamilyIndex = queueFamilyIndex;
+    VkCommandPoolCreateInfo commandPoolCreateInfo =
+        create_info::commandPoolCreateInfo(queueFamilyIndex);
     commandPoolCreateInfo.flags = createFlags;
     VkCommandPool commandPool;
     VK_CHECK(vkCreateCommandPool(logicalDevice, &commandPoolCreateInfo, nullptr,
@@ -221,11 +200,9 @@ DeviceHandler::createCommandPool(uint32_t queueFamilyIndex,
 VkCommandBuffer DeviceHandler::createCommandBuffer(VkCommandBufferLevel level,
                                                    VkCommandPool pool,
                                                    bool begin) {
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = pool;
+    VkCommandBufferAllocateInfo allocInfo =
+        create_info::commandBuffferAllocInfo(pool, 1);
     allocInfo.level = level;
-    allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer cmdBuffer;
     VK_CHECK(vkAllocateCommandBuffers(logicalDevice, &allocInfo, &cmdBuffer));

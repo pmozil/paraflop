@@ -57,10 +57,15 @@ void CommandBufferHandler::createCommandBuffers() {
     }
 }
 
-void CommandBufferHandler::cleanup() {
+void CommandBufferHandler::cleanupCommandBuffers() {
     vkFreeCommandBuffers(deviceHandler->logicalDevice, commandPool,
                          static_cast<uint32_t>(commandBuffers.size()),
                          commandBuffers.data());
     commandBuffers.clear();
 }
+void CommandBufferHandler::cleanup() {
+    cleanupCommandBuffers();
+    vkDestroyCommandPool(deviceHandler->logicalDevice, commandPool, nullptr);
+}
+
 } // namespace command_buffer

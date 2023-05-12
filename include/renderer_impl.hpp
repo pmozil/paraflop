@@ -44,7 +44,7 @@ void Renderer<GraphicsPipeline>::handleWindowUpdate() {
     vkDeviceWaitIdle(deviceHandler->logicalDevice);
 
     swapChain->cleanup();
-    commandBuffer->cleanup();
+    commandBuffer->cleanupCommandBuffers();
     graphicsPipeline->cleanup();
 
     swapChain->createSwapChain();
@@ -127,5 +127,17 @@ void Renderer<GraphicsPipeline>::drawFrame() {
     }
 
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+template <typename GraphicsPipeline>
+void Renderer<GraphicsPipeline>::cleanup() {
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        vkDestroySemaphore(deviceHandler->logicalDevice,
+                           renderFinishedSemaphores[i], nullptr);
+        vkDestroySemaphore(deviceHandler->logicalDevice,
+                           imageAvailableSemaphores[i], nullptr);
+        vkDestroyFence(deviceHandler->logicalDevice, inFlightFences[i],
+                       nullptr);
+    }
 }
 } // namespace renderer

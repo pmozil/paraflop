@@ -123,4 +123,57 @@ deviceCreateInfo(std::vector<VkDeviceQueueCreateInfo> &queueCreateInfos,
     }
     return createInfo;
 }
+VkImageViewCreateInfo imageViewCreateInfo(VkImage image, VkFormat format) {
+    VkImageViewCreateInfo createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    createInfo.image = image;
+    createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    createInfo.format = format;
+    createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+    createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+    createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    createInfo.subresourceRange.baseMipLevel = 0;
+    createInfo.subresourceRange.levelCount = 1;
+    createInfo.subresourceRange.baseArrayLayer = 0;
+    createInfo.subresourceRange.layerCount = 1;
+    return createInfo;
+}
+
+VkSwapchainCreateInfoKHR
+swapChainCreateInfo(VkSurfaceKHR surface, uint32_t imageCount, VkFormat format,
+                    VkColorSpaceKHR colorSpace, VkExtent2D extent,
+                    uint32_t imageArrayLayers, VkImageUsageFlags usageFlags,
+                    QueueFamilyIndices indices,
+                    VkSurfaceTransformFlagBitsKHR currentTransform,
+                    VkPresentModeKHR presentMode) {
+    VkSwapchainCreateInfoKHR createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    createInfo.surface = surface;
+
+    createInfo.minImageCount = imageCount;
+    createInfo.imageFormat = format;
+    createInfo.imageColorSpace = colorSpace;
+    createInfo.imageExtent = extent;
+    createInfo.imageArrayLayers = imageArrayLayers;
+    createInfo.imageUsage = usageFlags;
+
+    std::array<uint32_t, 2> queueFamilyIndices = {
+        indices.graphicsFamily.value(), indices.presentFamily.value()};
+
+    if (indices.graphicsFamily != indices.presentFamily) {
+        createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        createInfo.queueFamilyIndexCount = 2;
+        createInfo.pQueueFamilyIndices = queueFamilyIndices.data();
+    } else {
+        createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    }
+
+    createInfo.preTransform = currentTransform;
+    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    createInfo.presentMode = presentMode;
+    createInfo.clipped = VK_TRUE;
+    return createInfo;
+}
 } // namespace create_info

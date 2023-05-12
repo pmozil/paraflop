@@ -152,25 +152,25 @@ DeviceHandler::getQueueFamilyIndices(VkPhysicalDevice &device) {
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount,
                                              queueFamilies.data());
 
-    int i = 0;
+    int idx = 0;
     for (const auto &queueFamily : queueFamilies) {
         if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            indices.graphicsFamily = i;
+            indices.graphicsFamily = idx;
         }
 
         VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface,
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, idx, surface,
                                              &presentSupport);
 
         if (presentSupport) {
-            indices.presentFamily = i;
+            indices.presentFamily = idx;
         }
 
         if (indices.isComplete()) {
             break;
         }
 
-        i++;
+        idx++;
     }
 
     return indices;

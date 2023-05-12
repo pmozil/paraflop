@@ -73,8 +73,8 @@ void RasterGraphicsPipeline::createGraphicsPipeline() {
         create_info::shaderStageInfo(fragShaderModule,
                                      VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo,
-                                                      fragShaderStageInfo};
+    std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = {
+        vertShaderStageInfo, fragShaderStageInfo};
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     vertexInputInfo.sType =
@@ -155,7 +155,7 @@ void RasterGraphicsPipeline::createGraphicsPipeline() {
     VkGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.stageCount = 2;
-    pipelineInfo.pStages = shaderStages;
+    pipelineInfo.pStages = shaderStages.data();
     pipelineInfo.pVertexInputState = &vertexInputInfo;
     pipelineInfo.pInputAssemblyState = &inputAssembly;
     pipelineInfo.pViewportState = &viewportState;
@@ -182,8 +182,4 @@ void AbstractGraphicsPipeline::cleanup() {
     vkDestroyPipelineLayout(deviceHandler->logicalDevice, pipelineLayout,
                             nullptr);
 }
-
-RasterGraphicsPipeline::~RasterGraphicsPipeline() { cleanup(); }
-
-CustomGraphicsPipeline::~CustomGraphicsPipeline() { cleanup(); }
 } // namespace graphics_pipeline

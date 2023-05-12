@@ -31,7 +31,6 @@ class CustomGraphicsPipeline : public AbstractGraphicsPipeline {
                            device::DeviceHandler *deviceHandler,
                            VkPipelineLayoutCreateInfo &pipelineLayoutCreateInfo,
                            VkGraphicsPipelineCreateInfo &pipelineCreateInfo);
-    ~CustomGraphicsPipeline();
     void createGraphicsPipeline() override;
 
   private:
@@ -43,7 +42,6 @@ class RasterGraphicsPipeline : public AbstractGraphicsPipeline {
   public:
     RasterGraphicsPipeline(swap_chain::SwapChain *swapChain,
                            device::DeviceHandler *deviceHandler);
-    ~RasterGraphicsPipeline();
     void createGraphicsPipeline() override;
 };
 } // namespace graphics_pipeline

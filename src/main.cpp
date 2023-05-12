@@ -36,9 +36,14 @@ int main() {
         renderer.drawFrame();
     }
 
-    swapChain.cleanup();
+    renderer.cleanup();
     commandBuffer.cleanup();
     pipeline.cleanup();
+    swapChain.cleanup();
+    deviceHandler.cleanupDevice(nullptr);
+    vk_instance::cleanupInstance(instance, nullptr);
+    glfwDestroyWindow(window);
+    glfwTerminate();
 
     return 0;
 }

@@ -34,4 +34,14 @@ deviceCreateInfo(std::vector<VkDeviceQueueCreateInfo> &queueCreateInfos,
                  std::vector<const char *> &deviceExtensions,
                  std::vector<const char *> &validationLayers,
                  const VkPhysicalDeviceFeatures *deviceFeatures);
+
+VkImageViewCreateInfo imageViewCreateInfo(VkImage image, VkFormat format);
+
+VkSwapchainCreateInfoKHR
+swapChainCreateInfo(VkSurfaceKHR surface, uint32_t imageCount, VkFormat format,
+                    VkColorSpaceKHR colorSpace, VkExtent2D extent,
+                    uint32_t imageArrayLayers, VkImageUsageFlags usageFlags,
+                    QueueFamilyIndices indices,
+                    VkSurfaceTransformFlagBitsKHR currentTransform,
+                    VkPresentModeKHR presentMode);
 } // namespace create_info

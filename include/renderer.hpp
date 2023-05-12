@@ -25,6 +25,7 @@ template <typename GraphicsPipeline> class Renderer {
     }
     void handleWindowUpdate();
     void drawFrame();
+    void cleanup();
 
   private:
     GLFWwindow *window;

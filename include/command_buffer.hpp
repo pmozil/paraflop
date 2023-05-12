@@ -10,11 +10,11 @@ class CommandBufferHandler {
     CommandBufferHandler(
         device::DeviceHandler *deviceHandler, swap_chain::SwapChain *swapChain,
         graphics_pipeline::AbstractGraphicsPipeline *graphicsPipeline);
-    // ~CommandBufferHandler();
     VkCommandPool commandPool;
     std::vector<VkCommandBuffer> commandBuffers;
     VkCommandBuffer transferBuffer = VK_NULL_HANDLE;
     void createCommandBuffers();
+    void cleanupCommandBuffers();
     void cleanup();
 
   private:

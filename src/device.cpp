@@ -2,7 +2,7 @@
 #include "vulkan_utils/create_info.hpp"
 
 namespace device {
-bool DeviceHandler::checkDeviceExtensionSupport(VkPhysicalDevice device) {
+bool DeviceHandler::m_checkDeviceExtensions(VkPhysicalDevice device) {
     uint32_t extensionCount;
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount,
                                          nullptr);
@@ -11,8 +11,8 @@ bool DeviceHandler::checkDeviceExtensionSupport(VkPhysicalDevice device) {
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount,
                                          availableExtensions.data());
 
-    std::set<std::string> requiredExtensions(deviceExtensions.begin(),
-                                             deviceExtensions.end());
+    std::set<std::string> requiredExtensions(m_deviceExtensions.begin(),
+                                             m_deviceExtensions.end());
 
     for (const auto &extension : availableExtensions) {
         requiredExtensions.erase(extension.extensionName);
@@ -25,36 +25,37 @@ SwapChainSupportDetails
 DeviceHandler::querySwapChainSupport(VkPhysicalDevice &device) {
     SwapChainSupportDetails details;
 
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface,
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_vkSurface,
                                               &details.capabilities);
 
     uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount,
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_vkSurface, &formatCount,
                                          nullptr);
 
     if (formatCount != 0) {
         details.formats.resize(formatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount,
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_vkSurface, &formatCount,
                                              details.formats.data());
     }
 
     uint32_t presentModeCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface,
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_vkSurface,
                                               &presentModeCount, nullptr);
 
     if (presentModeCount != 0) {
         details.presentModes.resize(presentModeCount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(
-            device, surface, &presentModeCount, details.presentModes.data());
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_vkSurface,
+                                                  &presentModeCount,
+                                                  details.presentModes.data());
     }
 
     return details;
 }
 
-bool DeviceHandler::deviceIsSuitable(VkPhysicalDevice device) {
+bool DeviceHandler::m_deviceIsSuitable(VkPhysicalDevice device) {
     QueueFamilyIndices indices = getQueueFamilyIndices(device);
 
-    bool extensionsSupported = checkDeviceExtensionSupport(device);
+    bool extensionsSupported = m_checkDeviceExtensions(device);
 
     bool swapChainAdequate = false;
     if (extensionsSupported) {
@@ -67,8 +68,8 @@ bool DeviceHandler::deviceIsSuitable(VkPhysicalDevice device) {
     return indices.isComplete() && extensionsSupported && swapChainAdequate;
 }
 
-int DeviceHandler::rateDevice(VkPhysicalDevice device) {
-    if (!deviceIsSuitable(device)) {
+int DeviceHandler::m_rateDevice(VkPhysicalDevice device) {
+    if (!m_deviceIsSuitable(device)) {
         return -1;
     }
 
@@ -89,20 +90,20 @@ int DeviceHandler::rateDevice(VkPhysicalDevice device) {
     return score;
 }
 
-void DeviceHandler::pickPhysicalDevice() {
+void DeviceHandler::m_pickDevice() {
     std::multimap<int, VkPhysicalDevice> candidates;
     uint32_t deviceCount = 0;
-    vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+    vkEnumeratePhysicalDevices(m_vkInstance, &deviceCount, nullptr);
 
     if (deviceCount == 0) {
         throw std::runtime_error("failed to find GPUs with Vulkan support!");
     }
 
     std::vector<VkPhysicalDevice> devices(deviceCount);
-    vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+    vkEnumeratePhysicalDevices(m_vkInstance, &deviceCount, devices.data());
 
     for (const auto &device : devices) {
-        int score = rateDevice(device);
+        int score = m_rateDevice(device);
         candidates.insert(std::make_pair(score, device));
     }
     if (candidates.rbegin()->first > 0) {
@@ -112,7 +113,7 @@ void DeviceHandler::pickPhysicalDevice() {
     }
 }
 
-void DeviceHandler::createLogicalDevice(VkAllocationCallbacks *pAllocator) {
+void DeviceHandler::m_createLogicalDevice(VkAllocationCallbacks *pAllocator) {
     QueueFamilyIndices indices = getQueueFamilyIndices(physicalDevice);
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -135,8 +136,9 @@ void DeviceHandler::createLogicalDevice(VkAllocationCallbacks *pAllocator) {
 
     VkPhysicalDeviceFeatures deviceFeatures = {};
 
-    VkDeviceCreateInfo createInfo = create_info::deviceCreateInfo(
-        queueCreateInfos, deviceExtensions, validationLayers, &deviceFeatures);
+    VkDeviceCreateInfo createInfo =
+        create_info::deviceCreateInfo(queueCreateInfos, m_deviceExtensions,
+                                      m_validationLayers, &deviceFeatures);
 
     VK_CHECK(vkCreateDevice(physicalDevice, &createInfo, pAllocator,
                             &logicalDevice));
@@ -176,7 +178,7 @@ DeviceHandler::getQueueFamilyIndices(VkPhysicalDevice &device) {
         }
 
         auto presentSupport = static_cast<VkBool32>(false);
-        vkGetPhysicalDeviceSurfaceSupportKHR(device, idx, surface,
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, idx, m_vkSurface,
                                              &presentSupport);
 
         if (static_cast<bool>(presentSupport)) {
@@ -195,11 +197,11 @@ DeviceHandler::getQueueFamilyIndices(VkPhysicalDevice &device) {
 
 DeviceHandler::DeviceHandler(std::vector<const char *> &devExt,
                              std::vector<const char *> &validations,
-                             VkInstance &instance, VkSurfaceKHR &surface)
-    : deviceExtensions(devExt), validationLayers(validations),
-      instance(instance), surface(surface) {
-    pickPhysicalDevice();
-    createLogicalDevice(nullptr);
+                             VkInstance m_vkInstance, VkSurfaceKHR m_vkSurface)
+    : m_deviceExtensions(devExt), m_validationLayers(validations),
+      m_vkInstance(m_vkInstance), m_vkSurface(m_vkSurface) {
+    m_pickDevice();
+    m_createLogicalDevice(nullptr);
 }
 
 [[nodiscard]] VkCommandPool

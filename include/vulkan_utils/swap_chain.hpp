@@ -5,8 +5,8 @@
 namespace swap_chain {
 class SwapChain {
   public:
-    SwapChain(GLFWwindow *window, VkSurfaceKHR &surface,
-              device::DeviceHandler *deviceHandler);
+    SwapChain(GLFWwindow *m_window, VkSurfaceKHR m_surface,
+              device::DeviceHandler *m_deviceHandler);
     VkSwapchainKHR swapChain;
     VkFormat swapChainImageFormat;
     VkExtent2D swapChainExtent;
@@ -16,7 +16,9 @@ class SwapChain {
     std::vector<VkFramebuffer> swapChainFramebuffers;
     inline VkRenderPass getRenderPass() { return renderPasses[0]; };
     inline VkRenderPass getRenderPass(int n) { return renderPasses[n]; };
-    inline int renderPassesLength() { return renderPasses.size(); };
+    [[nodiscard]] inline int renderPassesLength() const {
+        return renderPasses.size();
+    };
     int createRenderPass(VkRenderPassCreateInfo renderPassInfo);
     void cleanup();
     void createSwapChain();
@@ -25,14 +27,14 @@ class SwapChain {
     void createFrameBuffers();
 
   private:
-    GLFWwindow *window;
-    VkSurfaceKHR &surface;
-    device::DeviceHandler *deviceHandler;
+    GLFWwindow *m_window;
+    VkSurfaceKHR m_surface;
+    device::DeviceHandler *m_deviceHandler;
 
-    static VkSurfaceFormatKHR chooseSwapSurfaceFormat(
+    static VkSurfaceFormatKHR m_chooseSwapSurfaceFormat(
         const std::vector<VkSurfaceFormatKHR> &availableFormats);
-    static VkPresentModeKHR chooseSwapPresentMode(
+    static VkPresentModeKHR m_chooseSwapPresentMode(
         const std::vector<VkPresentModeKHR> &availablePresentModes);
-    VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
+    VkExtent2D m_chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
 };
 } // namespace swap_chain

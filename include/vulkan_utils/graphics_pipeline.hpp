@@ -6,29 +6,25 @@
 namespace graphics_pipeline {
 class AbstractGraphicsPipeline {
   public:
-    inline VkPipeline &getGraphicsPipeline() { return graphicsPipeline; }
-    inline VkPipelineLayout &getGraphicsPipelineLayout() {
-        return pipelineLayout;
-    }
     virtual void createGraphicsPipeline() = 0;
+    VkPipelineLayout pipelineLayout;
+    VkPipeline graphicsPipeline;
     void cleanup();
 
   protected:
-    AbstractGraphicsPipeline(swap_chain::SwapChain *swapChain,
-                             device::DeviceHandler *deviceHandler)
-        : swapChain(swapChain), deviceHandler(deviceHandler){};
+    AbstractGraphicsPipeline(swap_chain::SwapChain *m_swapChain,
+                             device::DeviceHandler *m_deviceHandler)
+        : m_swapChain(m_swapChain), m_deviceHandler(m_deviceHandler){};
     static std::vector<char> readFile(const std::string &filename);
-    swap_chain::SwapChain *swapChain;
-    device::DeviceHandler *deviceHandler;
-    VkPipelineLayout pipelineLayout;
-    VkPipeline graphicsPipeline;
+    swap_chain::SwapChain *m_swapChain;
+    device::DeviceHandler *m_deviceHandler;
     VkShaderModule createShaderModule(const std::vector<char> &code);
 };
 
 class CustomGraphicsPipeline : public AbstractGraphicsPipeline {
   public:
-    CustomGraphicsPipeline(swap_chain::SwapChain *swapChain,
-                           device::DeviceHandler *deviceHandler,
+    CustomGraphicsPipeline(swap_chain::SwapChain *m_swapChain,
+                           device::DeviceHandler *m_deviceHandler,
                            VkPipelineLayoutCreateInfo &pipelineLayoutCreateInfo,
                            VkGraphicsPipelineCreateInfo &pipelineCreateInfo);
     void createGraphicsPipeline() override;
@@ -40,8 +36,8 @@ class CustomGraphicsPipeline : public AbstractGraphicsPipeline {
 
 class RasterGraphicsPipeline : public AbstractGraphicsPipeline {
   public:
-    RasterGraphicsPipeline(swap_chain::SwapChain *swapChain,
-                           device::DeviceHandler *deviceHandler);
+    RasterGraphicsPipeline(swap_chain::SwapChain *m_swapChain,
+                           device::DeviceHandler *m_deviceHandler);
     void createGraphicsPipeline() override;
 };
 } // namespace graphics_pipeline

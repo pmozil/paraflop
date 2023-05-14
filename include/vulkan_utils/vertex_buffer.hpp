@@ -5,10 +5,10 @@
 #include "vulkan_utils/device.hpp"
 
 namespace buffer {
-class StagingBuffer : public Buffer {
+class VertexBuffer : public Buffer {
   public:
-    StagingBuffer(device::DeviceHandler *deviceHandler,
-                  command_buffer::CommandBufferHandler *commandBuffer)
+    VertexBuffer(device::DeviceHandler *deviceHandler,
+                 command_buffer::CommandBufferHandler *commandBuffer)
         : Buffer(deviceHandler, commandBuffer,
                  VK_BUFFER_USAGE_TRANSFER_DST_BIT |
                      VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,

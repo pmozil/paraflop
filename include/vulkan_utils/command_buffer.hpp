@@ -8,8 +8,9 @@ namespace command_buffer {
 class CommandBufferHandler {
   public:
     CommandBufferHandler(
-        device::DeviceHandler *deviceHandler, swap_chain::SwapChain *swapChain,
-        graphics_pipeline::AbstractGraphicsPipeline *graphicsPipeline);
+        device::DeviceHandler *m_devicehandler,
+        swap_chain::SwapChain *m_swapChain,
+        graphics_pipeline::AbstractGraphicsPipeline *m_graphicsPipeline);
     VkCommandPool commandPool;
     std::vector<VkCommandBuffer> commandBuffers;
     VkCommandBuffer transferBuffer = VK_NULL_HANDLE;
@@ -18,9 +19,9 @@ class CommandBufferHandler {
     void cleanup();
 
   private:
-    device::DeviceHandler *deviceHandler;
-    swap_chain::SwapChain *swapChain;
-    graphics_pipeline::AbstractGraphicsPipeline *graphicsPipeline;
-    void createCommandPool();
+    device::DeviceHandler *m_devicehandler;
+    swap_chain::SwapChain *m_swapChain;
+    graphics_pipeline::AbstractGraphicsPipeline *m_graphicsPipeline;
+    void m_createCommandPool();
 };
 } // namespace command_buffer

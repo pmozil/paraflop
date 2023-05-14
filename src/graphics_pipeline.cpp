@@ -1,5 +1,8 @@
 #include "vulkan_utils/graphics_pipeline.hpp"
+#include "vulkan_utils/buffer.hpp"
 #include "vulkan_utils/create_info.hpp"
+#include "vulkan_utils/staging_buffer.hpp"
+#include "vulkan_utils/vertex_buffer.hpp"
 
 namespace graphics_pipeline {
 VkShaderModule
@@ -10,32 +13,32 @@ AbstractGraphicsPipeline::createShaderModule(const std::vector<char> &code) {
     createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
 
     VkShaderModule shaderModule;
-    VK_CHECK(vkCreateShaderModule(deviceHandler->logicalDevice, &createInfo,
+    VK_CHECK(vkCreateShaderModule(m_deviceHandler->logicalDevice, &createInfo,
                                   nullptr, &shaderModule));
 
     return shaderModule;
 }
 RasterGraphicsPipeline::RasterGraphicsPipeline(
-    swap_chain::SwapChain *swapChain, device::DeviceHandler *deviceHandler)
-    : AbstractGraphicsPipeline(swapChain, deviceHandler) {
+    swap_chain::SwapChain *m_swapChain, device::DeviceHandler *m_deviceHandler)
+    : AbstractGraphicsPipeline(m_swapChain, m_deviceHandler) {
     createGraphicsPipeline();
 }
 
 CustomGraphicsPipeline::CustomGraphicsPipeline(
-    swap_chain::SwapChain *swapChain, device::DeviceHandler *deviceHandler,
+    swap_chain::SwapChain *m_swapChain, device::DeviceHandler *m_deviceHandler,
     VkPipelineLayoutCreateInfo &pipelineLayoutCreateInfo,
     VkGraphicsPipelineCreateInfo &pipelineCreateInfo)
-    : AbstractGraphicsPipeline(swapChain, deviceHandler),
+    : AbstractGraphicsPipeline(m_swapChain, m_deviceHandler),
       pipelineCreateInfo(pipelineCreateInfo),
       pipelineLayoutCreateInfo(pipelineLayoutCreateInfo) {
     createGraphicsPipeline();
 }
 
 void CustomGraphicsPipeline::createGraphicsPipeline() {
-    VK_CHECK(vkCreatePipelineLayout(deviceHandler->logicalDevice,
+    VK_CHECK(vkCreatePipelineLayout(m_deviceHandler->logicalDevice,
                                     &pipelineLayoutCreateInfo, nullptr,
                                     &pipelineLayout));
-    VK_CHECK(vkCreateGraphicsPipelines(deviceHandler->logicalDevice,
+    VK_CHECK(vkCreateGraphicsPipelines(m_deviceHandler->logicalDevice,
                                        VK_NULL_HANDLE, 1, &pipelineCreateInfo,
                                        nullptr, &graphicsPipeline));
 }
@@ -88,18 +91,18 @@ void RasterGraphicsPipeline::createGraphicsPipeline() {
     inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
-    VkExtent2D swapChainExtent = swapChain->swapChainExtent;
+    VkExtent2D m_swapChainExtent = m_swapChain->swapChainExtent;
     VkViewport viewport = {};
     viewport.x = 0.0F;
     viewport.y = 0.0F;
-    viewport.width = (float)swapChainExtent.width;
-    viewport.height = (float)swapChainExtent.height;
+    viewport.width = (float)m_swapChainExtent.width;
+    viewport.height = (float)m_swapChainExtent.height;
     viewport.minDepth = 0.0F;
     viewport.maxDepth = 1.0F;
 
     VkRect2D scissor = {};
     scissor.offset = {0, 0};
-    scissor.extent = swapChainExtent;
+    scissor.extent = m_swapChainExtent;
 
     VkPipelineViewportStateCreateInfo viewportState = {};
     viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -148,7 +151,7 @@ void RasterGraphicsPipeline::createGraphicsPipeline() {
     pipelineLayoutInfo.setLayoutCount = 0;
     pipelineLayoutInfo.pushConstantRangeCount = 0;
 
-    VK_CHECK(vkCreatePipelineLayout(deviceHandler->logicalDevice,
+    VK_CHECK(vkCreatePipelineLayout(m_deviceHandler->logicalDevice,
                                     &pipelineLayoutInfo, nullptr,
                                     &pipelineLayout));
 
@@ -163,23 +166,24 @@ void RasterGraphicsPipeline::createGraphicsPipeline() {
     pipelineInfo.pMultisampleState = &multisampling;
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.layout = pipelineLayout;
-    pipelineInfo.renderPass = swapChain->getRenderPass();
+    pipelineInfo.renderPass = m_swapChain->getRenderPass();
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-    VK_CHECK(vkCreateGraphicsPipelines(deviceHandler->logicalDevice,
+    VK_CHECK(vkCreateGraphicsPipelines(m_deviceHandler->logicalDevice,
                                        VK_NULL_HANDLE, 1, &pipelineInfo,
                                        nullptr, &graphicsPipeline));
 
-    vkDestroyShaderModule(deviceHandler->logicalDevice, fragShaderModule,
+    vkDestroyShaderModule(m_deviceHandler->logicalDevice, fragShaderModule,
                           nullptr);
-    vkDestroyShaderModule(deviceHandler->logicalDevice, vertShaderModule,
+    vkDestroyShaderModule(m_deviceHandler->logicalDevice, vertShaderModule,
                           nullptr);
 }
 
 void AbstractGraphicsPipeline::cleanup() {
-    vkDestroyPipeline(deviceHandler->logicalDevice, graphicsPipeline, nullptr);
-    vkDestroyPipelineLayout(deviceHandler->logicalDevice, pipelineLayout,
+    vkDestroyPipeline(m_deviceHandler->logicalDevice, graphicsPipeline,
+                      nullptr);
+    vkDestroyPipelineLayout(m_deviceHandler->logicalDevice, pipelineLayout,
                             nullptr);
 }
 } // namespace graphics_pipeline

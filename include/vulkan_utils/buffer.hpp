@@ -6,8 +6,8 @@
 namespace buffer {
 class Buffer {
   public:
-    Buffer(device::DeviceHandler *deviceHandler,
-           command_buffer::CommandBufferHandler *commandBuffer,
+    Buffer(device::DeviceHandler *m_devicehandler,
+           command_buffer::CommandBufferHandler *m_commandBuffer,
            VkBufferUsageFlags usageFlags,
            VkMemoryPropertyFlags memoryPropertyFlags,
            VkSharingMode sharingMode);
@@ -33,10 +33,10 @@ class Buffer {
     VkMemoryPropertyFlags memoryPropertyFlags;
 
   private:
-    command_buffer::CommandBufferHandler *commandBuffer;
-    device::DeviceHandler *deviceHandler;
-    void createBuffer(VkSharingMode sharingMode);
-    uint32_t findMemoryType(uint32_t typeFilter,
-                            VkMemoryPropertyFlags properties);
+    command_buffer::CommandBufferHandler *m_commandBuffer;
+    device::DeviceHandler *m_devicehandler;
+    void m_createBuffer(VkSharingMode sharingMode);
+    uint32_t m_findMemoryType(uint32_t typeFilter,
+                              VkMemoryPropertyFlags properties);
 };
 } // namespace buffer

@@ -3,33 +3,33 @@
 
 namespace command_buffer {
 CommandBufferHandler::CommandBufferHandler(
-    device::DeviceHandler *deviceHandler, swap_chain::SwapChain *swapChain,
-    graphics_pipeline::AbstractGraphicsPipeline *graphicsPipeline)
-    : deviceHandler(deviceHandler), swapChain(swapChain),
-      graphicsPipeline(graphicsPipeline) {
-    createCommandPool();
+    device::DeviceHandler *m_devicehandler, swap_chain::SwapChain *m_swapChain,
+    graphics_pipeline::AbstractGraphicsPipeline *m_graphicsPipeline)
+    : m_devicehandler(m_devicehandler), m_swapChain(m_swapChain),
+      m_graphicsPipeline(m_graphicsPipeline) {
+    m_createCommandPool();
     createCommandBuffers();
 }
 
-void CommandBufferHandler::createCommandPool() {
+void CommandBufferHandler::m_createCommandPool() {
     QueueFamilyIndices queueFamilyIndices =
-        deviceHandler->getQueueFamilyIndices(deviceHandler->physicalDevice);
+        m_devicehandler->getQueueFamilyIndices(m_devicehandler->physicalDevice);
 
     VkCommandPoolCreateInfo poolInfo = create_info::commandPoolCreateInfo(
         queueFamilyIndices.graphicsFamily.value());
-    VK_CHECK(vkCreateCommandPool(deviceHandler->logicalDevice, &poolInfo,
+    VK_CHECK(vkCreateCommandPool(m_devicehandler->logicalDevice, &poolInfo,
                                  nullptr, &commandPool));
 }
 
 void CommandBufferHandler::createCommandBuffers() {
-    commandBuffers.resize(swapChain->swapChainFramebuffers.size());
+    commandBuffers.resize(m_swapChain->swapChainFramebuffers.size());
 
     VkCommandBufferAllocateInfo allocInfo =
         create_info::commandBuffferAllocInfo(commandPool,
                                              commandBuffers.size());
 
-    VK_CHECK(vkAllocateCommandBuffers(deviceHandler->logicalDevice, &allocInfo,
-                                      commandBuffers.data()))
+    VK_CHECK(vkAllocateCommandBuffers(m_devicehandler->logicalDevice,
+                                      &allocInfo, commandBuffers.data()))
 
     for (size_t i = 0; i < commandBuffers.size(); i++) {
         VkCommandBufferBeginInfo beginInfo =
@@ -40,14 +40,14 @@ void CommandBufferHandler::createCommandBuffers() {
         VkClearValue clearColor = {0.0F, 0.0F, 0.0F, 1.0F};
 
         VkRenderPassBeginInfo renderPassInfo = create_info::renderPassBeginInfo(
-            swapChain->getRenderPass(), swapChain->swapChainFramebuffers[i],
-            swapChain->swapChainExtent, &clearColor);
+            m_swapChain->getRenderPass(), m_swapChain->swapChainFramebuffers[i],
+            m_swapChain->swapChainExtent, &clearColor);
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo,
                              VK_SUBPASS_CONTENTS_INLINE);
 
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          graphicsPipeline->getGraphicsPipeline());
+                          m_graphicsPipeline->graphicsPipeline);
 
         vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
 
@@ -55,17 +55,23 @@ void CommandBufferHandler::createCommandBuffers() {
 
         VK_CHECK(vkEndCommandBuffer(commandBuffers[i]));
     }
+
+    VkCommandBufferAllocateInfo transferAllocInfo =
+        create_info::commandBuffferAllocInfo(commandPool, 1);
+
+    vkAllocateCommandBuffers(m_devicehandler->logicalDevice, &transferAllocInfo,
+                             &transferBuffer);
 }
 
 void CommandBufferHandler::cleanupCommandBuffers() {
-    vkFreeCommandBuffers(deviceHandler->logicalDevice, commandPool,
+    vkFreeCommandBuffers(m_devicehandler->logicalDevice, commandPool,
                          static_cast<uint32_t>(commandBuffers.size()),
                          commandBuffers.data());
     commandBuffers.clear();
 }
 void CommandBufferHandler::cleanup() {
     cleanupCommandBuffers();
-    vkDestroyCommandPool(deviceHandler->logicalDevice, commandPool, nullptr);
+    vkDestroyCommandPool(m_devicehandler->logicalDevice, commandPool, nullptr);
 }
 
 } // namespace command_buffer

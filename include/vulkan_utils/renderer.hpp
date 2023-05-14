@@ -13,15 +13,15 @@ template <typename GraphicsPipeline> class Renderer {
         "The graphics pipeline type must inherit for AbstractGraphicsPipeline");
 
   public:
-    Renderer(GLFWwindow *window, VkInstance &instance, VkSurfaceKHR &surface,
-             device::DeviceHandler *deviceHandler,
-             swap_chain::SwapChain *swapChain,
-             command_buffer::CommandBufferHandler *commandBuffer,
-             GraphicsPipeline *graphicsPipeline)
-        : window(window), instance(instance), surface(surface),
-          deviceHandler(deviceHandler), commandBuffer(commandBuffer),
-          swapChain(swapChain), graphicsPipeline(graphicsPipeline) {
-        createSyncObjects();
+    Renderer(GLFWwindow *window, VkInstance m_instance, VkSurfaceKHR m_surface,
+             device::DeviceHandler *m_deviceHandler,
+             swap_chain::SwapChain *m_swapChain,
+             command_buffer::CommandBufferHandler *m_commandBuffer,
+             GraphicsPipeline *m_graphicsPipeline)
+        : window(window), m_instance(m_instance), m_surface(m_surface),
+          m_deviceHandler(m_deviceHandler), m_commandBuffer(m_commandBuffer),
+          m_swapChain(m_swapChain), m_graphicsPipeline(m_graphicsPipeline) {
+        m_createSyncObjects();
     }
     void handleWindowUpdate();
     void drawFrame();
@@ -29,19 +29,19 @@ template <typename GraphicsPipeline> class Renderer {
 
   private:
     GLFWwindow *window;
-    VkInstance &instance;
-    VkSurfaceKHR &surface;
-    device::DeviceHandler *deviceHandler;
-    command_buffer::CommandBufferHandler *commandBuffer;
-    swap_chain::SwapChain *swapChain;
-    GraphicsPipeline *graphicsPipeline;
-    std::vector<VkSemaphore> imageAvailableSemaphores;
-    std::vector<VkSemaphore> renderFinishedSemaphores;
-    std::vector<VkFence> inFlightFences;
-    std::vector<VkFence> imagesInFlight;
-    size_t currentFrame = 0;
-    bool framebufferResized = false;
-    void createSyncObjects();
+    VkInstance m_instance;
+    VkSurfaceKHR m_surface;
+    device::DeviceHandler *m_deviceHandler;
+    command_buffer::CommandBufferHandler *m_commandBuffer;
+    swap_chain::SwapChain *m_swapChain;
+    GraphicsPipeline *m_graphicsPipeline;
+    std::vector<VkSemaphore> m_imageAvailableSemaphores;
+    std::vector<VkSemaphore> m_renderFinishedSemaphores;
+    std::vector<VkFence> m_inFlightFences;
+    std::vector<VkFence> m_imagesInFlight;
+    size_t m_currentFrame = 0;
+    bool m_framebufferResized = false;
+    void m_createSyncObjects();
 };
 } // namespace renderer
 

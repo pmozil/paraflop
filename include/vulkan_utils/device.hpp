@@ -8,7 +8,7 @@ const int INTEGRATED_GPU_BONUS = 200;
 class DeviceHandler {
   public:
     DeviceHandler(std::vector<const char *> &, std::vector<const char *> &,
-                  VkInstance &, VkSurfaceKHR &);
+                  VkInstance, VkSurfaceKHR);
     QueueFamilyIndices getQueueFamilyIndices(VkPhysicalDevice &device);
     SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice &device);
     VkQueue graphicsQueue = VK_NULL_HANDLE;
@@ -31,14 +31,14 @@ class DeviceHandler {
     }
 
   private:
-    std::vector<const char *> &deviceExtensions;
-    std::vector<const char *> &validationLayers;
-    VkInstance &instance;
-    VkSurfaceKHR &surface;
-    bool checkDeviceExtensionSupport(VkPhysicalDevice device);
-    bool deviceIsSuitable(VkPhysicalDevice device);
-    void pickPhysicalDevice();
-    void createLogicalDevice(VkAllocationCallbacks *pAllocator);
-    int rateDevice(VkPhysicalDevice device);
+    std::vector<const char *> &m_deviceExtensions;
+    std::vector<const char *> &m_validationLayers;
+    VkInstance m_vkInstance;
+    VkSurfaceKHR m_vkSurface;
+    bool m_checkDeviceExtensions(VkPhysicalDevice device);
+    bool m_deviceIsSuitable(VkPhysicalDevice device);
+    void m_pickDevice();
+    void m_createLogicalDevice(VkAllocationCallbacks *pAllocator);
+    int m_rateDevice(VkPhysicalDevice device);
 };
 } // namespace device

@@ -42,7 +42,8 @@ VkInstance createDefaultVkInstance(VkAllocationCallbacks *alloc) {
     return instance;
 }
 
-VkInstance createNamedVkInstance(char *name, VkAllocationCallbacks *alloc) {
+VkInstance createNamedVkInstance(const char *name,
+                                 VkAllocationCallbacks *alloc) {
     VkInstance instance;
     if (enableValidationLayers && !checkValidationLayerSupport(nullptr)) {
         throw std::runtime_error(

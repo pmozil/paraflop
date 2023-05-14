@@ -13,15 +13,20 @@ class DeviceHandler {
     SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice &device);
     VkQueue graphicsQueue = VK_NULL_HANDLE;
     VkQueue presentQueue = VK_NULL_HANDLE;
+    VkQueue transferQueue = VK_NULL_HANDLE;
+    inline VkQueue getTransferQueue() {
+        return transferQueue != VK_NULL_HANDLE ? transferQueue : graphicsQueue;
+    }
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDevice logicalDevice = VK_NULL_HANDLE;
-    VkCommandPool
-    createCommandPool(uint32_t queueFamilyIndex,
-                      VkCommandPoolCreateFlags createFlags =
-                          VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level,
-                                        VkCommandPool pool, bool begin = false);
-    inline void cleanupDevice(VkAllocationCallbacks *pAllocator) {
+    [[nodiscard]] VkCommandPool createCommandPool(
+        uint32_t queueFamilyIndex,
+        VkCommandPoolCreateFlags createFlags =
+            VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT) const;
+    [[nodiscard]] VkCommandBuffer
+    createCommandBuffer(VkCommandBufferLevel level, VkCommandPool pool,
+                        bool begin = false) const;
+    inline void cleanupDevice(VkAllocationCallbacks *pAllocator) const {
         vkDestroyDevice(logicalDevice, pAllocator);
     }
 

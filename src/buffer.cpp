@@ -5,15 +5,16 @@ namespace buffer {
 Buffer::Buffer(device::DeviceHandler *deviceHandler,
                command_buffer::CommandBufferHandler *commandBuffer,
                VkBufferUsageFlags usageFlags,
-               VkMemoryPropertyFlags memoryPropertyFlags)
+               VkMemoryPropertyFlags memoryPropertyFlags,
+               VkSharingMode sharingMode)
     : usageFlags(usageFlags), memoryPropertyFlags(memoryPropertyFlags),
       commandBuffer(commandBuffer), deviceHandler(deviceHandler) {
-    createBuffer();
+    createBuffer(sharingMode);
 }
 
-void Buffer::createBuffer() {
-    VkBufferCreateInfo bufferInfo = create_info::bufferCreateInfo(
-        size, usageFlags, VK_SHARING_MODE_EXCLUSIVE);
+void Buffer::createBuffer(VkSharingMode sharingMode) {
+    VkBufferCreateInfo bufferInfo =
+        create_info::bufferCreateInfo(size, usageFlags, sharingMode);
 
     if (vkCreateBuffer(deviceHandler->logicalDevice, &bufferInfo, nullptr,
                        &buffer) != VK_SUCCESS) {
@@ -43,7 +44,7 @@ uint32_t Buffer::findMemoryType(uint32_t typeFilter,
                                         &memProperties);
 
     for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-        if ((typeFilter & (1 << i)) &&
+        if (static_cast<bool>(typeFilter & (1 << i)) &&
             (memProperties.memoryTypes[i].propertyFlags & properties) ==
                 properties) {
             return i;
@@ -76,7 +77,7 @@ void Buffer::setupDescriptor(VkDeviceSize size, VkDeviceSize offset) {
     descriptor.range = size;
 }
 
-void Buffer::copyTo(void *data, VkDeviceSize size) {
+void Buffer::copy(void *data, VkDeviceSize size) const {
     assert(mapped);
     memcpy(mapped, data, size);
 }
@@ -110,8 +111,8 @@ void Buffer::destroy() {
         vkFreeMemory(deviceHandler->logicalDevice, memory, nullptr);
     }
 }
-void Buffer::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer,
-                        VkDeviceSize size) {
+
+void Buffer::copyFrom(VkBuffer srcBuffer, VkDeviceSize size) {
     VkCommandBufferAllocateInfo allocInfo =
         create_info::commandBuffferAllocInfo(commandBuffer->commandPool, 1);
 
@@ -124,14 +125,42 @@ void Buffer::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer,
     vkBeginCommandBuffer(cmdBuffer, &beginInfo);
 
     VkBufferCopy copyRegion = create_info::copyRegion(size);
-    vkCmdCopyBuffer(cmdBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+    vkCmdCopyBuffer(cmdBuffer, srcBuffer, buffer, 1, &copyRegion);
 
     vkEndCommandBuffer(cmdBuffer);
 
     VkSubmitInfo submitInfo = create_info::submitInfo(1, &cmdBuffer);
 
-    vkQueueSubmit(deviceHandler->graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(deviceHandler->graphicsQueue);
+    VkQueue transferQueue = deviceHandler->getTransferQueue();
+    vkQueueSubmit(transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(transferQueue);
+
+    vkFreeCommandBuffers(deviceHandler->logicalDevice,
+                         commandBuffer->commandPool, 1, &cmdBuffer);
+}
+
+void Buffer::copyTo(VkBuffer dstBuffer, VkDeviceSize size) {
+    VkCommandBufferAllocateInfo allocInfo =
+        create_info::commandBuffferAllocInfo(commandBuffer->commandPool, 1);
+
+    VkCommandBuffer cmdBuffer;
+    vkAllocateCommandBuffers(deviceHandler->logicalDevice, &allocInfo,
+                             &cmdBuffer);
+
+    VkCommandBufferBeginInfo beginInfo = create_info::commabdBufferBeginInfo();
+
+    vkBeginCommandBuffer(cmdBuffer, &beginInfo);
+
+    VkBufferCopy copyRegion = create_info::copyRegion(size);
+    vkCmdCopyBuffer(cmdBuffer, buffer, dstBuffer, 1, &copyRegion);
+
+    vkEndCommandBuffer(cmdBuffer);
+
+    VkSubmitInfo submitInfo = create_info::submitInfo(1, &cmdBuffer);
+
+    VkQueue transferQueue = deviceHandler->getTransferQueue();
+    vkQueueSubmit(transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(transferQueue);
 
     vkFreeCommandBuffers(deviceHandler->logicalDevice,
                          commandBuffer->commandPool, 1, &cmdBuffer);

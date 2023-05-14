@@ -147,7 +147,7 @@ void DeviceHandler::createLogicalDevice(VkAllocationCallbacks *pAllocator) {
                      &presentQueue);
     if (indices.hasDedicatedTransfer()) {
         vkGetDeviceQueue(logicalDevice, indices.transferFamily.value(), 0,
-                         &presentQueue);
+                         &transferQueue);
     }
 }
 
@@ -165,20 +165,21 @@ DeviceHandler::getQueueFamilyIndices(VkPhysicalDevice &device) {
 
     int idx = 0;
     for (const auto &queueFamily : queueFamilies) {
-        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+        if (static_cast<bool>(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
             indices.graphicsFamily = idx;
         }
 
-        if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT &&
-            !queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+        if (static_cast<bool>(queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) &&
+            !static_cast<bool>(queueFamily.queueFlags &
+                               VK_QUEUE_GRAPHICS_BIT)) {
             indices.transferFamily = idx;
         }
 
-        VkBool32 presentSupport = false;
+        auto presentSupport = static_cast<VkBool32>(false);
         vkGetPhysicalDeviceSurfaceSupportKHR(device, idx, surface,
                                              &presentSupport);
 
-        if (presentSupport) {
+        if (static_cast<bool>(presentSupport)) {
             indices.presentFamily = idx;
         }
 
@@ -201,9 +202,9 @@ DeviceHandler::DeviceHandler(std::vector<const char *> &devExt,
     createLogicalDevice(nullptr);
 }
 
-VkCommandPool
+[[nodiscard]] VkCommandPool
 DeviceHandler::createCommandPool(uint32_t queueFamilyIndex,
-                                 VkCommandPoolCreateFlags createFlags) {
+                                 VkCommandPoolCreateFlags createFlags) const {
     VkCommandPoolCreateInfo commandPoolCreateInfo =
         create_info::commandPoolCreateInfo(queueFamilyIndex);
     commandPoolCreateInfo.flags = createFlags;
@@ -213,9 +214,9 @@ DeviceHandler::createCommandPool(uint32_t queueFamilyIndex,
     return commandPool;
 }
 
-VkCommandBuffer DeviceHandler::createCommandBuffer(VkCommandBufferLevel level,
-                                                   VkCommandPool pool,
-                                                   bool begin) {
+[[nodiscard]] VkCommandBuffer
+DeviceHandler::createCommandBuffer(VkCommandBufferLevel level,
+                                   VkCommandPool pool, bool begin) const {
     VkCommandBufferAllocateInfo allocInfo =
         create_info::commandBuffferAllocInfo(pool, 1);
     allocInfo.level = level;

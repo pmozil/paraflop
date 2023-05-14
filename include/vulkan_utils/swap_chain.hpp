@@ -1,6 +1,6 @@
 #pragma once
-#include "common.hpp"
-#include "device.hpp"
+#include "vulkan_utils/common.hpp"
+#include "vulkan_utils/device.hpp"
 
 namespace swap_chain {
 class SwapChain {

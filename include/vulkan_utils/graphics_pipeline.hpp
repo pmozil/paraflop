@@ -1,7 +1,7 @@
 #pragma once
-#include "common.hpp"
-#include "device.hpp"
-#include "swap_chain.hpp"
+#include "vulkan_utils/common.hpp"
+#include "vulkan_utils/device.hpp"
+#include "vulkan_utils/swap_chain.hpp"
 
 namespace graphics_pipeline {
 class AbstractGraphicsPipeline {

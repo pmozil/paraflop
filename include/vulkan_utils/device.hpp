@@ -1,5 +1,5 @@
 #pragma once
-#include "common.hpp"
+#include "vulkan_utils/common.hpp"
 
 namespace device {
 const int DISCRETE_GPU_BONUS = 1000;

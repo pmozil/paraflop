@@ -1,8 +1,8 @@
 #pragma once
-#include "common.hpp"
-#include "device.hpp"
-#include "graphics_pipeline.hpp"
-#include "swap_chain.hpp"
+#include "vulkan_utils/common.hpp"
+#include "vulkan_utils/device.hpp"
+#include "vulkan_utils/graphics_pipeline.hpp"
+#include "vulkan_utils/swap_chain.hpp"
 
 namespace command_buffer {
 class CommandBufferHandler {

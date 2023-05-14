@@ -1,9 +1,10 @@
 #pragma once
-#include "common.hpp"
+#include "vulkan_utils/common.hpp"
 
 namespace create_info {
-VkBufferCreateInfo bufferCreateInfo(VkDeviceSize size,
-                                    VkBufferUsageFlags usageFlags);
+VkBufferCreateInfo
+bufferCreateInfo(VkDeviceSize size, VkBufferUsageFlags usageFlags,
+                 VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE);
 
 VkMemoryAllocateInfo memoryAllocInfo(VkDeviceSize size, uint32_t memoryIndex);
 

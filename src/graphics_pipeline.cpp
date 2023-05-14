@@ -1,5 +1,5 @@
-#include "graphics_pipeline.hpp"
-#include "create_info.hpp"
+#include "vulkan_utils/graphics_pipeline.hpp"
+#include "vulkan_utils/create_info.hpp"
 
 namespace graphics_pipeline {
 VkShaderModule

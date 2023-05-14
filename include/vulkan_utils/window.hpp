@@ -1,5 +1,5 @@
 #pragma once
-#include "common.hpp"
+#include "vulkan_utils/common.hpp"
 
 namespace window {
 GLFWwindow *initWindow(GLFWframebuffersizefun framebufferResizeCallback,

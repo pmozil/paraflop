@@ -1,4 +1,4 @@
-#include "surface.hpp"
+#include "vulkan_utils/surface.hpp"
 
 namespace surface {
 VkSurfaceKHR createSurface(VkInstance &instance, GLFWwindow *window,

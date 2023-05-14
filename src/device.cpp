@@ -1,5 +1,5 @@
-#include "device.hpp"
-#include "create_info.hpp"
+#include "vulkan_utils/device.hpp"
+#include "vulkan_utils/create_info.hpp"
 
 namespace device {
 bool DeviceHandler::checkDeviceExtensionSupport(VkPhysicalDevice device) {
@@ -118,6 +118,13 @@ void DeviceHandler::createLogicalDevice(VkAllocationCallbacks *pAllocator) {
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(),
                                               indices.presentFamily.value()};
+    if (indices.hasDedicatedTransfer()) {
+        uniqueQueueFamilies = {
+            indices.graphicsFamily.value(),
+            indices.presentFamily.value(),
+            indices.transferFamily.value(),
+        };
+    }
 
     float queuePriority = 1.0F;
     for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -138,6 +145,10 @@ void DeviceHandler::createLogicalDevice(VkAllocationCallbacks *pAllocator) {
                      &graphicsQueue);
     vkGetDeviceQueue(logicalDevice, indices.presentFamily.value(), 0,
                      &presentQueue);
+    if (indices.hasDedicatedTransfer()) {
+        vkGetDeviceQueue(logicalDevice, indices.transferFamily.value(), 0,
+                         &presentQueue);
+    }
 }
 
 QueueFamilyIndices
@@ -156,6 +167,11 @@ DeviceHandler::getQueueFamilyIndices(VkPhysicalDevice &device) {
     for (const auto &queueFamily : queueFamilies) {
         if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             indices.graphicsFamily = idx;
+        }
+
+        if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT &&
+            !queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            indices.transferFamily = idx;
         }
 
         VkBool32 presentSupport = false;

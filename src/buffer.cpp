@@ -1,5 +1,5 @@
-#include "buffer.hpp"
-#include "create_info.hpp"
+#include "vulkan_utils/buffer.hpp"
+#include "vulkan_utils/create_info.hpp"
 
 namespace buffer {
 Buffer::Buffer(device::DeviceHandler *deviceHandler,
@@ -12,8 +12,8 @@ Buffer::Buffer(device::DeviceHandler *deviceHandler,
 }
 
 void Buffer::createBuffer() {
-    VkBufferCreateInfo bufferInfo =
-        create_info::bufferCreateInfo(size, usageFlags);
+    VkBufferCreateInfo bufferInfo = create_info::bufferCreateInfo(
+        size, usageFlags, VK_SHARING_MODE_EXCLUSIVE);
 
     if (vkCreateBuffer(deviceHandler->logicalDevice, &bufferInfo, nullptr,
                        &buffer) != VK_SUCCESS) {

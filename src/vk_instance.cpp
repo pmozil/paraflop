@@ -1,4 +1,4 @@
-#include "vk_instance.hpp"
+#include "vulkan_utils/vk_instance.hpp"
 
 namespace vk_instance {
 VkInstance createDefaultVkInstance(VkAllocationCallbacks *alloc) {

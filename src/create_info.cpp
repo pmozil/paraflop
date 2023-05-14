@@ -1,13 +1,14 @@
-#include "create_info.hpp"
+#include "vulkan_utils/create_info.hpp"
 
 namespace create_info {
 VkBufferCreateInfo bufferCreateInfo(VkDeviceSize size,
-                                    VkBufferUsageFlags usageFlags) {
+                                    VkBufferUsageFlags usageFlags,
+                                    VkSharingMode sharingMode) {
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = size;
     bufferInfo.usage = usageFlags;
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferInfo.sharingMode = sharingMode;
     return bufferInfo;
 }
 

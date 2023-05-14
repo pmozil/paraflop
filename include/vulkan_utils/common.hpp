@@ -50,8 +50,12 @@ struct QueueFamilyIndices {
     std::optional<uint32_t> computeFamily;
     std::optional<uint32_t> transferFamily;
 
-    inline bool isComplete() {
+    [[nodiscard]] inline bool isComplete() const {
         return graphicsFamily.has_value() && presentFamily.has_value();
+    }
+
+    [[nodiscard]] inline bool hasDedicatedTransfer() const {
+        return transferFamily.has_value();
     }
 };
 

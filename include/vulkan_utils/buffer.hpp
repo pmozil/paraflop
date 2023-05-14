@@ -1,7 +1,7 @@
 #pragma once
-#include "command_buffer.hpp"
-#include "common.hpp"
-#include "device.hpp"
+#include "vulkan_utils/command_buffer.hpp"
+#include "vulkan_utils/common.hpp"
+#include "vulkan_utils/device.hpp"
 
 namespace buffer {
 class Buffer {

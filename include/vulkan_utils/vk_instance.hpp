@@ -1,6 +1,6 @@
 #pragma once
-#include "common.hpp"
-#include "debug.hpp"
+#include "vulkan_utils/common.hpp"
+#include "vulkan_utils/debug.hpp"
 
 namespace vk_instance {
 

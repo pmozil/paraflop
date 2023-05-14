@@ -1,5 +1,5 @@
-#include "swap_chain.hpp"
-#include "create_info.hpp"
+#include "vulkan_utils/swap_chain.hpp"
+#include "vulkan_utils/create_info.hpp"
 #include <utility>
 
 namespace swap_chain {

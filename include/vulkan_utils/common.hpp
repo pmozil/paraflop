@@ -21,6 +21,7 @@
 #include <stdexcept>
 #include <type_traits>
 #include <vector>
+#include <memory>
 
 const int WIDTH = 800;
 const int HEIGHT = 600;

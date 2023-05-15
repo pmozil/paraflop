@@ -11,39 +11,40 @@
 #include "vulkan_utils/window.hpp"
 
 int main() {
-    std::vector<const char *> validation = {"VK_LAYER_KHRONOS_validation"};
+  std::vector<const char *> validation = {"VK_LAYER_KHRONOS_validation"};
 
-    std::vector<const char *> devExt = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-    GLFWwindow *window = window::initWindow(nullptr, nullptr);
-    VkInstance instance = vk_instance::createDefaultVkInstance(nullptr);
-    debug::createDebugMessenger(instance);
-    VkSurfaceKHR surface = surface::createSurface(instance, window, nullptr);
-    device::DeviceHandler deviceHandler =
-        device::DeviceHandler(devExt, validation, instance, surface);
-    swap_chain::SwapChain swapChain =
-        swap_chain::SwapChain(window, surface, &deviceHandler);
-    graphics_pipeline::RasterGraphicsPipeline pipeline =
-        graphics_pipeline::RasterGraphicsPipeline(&swapChain, &deviceHandler);
-    command_buffer::CommandBufferHandler commandBuffer =
-        command_buffer::CommandBufferHandler(&deviceHandler, &swapChain,
-                                             &pipeline);
+  std::vector<const char *> devExt = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+  GLFWwindow *window = window::initWindow(nullptr, nullptr);
+  VkInstance instance = vk_instance::createDefaultVkInstance(nullptr);
+  debug::createDebugMessenger(instance);
+  VkSurfaceKHR surface = surface::createSurface(instance, window, nullptr);
+  std::shared_ptr<device::DeviceHandler> deviceHandler{
+      new device::DeviceHandler(devExt, validation, instance, surface)};
+  std::shared_ptr<swap_chain::SwapChain> swapChain{
+      new swap_chain::SwapChain(window, surface, deviceHandler)};
+  std::shared_ptr<graphics_pipeline::RasterGraphicsPipeline> pipeline{
+      new graphics_pipeline::RasterGraphicsPipeline(swapChain, deviceHandler)};
+  std::shared_ptr<command_buffer::CommandBufferHandler> commandBuffer{
+      new command_buffer::CommandBufferHandler(deviceHandler, swapChain,
+                                               pipeline)};
 
-    renderer::Renderer<graphics_pipeline::RasterGraphicsPipeline> renderer =
-        renderer::Renderer(window, instance, surface, &deviceHandler,
-                           &swapChain, &commandBuffer, &pipeline);
-    while (!glfwWindowShouldClose(window)) {
-        glfwPollEvents();
-        renderer.drawFrame();
-    }
+  renderer::Renderer<graphics_pipeline::RasterGraphicsPipeline> renderer =
+      renderer::Renderer(window, instance, surface, deviceHandler, swapChain,
+                         commandBuffer, pipeline);
 
-    renderer.cleanup();
-    commandBuffer.cleanup();
-    pipeline.cleanup();
-    swapChain.cleanup();
-    deviceHandler.cleanupDevice(nullptr);
-    vk_instance::cleanupInstance(instance, nullptr);
-    glfwDestroyWindow(window);
-    glfwTerminate();
+  while (!static_cast<bool>(glfwWindowShouldClose(window))) {
+    glfwPollEvents();
+    renderer.drawFrame();
+  }
 
-    return 0;
+  renderer.cleanup();
+  commandBuffer->cleanup();
+  pipeline->cleanup();
+  swapChain->cleanup();
+  deviceHandler->cleanupDevice(nullptr);
+  vk_instance::cleanupInstance(instance, nullptr);
+  glfwDestroyWindow(window);
+  glfwTerminate();
+
+  return 0;
 }

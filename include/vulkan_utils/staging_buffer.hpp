@@ -6,12 +6,14 @@
 
 namespace buffer {
 class StagingBuffer : public Buffer {
-  public:
-    StagingBuffer(device::DeviceHandler *deviceHandler,
-                  command_buffer::CommandBufferHandler *commandBuffer)
-        : Buffer(deviceHandler, commandBuffer, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                     VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                 VK_SHARING_MODE_CONCURRENT){};
+public:
+  StagingBuffer(
+      std::shared_ptr<device::DeviceHandler> deviceHandler,
+      std::shared_ptr<command_buffer::CommandBufferHandler> commandBuffer)
+      : Buffer(std::move(deviceHandler), std::move(commandBuffer),
+               VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                   VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+               VK_SHARING_MODE_CONCURRENT){};
 };
 } // namespace buffer

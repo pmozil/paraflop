@@ -6,22 +6,24 @@
 
 namespace command_buffer {
 class CommandBufferHandler {
-  public:
-    CommandBufferHandler(
-        device::DeviceHandler *m_devicehandler,
-        swap_chain::SwapChain *m_swapChain,
-        graphics_pipeline::AbstractGraphicsPipeline *m_graphicsPipeline);
-    VkCommandPool commandPool;
-    std::vector<VkCommandBuffer> commandBuffers;
-    VkCommandBuffer transferBuffer = VK_NULL_HANDLE;
-    void createCommandBuffers();
-    void cleanupCommandBuffers();
-    void cleanup();
+public:
+  CommandBufferHandler(
+      std::shared_ptr<device::DeviceHandler> m_devicehandler,
+      std::shared_ptr<swap_chain::SwapChain> m_swapChain,
+      std::shared_ptr<graphics_pipeline::AbstractGraphicsPipeline>
+          m_graphicsPipeline);
+  VkCommandPool commandPool;
+  std::vector<VkCommandBuffer> commandBuffers;
+  VkCommandBuffer transferBuffer = VK_NULL_HANDLE;
+  void createCommandBuffers();
+  void cleanupCommandBuffers();
+  void cleanup();
 
-  private:
-    device::DeviceHandler *m_devicehandler;
-    swap_chain::SwapChain *m_swapChain;
-    graphics_pipeline::AbstractGraphicsPipeline *m_graphicsPipeline;
-    void m_createCommandPool();
+private:
+  std::shared_ptr<device::DeviceHandler> m_devicehandler;
+  std::shared_ptr<swap_chain::SwapChain> m_swapChain;
+  std::shared_ptr<graphics_pipeline::AbstractGraphicsPipeline>
+      m_graphicsPipeline;
+  void m_createCommandPool();
 };
 } // namespace command_buffer

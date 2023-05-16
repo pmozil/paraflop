@@ -1,5 +1,5 @@
 #pragma once
-#include "vulkan_utils/common.hpp"
+#include "common.hpp"
 #include "vulkan_utils/device.hpp"
 #include "vulkan_utils/graphics_pipeline.hpp"
 #include "vulkan_utils/swap_chain.hpp"
@@ -12,6 +12,7 @@ public:
       std::shared_ptr<swap_chain::SwapChain> m_swapChain,
       std::shared_ptr<graphics_pipeline::AbstractGraphicsPipeline>
           m_graphicsPipeline);
+  ~CommandBufferHandler() { cleanup(); }
   VkCommandPool commandPool;
   std::vector<VkCommandBuffer> commandBuffers;
   VkCommandBuffer transferBuffer = VK_NULL_HANDLE;

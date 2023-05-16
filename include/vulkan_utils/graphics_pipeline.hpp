@@ -1,5 +1,5 @@
 #pragma once
-#include "vulkan_utils/common.hpp"
+#include "common.hpp"
 #include "vulkan_utils/device.hpp"
 #include "vulkan_utils/swap_chain.hpp"
 
@@ -21,6 +21,7 @@ protected:
   std::shared_ptr<device::DeviceHandler> m_deviceHandler;
   static std::vector<char> readFile(const std::string &filename);
   VkShaderModule createShaderModule(const std::vector<char> &code);
+  ~AbstractGraphicsPipeline() { cleanup(); }
 };
 
 class CustomGraphicsPipeline : public AbstractGraphicsPipeline {
@@ -30,6 +31,7 @@ public:
                          VkPipelineLayoutCreateInfo &pipelineLayoutCreateInfo,
                          VkGraphicsPipelineCreateInfo &pipelineCreateInfo);
   void createGraphicsPipeline() override;
+  ~CustomGraphicsPipeline() { cleanup(); }
 
 private:
   VkGraphicsPipelineCreateInfo &pipelineCreateInfo;
@@ -42,5 +44,6 @@ public:
       std::shared_ptr<swap_chain::SwapChain> m_swapChain,
       std::shared_ptr<device::DeviceHandler> m_deviceHandler);
   void createGraphicsPipeline() override;
+  ~RasterGraphicsPipeline() { cleanup(); }
 };
 } // namespace graphics_pipeline

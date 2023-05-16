@@ -1,5 +1,5 @@
 #pragma once
-#include "vulkan_utils/common.hpp"
+#include "common.hpp"
 
 namespace create_info {
 VkBufferCreateInfo

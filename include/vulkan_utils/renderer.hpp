@@ -1,6 +1,6 @@
 #pragma once
+#include "common.hpp"
 #include "vulkan_utils/command_buffer.hpp"
-#include "vulkan_utils/common.hpp"
 #include "vulkan_utils/device.hpp"
 #include "vulkan_utils/graphics_pipeline.hpp"
 #include "vulkan_utils/swap_chain.hpp"
@@ -26,6 +26,7 @@ public:
         m_graphicsPipeline(std::move(m_graphicsPipeline)) {
     m_createSyncObjects();
   }
+  ~Renderer() { cleanup(); }
   void handleWindowUpdate();
   void drawFrame();
   void cleanup();

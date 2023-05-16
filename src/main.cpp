@@ -1,6 +1,8 @@
+#include "common.hpp"
+#include "geometry/uniform_buffer_object.hpp"
+#include "geometry/vertex.hpp"
 #include "vulkan_utils/buffer.hpp"
 #include "vulkan_utils/command_buffer.hpp"
-#include "vulkan_utils/common.hpp"
 #include "vulkan_utils/debug.hpp"
 #include "vulkan_utils/device.hpp"
 #include "vulkan_utils/graphics_pipeline.hpp"
@@ -15,13 +17,16 @@ int main() {
 
   std::vector<const char *> devExt = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
   GLFWwindow *window = window::initWindow(nullptr, nullptr);
-  VkInstance instance = vk_instance::createDefaultVkInstance(nullptr);
-  debug::createDebugMessenger(instance);
-  VkSurfaceKHR surface = surface::createSurface(instance, window, nullptr);
+  // VkInstance instance = vk_instance::createDefaultVkInstance(nullptr);
+  std::unique_ptr<vk_instance::Instance> instance{new vk_instance::Instance()};
+  debug::createDebugMessenger(instance->instance);
+  std::unique_ptr<surface::Surface> surface{
+      new surface::Surface(instance->instance, window, nullptr)};
   std::shared_ptr<device::DeviceHandler> deviceHandler{
-      new device::DeviceHandler(devExt, validation, instance, surface)};
+      new device::DeviceHandler(devExt, validation, instance->instance,
+                                surface->surface)};
   std::shared_ptr<swap_chain::SwapChain> swapChain{
-      new swap_chain::SwapChain(window, surface, deviceHandler)};
+      new swap_chain::SwapChain(window, surface->surface, deviceHandler)};
   std::shared_ptr<graphics_pipeline::RasterGraphicsPipeline> pipeline{
       new graphics_pipeline::RasterGraphicsPipeline(swapChain, deviceHandler)};
   std::shared_ptr<command_buffer::CommandBufferHandler> commandBuffer{
@@ -29,20 +34,20 @@ int main() {
                                                pipeline)};
 
   renderer::Renderer<graphics_pipeline::RasterGraphicsPipeline> renderer =
-      renderer::Renderer(window, instance, surface, deviceHandler, swapChain,
-                         commandBuffer, pipeline);
+      renderer::Renderer(window, instance->instance, surface->surface,
+                         deviceHandler, swapChain, commandBuffer, pipeline);
 
   while (!static_cast<bool>(glfwWindowShouldClose(window))) {
     glfwPollEvents();
     renderer.drawFrame();
   }
 
-  renderer.cleanup();
-  commandBuffer->cleanup();
-  pipeline->cleanup();
-  swapChain->cleanup();
-  deviceHandler->cleanupDevice(nullptr);
-  vk_instance::cleanupInstance(instance, nullptr);
+  // renderer.cleanup();
+  // commandBuffer->cleanup();
+  // pipeline->cleanup();
+  // swapChain->cleanup();
+  // deviceHandler->cleanupDevice(nullptr);
+  // vk_instance::cleanupInstance(instance->instance, nullptr);
   glfwDestroyWindow(window);
   glfwTerminate();
 

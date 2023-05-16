@@ -1,5 +1,5 @@
 #pragma once
-#include "vulkan_utils/common.hpp"
+#include "common.hpp"
 #include "vulkan_utils/device.hpp"
 
 namespace swap_chain {
@@ -7,6 +7,7 @@ class SwapChain {
 public:
   SwapChain(GLFWwindow *m_window, VkSurfaceKHR m_surface,
             std::shared_ptr<device::DeviceHandler> m_deviceHandler);
+  ~SwapChain() { cleanup(); }
   VkSwapchainKHR swapChain;
   VkFormat swapChainImageFormat;
   VkExtent2D swapChainExtent;

@@ -1,6 +1,6 @@
 #pragma once
+#include "common.hpp"
 #include "vulkan_utils/command_buffer.hpp"
-#include "vulkan_utils/common.hpp"
 #include "vulkan_utils/device.hpp"
 
 namespace buffer {
@@ -10,6 +10,7 @@ public:
          std::shared_ptr<command_buffer::CommandBufferHandler> m_commandBuffer,
          VkBufferUsageFlags usageFlags,
          VkMemoryPropertyFlags memoryPropertyFlags, VkSharingMode sharingMode);
+  ~Buffer() { destroy(); }
   void map(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
   void unmap();
   void bind(VkDeviceSize offset = 0);

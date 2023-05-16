@@ -75,3 +75,5 @@ struct SwapChainSupportDetails {
             assert(res == VK_SUCCESS);                                         \
         }                                                                      \
     }
+
+static const size_t GLM_16_BYTE_ALIGN = 16;

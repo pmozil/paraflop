@@ -177,4 +177,54 @@ swapChainCreateInfo(VkSurfaceKHR surface, uint32_t imageCount, VkFormat format,
     createInfo.clipped = VK_TRUE;
     return createInfo;
 }
+
+VkDescriptorSetLayoutBinding
+descriptorSetLayoutBinding(VkDescriptorType descType,
+                           VkShaderStageFlags stageFlags) {
+    VkDescriptorSetLayoutBinding uboLayoutBinding{};
+    uboLayoutBinding.binding = 0;
+    uboLayoutBinding.descriptorCount = 1;
+    uboLayoutBinding.descriptorType = descType;
+    uboLayoutBinding.pImmutableSamplers = nullptr;
+    uboLayoutBinding.stageFlags = stageFlags;
+
+    return uboLayoutBinding;
+}
+
+VkDescriptorSetLayoutCreateInfo
+descriptorSetLayoutInfo(VkDescriptorType descType,
+                        VkShaderStageFlags stageFlags) {
+    auto binding = descriptorSetLayoutBinding(descType, stageFlags);
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings = &binding;
+
+    return layoutInfo;
+}
+
+VkDescriptorPoolCreateInfo descriptorPoolCreateInfo(VkDescriptorType type,
+                                                    uint32_t poolSizeInt) {
+    VkDescriptorPoolSize poolSize{};
+    poolSize.type = type;
+    poolSize.descriptorCount = poolSizeInt;
+
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    return poolInfo;
+}
+
+VkDescriptorSetAllocateInfo
+descriptorSetAllocInfo(VkDescriptorPool descriptorPool,
+                       std::vector<VkDescriptorSetLayout> &layouts) {
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = descriptorPool;
+    allocInfo.descriptorSetCount = layouts.size();
+    allocInfo.pSetLayouts = layouts.data();
+    return allocInfo;
+}
 } // namespace create_info

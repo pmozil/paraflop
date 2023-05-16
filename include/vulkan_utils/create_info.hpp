@@ -45,4 +45,19 @@ swapChainCreateInfo(VkSurfaceKHR surface, uint32_t imageCount, VkFormat format,
                     QueueFamilyIndices indices,
                     VkSurfaceTransformFlagBitsKHR currentTransform,
                     VkPresentModeKHR presentMode);
+
+VkDescriptorPoolCreateInfo descriptorPoolCreateInfo(VkDescriptorType type,
+                                                    uint32_t poolSizeInt);
+
+VkDescriptorSetAllocateInfo
+descriptorSetAllocInfo(VkDescriptorPool descriptorPool,
+                       std::vector<VkDescriptorSetLayout> &layouts);
+
+VkDescriptorSetLayoutBinding
+descriptorSetLayoutBinding(VkDescriptorType descType,
+                           VkShaderStageFlags stageFlags);
+
+VkDescriptorSetLayoutCreateInfo
+descriptorSetLayoutInfo(VkDescriptorType descType,
+                        VkShaderStageFlags stageFlags);
 } // namespace create_info

@@ -1,5 +1,5 @@
 #pragma once
-#include "vulkan_utils/renderer.hpp"
+#include "renderer/renderer.hpp"
 
 namespace renderer {
 template <typename GraphicsPipeline>

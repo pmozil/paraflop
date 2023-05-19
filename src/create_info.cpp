@@ -180,10 +180,11 @@ swapChainCreateInfo(VkSurfaceKHR surface, uint32_t imageCount, VkFormat format,
 
 VkDescriptorSetLayoutBinding
 descriptorSetLayoutBinding(VkDescriptorType descType,
-                           VkShaderStageFlags stageFlags) {
+                           VkShaderStageFlags stageFlags, uint32_t binding,
+                           uint32_t descriptors) {
     VkDescriptorSetLayoutBinding uboLayoutBinding{};
-    uboLayoutBinding.binding = 0;
-    uboLayoutBinding.descriptorCount = 1;
+    uboLayoutBinding.binding = binding;
+    uboLayoutBinding.descriptorCount = descriptors;
     uboLayoutBinding.descriptorType = descType;
     uboLayoutBinding.pImmutableSamplers = nullptr;
     uboLayoutBinding.stageFlags = stageFlags;
@@ -192,14 +193,11 @@ descriptorSetLayoutBinding(VkDescriptorType descType,
 }
 
 VkDescriptorSetLayoutCreateInfo
-descriptorSetLayoutInfo(VkDescriptorType descType,
-                        VkShaderStageFlags stageFlags) {
-    VkDescriptorSetLayoutBinding binding =
-        descriptorSetLayoutBinding(descType, stageFlags);
+descriptorSetLayoutInfo(VkDescriptorSetLayoutBinding *bindings) {
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layoutInfo.bindingCount = 1;
-    layoutInfo.pBindings = &binding;
+    layoutInfo.pBindings = bindings;
 
     return layoutInfo;
 }

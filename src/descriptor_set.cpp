@@ -5,15 +5,14 @@
 namespace descriptor_set {
 DescriptorSetLayout::DescriptorSetLayout(
     std::shared_ptr<device::DeviceHandler> m_deviceHandler,
-    VkDescriptorType type, VkShaderStageFlags flags)
+    VkDescriptorSetLayoutBinding *bindings)
     : m_deviceHandler(std::move(m_deviceHandler)) {
-    createLayout(type, flags);
+    createLayout(bindings);
 }
 
-void DescriptorSetLayout::createLayout(VkDescriptorType type,
-                                       VkShaderStageFlags flags) {
+void DescriptorSetLayout::createLayout(VkDescriptorSetLayoutBinding *bindings) {
     VkDescriptorSetLayoutCreateInfo createInfo =
-        create_info::descriptorSetLayoutInfo(type, flags);
+        create_info::descriptorSetLayoutInfo(bindings);
 
     VK_CHECK(vkCreateDescriptorSetLayout(m_deviceHandler->logicalDevice,
                                          &createInfo, nullptr, &layout));

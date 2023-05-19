@@ -55,9 +55,9 @@ descriptorSetAllocInfo(VkDescriptorPool descriptorPool,
 
 VkDescriptorSetLayoutBinding
 descriptorSetLayoutBinding(VkDescriptorType descType,
-                           VkShaderStageFlags stageFlags);
+                           VkShaderStageFlags stageFlags, uint32_t binding,
+                           uint32_t descriptors);
 
 VkDescriptorSetLayoutCreateInfo
-descriptorSetLayoutInfo(VkDescriptorType descType,
-                        VkShaderStageFlags stageFlags);
+descriptorSetLayoutInfo(VkDescriptorSetLayoutBinding *bindings);
 } // namespace create_info

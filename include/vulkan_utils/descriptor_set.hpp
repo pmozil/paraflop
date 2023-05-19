@@ -8,12 +8,12 @@ namespace descriptor_set {
 class DescriptorSetLayout {
   public:
     DescriptorSetLayout(std::shared_ptr<device::DeviceHandler> m_deviceHandler,
-                        VkDescriptorType type, VkShaderStageFlags flags);
+                        VkDescriptorSetLayoutBinding *bindings);
     VkDescriptorSetLayout layout;
 
   private:
     std::shared_ptr<device::DeviceHandler> m_deviceHandler;
-    void createLayout(VkDescriptorType type, VkShaderStageFlags flags);
+    void createLayout(VkDescriptorSetLayoutBinding *bindings);
 };
 
 class DescriptorSetHandler {};

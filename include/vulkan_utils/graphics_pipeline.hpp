@@ -17,9 +17,11 @@ class AbstractGraphicsPipeline {
   protected:
     AbstractGraphicsPipeline(
         std::shared_ptr<swap_chain::SwapChain> m_swapChain,
-        std::shared_ptr<device::DeviceHandler> m_deviceHandler)
-        : m_swapChain(std::move(m_swapChain)),
+        std::shared_ptr<device::DeviceHandler> m_deviceHandler,
+        VkDescriptorSetLayout *layout)
+        : m_descriptorSetLayout(layout), m_swapChain(std::move(m_swapChain)),
           m_deviceHandler(std::move(m_deviceHandler)){};
+    VkDescriptorSetLayout *m_descriptorSetLayout;
     std::shared_ptr<swap_chain::SwapChain> m_swapChain;
     std::shared_ptr<device::DeviceHandler> m_deviceHandler;
     ~AbstractGraphicsPipeline() { cleanup(); }

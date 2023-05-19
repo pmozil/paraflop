@@ -194,7 +194,8 @@ descriptorSetLayoutBinding(VkDescriptorType descType,
 VkDescriptorSetLayoutCreateInfo
 descriptorSetLayoutInfo(VkDescriptorType descType,
                         VkShaderStageFlags stageFlags) {
-    auto binding = descriptorSetLayoutBinding(descType, stageFlags);
+    VkDescriptorSetLayoutBinding binding =
+        descriptorSetLayoutBinding(descType, stageFlags);
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layoutInfo.bindingCount = 1;

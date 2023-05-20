@@ -134,6 +134,71 @@ void Renderer<GraphicsPipeline>::drawFrame() {
 }
 
 template <typename GraphicsPipeline>
+void Renderer<GraphicsPipeline>::m_recordCommandBuffers(uint32_t imageIndex) {
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+    if (vkBeginCommandBuffer(m_commandBuffer->commandBuffers[m_currentFrame],
+                             &beginInfo) != VK_SUCCESS) {
+        throw std::runtime_error("failed to begin recording command buffer!");
+    }
+
+    VkRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = m_swapChain->getRenderPass();
+    renderPassInfo.framebuffer = m_swapChain->swapChainFramebuffers[imageIndex];
+    renderPassInfo.renderArea.offset = {0, 0};
+    renderPassInfo.renderArea.extent = m_swapChain->swapChainExtent;
+
+    VkClearValue clearColor = {{{0.0F, 0.0F, 0.0F, 1.0F}}};
+    renderPassInfo.clearValueCount = 1;
+    renderPassInfo.pClearValues = &clearColor;
+
+    vkCmdBeginRenderPass(m_commandBuffer->commandBuffers[m_currentFrame],
+                         &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    vkCmdBindPipeline(m_commandBuffer->commandBuffers[m_currentFrame],
+                      VK_PIPELINE_BIND_POINT_GRAPHICS,
+                      m_graphicsPipeline->graphicsPipeline);
+
+    VkViewport viewport{};
+    viewport.x = 0.0F;
+    viewport.y = 0.0F;
+    viewport.width = (float)m_swapChain->swapChainExtent.width;
+    viewport.height = (float)m_swapChain->swapChainExtent.height;
+    viewport.minDepth = 0.0F;
+    viewport.maxDepth = 1.0F;
+    vkCmdSetViewport(m_commandBuffer->commandBuffers[m_currentFrame], 0, 1,
+                     &viewport);
+
+    VkRect2D scissor{};
+    scissor.offset = {0, 0};
+    scissor.extent = m_swapChain->swapChainExtent;
+    vkCmdSetScissor(m_commandBuffer->commandBuffers[m_currentFrame], 0, 1,
+                    &scissor);
+
+    std::array<VkBuffer, 1> vertexBuffers = {m_vertexBuffer.buffer};
+    std::array<VkDeviceSize, 1> offsets = {0};
+    vkCmdBindVertexBuffers(m_commandBuffer->commandBuffers[m_currentFrame], 0,
+                           1, vertexBuffers.data(), offsets.data());
+
+    // vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0,
+    // VK_INDEX_TYPE_UINT16);
+
+    // vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+    //                         m_graphicsPipeline->pipelineLayout, 0, 1,
+    //                         &descriptorSets[currentFrame], 0, nullptr);
+
+    // vkCmdDrawIndexed(m_commandBuffer->commandBuffers[m_currentFrame],
+    //                  static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+
+    vkCmdEndRenderPass(m_commandBuffer->commandBuffers[m_currentFrame]);
+
+    VK_CHECK(
+        vkEndCommandBuffer(m_commandBuffer->commandBuffers[m_currentFrame]));
+}
+
+template <typename GraphicsPipeline>
 void Renderer<GraphicsPipeline>::cleanup() {
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroySemaphore(m_deviceHandler->logicalDevice,

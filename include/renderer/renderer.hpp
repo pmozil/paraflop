@@ -3,7 +3,10 @@
 #include "vulkan_utils/command_buffer.hpp"
 #include "vulkan_utils/device.hpp"
 #include "vulkan_utils/graphics_pipeline.hpp"
+#include "vulkan_utils/index_buffer.hpp"
 #include "vulkan_utils/swap_chain.hpp"
+#include "vulkan_utils/uniform_buffer.hpp"
+#include "vulkan_utils/vertex_buffer.hpp"
 
 namespace renderer {
 template <typename GraphicsPipeline> class Renderer {
@@ -43,9 +46,13 @@ template <typename GraphicsPipeline> class Renderer {
     std::vector<VkSemaphore> m_renderFinishedSemaphores;
     std::vector<VkFence> m_inFlightFences;
     std::vector<VkFence> m_imagesInFlight;
+    buffer::VertexBuffer m_vertexBuffer;
+    buffer::IndexBuffer m_indexBuffer;
+    buffer::UniformBuffer m_uniformBuffer;
     size_t m_currentFrame = 0;
     bool m_framebufferResized = false;
     void m_createSyncObjects();
+    void m_recordCommandBuffers(uint32_t imageIndex);
 };
 } // namespace renderer
 

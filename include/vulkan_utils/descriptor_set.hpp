@@ -6,15 +6,18 @@
 
 namespace descriptor_set {
 class DescriptorSetLayout {
-  public:
-    DescriptorSetLayout(std::shared_ptr<device::DeviceHandler> m_deviceHandler,
-                        VkDescriptorSetLayoutBinding *bindings);
-    VkDescriptorSetLayout layout;
+public:
+  DescriptorSetLayout(std::shared_ptr<device::DeviceHandler> m_deviceHandler,
+                      VkDescriptorSetLayoutBinding *bindings);
+  VkDescriptorSetLayout layout;
 
-  private:
-    std::shared_ptr<device::DeviceHandler> m_deviceHandler;
-    void createLayout(VkDescriptorSetLayoutBinding *bindings);
+private:
+  std::shared_ptr<device::DeviceHandler> m_deviceHandler;
+  void createLayout(VkDescriptorSetLayoutBinding *bindings);
 };
 
-class DescriptorSetHandler {};
+class DescriptorSetHandler {
+public:
+  std::vector<VkDescriptorSet> descriptorSets;
+};
 } // namespace descriptor_set

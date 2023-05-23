@@ -7,8 +7,10 @@
 #include "vulkan_utils/debug.hpp"
 #include "vulkan_utils/device.hpp"
 #include "vulkan_utils/graphics_pipeline.hpp"
+#include "vulkan_utils/index_buffer.hpp"
 #include "vulkan_utils/surface.hpp"
 #include "vulkan_utils/swap_chain.hpp"
+#include "vulkan_utils/vertex_buffer.hpp"
 #include "vulkan_utils/vk_instance.hpp"
 #include "vulkan_utils/window.hpp"
 

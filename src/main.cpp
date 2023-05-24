@@ -58,14 +58,14 @@ int main() {
   std::shared_ptr<buffer::VertexBuffer> vertexBuffer;
   vertexBuffer->copy((void *)vertices.data(), sizeof(Vertex) * vertices.size());
 
-  std::vector<buffer::UniformBuffer> uniformBuffers;
-  for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    uniformBuffers.emplace_back(deviceHandler, commandBuffer);
-  }
+  std::vector<buffer::UniformBuffer> uniformBuffers(
+      MAX_FRAMES_IN_FLIGHT,
+      buffer::UniformBuffer(deviceHandler, commandBuffer));
 
   renderer::Renderer<graphics_pipeline::RasterGraphicsPipeline> renderer =
       renderer::Renderer(window, instance->instance, surface->surface,
-                         deviceHandler, swapChain, commandBuffer, pipeline);
+                         deviceHandler, swapChain, commandBuffer, pipeline,
+                         nullptr, vertexBuffer, indexBuffer);
 
   while (!static_cast<bool>(glfwWindowShouldClose(window))) {
     glfwPollEvents();

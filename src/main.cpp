@@ -24,56 +24,65 @@ const std::vector<Vertex> vertices = {{{-0.5F, -0.5F}, {1.0F, 0.0F, 0.0F}},
 const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
 
 int main() {
-  std::vector<const char *> validation = {"VK_LAYER_KHRONOS_validation"};
+    std::vector<const char *> validation = {"VK_LAYER_KHRONOS_validation"};
 
-  std::vector<const char *> devExt = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-  GLFWwindow *window = window::initWindow(nullptr, nullptr);
-  std::unique_ptr<vk_instance::Instance> instance{new vk_instance::Instance()};
-  debug::createDebugMessenger(instance->instance);
-  std::unique_ptr<surface::Surface> surface{
-      new surface::Surface(instance->instance, window, nullptr)};
-  std::shared_ptr<device::DeviceHandler> deviceHandler{
-      new device::DeviceHandler(devExt, validation, instance->instance,
-                                surface->surface)};
-  std::shared_ptr<swap_chain::SwapChain> swapChain{
-      new swap_chain::SwapChain(window, surface->surface, deviceHandler)};
+    std::vector<const char *> devExt = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    GLFWwindow *window = window::initWindow(nullptr, nullptr);
+    std::unique_ptr<vk_instance::Instance> instance{
+        new vk_instance::Instance()};
+    debug::createDebugMessenger(instance->instance);
+    std::unique_ptr<surface::Surface> surface{
+        new surface::Surface(instance->instance, window, nullptr)};
+    std::shared_ptr<device::DeviceHandler> deviceHandler{
+        new device::DeviceHandler(devExt, validation, instance->instance,
+                                  surface->surface)};
+    std::shared_ptr<swap_chain::SwapChain> swapChain{
+        new swap_chain::SwapChain(window, surface->surface, deviceHandler)};
 
-  std::shared_ptr<graphics_pipeline::RasterGraphicsPipeline> pipeline{
-      new graphics_pipeline::RasterGraphicsPipeline(swapChain, deviceHandler)};
-  std::shared_ptr<command_buffer::CommandBufferHandler> commandBuffer{
-      new command_buffer::CommandBufferHandler(deviceHandler, swapChain,
-                                               pipeline)};
+    std::shared_ptr<graphics_pipeline::RasterGraphicsPipeline> pipeline{
+        new graphics_pipeline::RasterGraphicsPipeline(swapChain,
+                                                      deviceHandler)};
+    std::shared_ptr<command_buffer::CommandBufferHandler> commandBuffer{
+        new command_buffer::CommandBufferHandler(deviceHandler, swapChain,
+                                                 pipeline)};
 
-  VkDescriptorSetLayoutBinding uboBinding =
-      create_info::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                              VK_SHADER_STAGE_VERTEX_BIT, 0, 1);
+    VkDescriptorSetLayoutBinding uboBinding =
+        create_info::descriptorSetLayoutBinding(
+            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0,
+            1);
 
-  std::shared_ptr<descriptor_set::DescriptorSetLayout> layout{
-      new descriptor_set::DescriptorSetLayout(deviceHandler, &uboBinding, 1)};
+    std::shared_ptr<descriptor_set::DescriptorSetLayout> layout{
+        new descriptor_set::DescriptorSetLayout(deviceHandler, &uboBinding, 1)};
 
-  std::shared_ptr<buffer::IndexBuffer> indexBuffer{
-      new buffer::IndexBuffer(deviceHandler, commandBuffer)};
-  indexBuffer->copy((void *)indices.data(), sizeof(uint32_t) * indices.size());
+    std::shared_ptr<buffer::IndexBuffer> indexBuffer{new buffer::IndexBuffer(
+        deviceHandler, commandBuffer, sizeof(uint32_t) * indices.size())};
+    indexBuffer->map();
+    indexBuffer->copy((void *)indices.data(),
+                      sizeof(uint32_t) * indices.size());
 
-  std::shared_ptr<buffer::VertexBuffer> vertexBuffer;
-  vertexBuffer->copy((void *)vertices.data(), sizeof(Vertex) * vertices.size());
+    std::shared_ptr<buffer::VertexBuffer> vertexBuffer{new buffer::VertexBuffer(
+        deviceHandler, commandBuffer, sizeof(Vertex) * vertices.size())};
+    vertexBuffer->map();
+    vertexBuffer->copy((void *)vertices.data(),
+                       sizeof(Vertex) * vertices.size());
 
-  std::vector<buffer::UniformBuffer> uniformBuffers(
-      MAX_FRAMES_IN_FLIGHT,
-      buffer::UniformBuffer(deviceHandler, commandBuffer));
+    std::vector<buffer::UniformBuffer> uniformBuffers(
+        MAX_FRAMES_IN_FLIGHT,
+        buffer::UniformBuffer(deviceHandler, commandBuffer,
+                              sizeof(UniformBufferObject)));
 
-  renderer::Renderer<graphics_pipeline::RasterGraphicsPipeline> renderer =
-      renderer::Renderer(window, instance->instance, surface->surface,
-                         deviceHandler, swapChain, commandBuffer, pipeline,
-                         nullptr, vertexBuffer, indexBuffer);
+    renderer::Renderer<graphics_pipeline::RasterGraphicsPipeline> renderer =
+        renderer::Renderer(window, instance->instance, surface->surface,
+                           deviceHandler, swapChain, commandBuffer, pipeline,
+                           nullptr, vertexBuffer, indexBuffer);
 
-  while (!static_cast<bool>(glfwWindowShouldClose(window))) {
-    glfwPollEvents();
-    renderer.drawFrame();
-  }
+    while (!static_cast<bool>(glfwWindowShouldClose(window))) {
+        glfwPollEvents();
+        renderer.drawFrame();
+    }
 
-  glfwDestroyWindow(window);
-  glfwTerminate();
+    glfwDestroyWindow(window);
+    glfwTerminate();
 
-  return 0;
+    return 0;
 }

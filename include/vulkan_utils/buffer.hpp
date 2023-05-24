@@ -13,12 +13,12 @@ class Buffer {
         VkMemoryPropertyFlags memoryPropertyFlags, VkSharingMode sharingMode,
         VkDeviceSize size);
     ~Buffer() { destroy(); }
-    void map(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+    void map();
     void unmap();
     void bind(VkDeviceSize offset = 0);
     void setupDescriptor(VkDeviceSize size = VK_WHOLE_SIZE,
                          VkDeviceSize offset = 0);
-    void copy(void *data, VkDeviceSize size) const;
+    void copy(void *data, VkDeviceSize size);
     void flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
     void invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
     void copyFrom(VkBuffer srcBuffer, VkDeviceSize size);
@@ -35,9 +35,11 @@ class Buffer {
     VkMemoryPropertyFlags memoryPropertyFlags;
 
   private:
+    void m_makeBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
+                      VkMemoryPropertyFlags properties, VkBuffer &buffer,
+                      VkDeviceMemory &bufferMemory, VkSharingMode sharingMode);
     std::shared_ptr<command_buffer::CommandBufferHandler> m_commandBuffer;
     std::shared_ptr<device::DeviceHandler> m_deviceHandler;
-    void m_createBuffer(VkSharingMode sharingMode);
     uint32_t m_findMemoryType(uint32_t typeFilter,
                               VkMemoryPropertyFlags properties);
 };

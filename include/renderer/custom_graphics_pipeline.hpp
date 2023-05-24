@@ -113,7 +113,7 @@ class CustomRasterPipeline : public AbstractGraphicsPipeline {
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType =
             VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = 1;
+        pipelineLayoutInfo.setLayoutCount = 0;
         pipelineLayoutInfo.pSetLayouts = m_descriptorSetLayout;
 
         if (vkCreatePipelineLayout(m_deviceHandler->logicalDevice,

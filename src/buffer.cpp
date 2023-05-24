@@ -11,12 +11,19 @@ Buffer::Buffer(
       memoryPropertyFlags(memoryPropertyFlags),
       m_commandBuffer(std::move(m_commandBuffer)),
       m_deviceHandler(std::move(m_deviceHandler)) {
-    m_createBuffer(sharingMode);
+    m_makeBuffer(size, usageFlags, memoryPropertyFlags, buffer, memory,
+                 sharingMode);
 }
 
-void Buffer::m_createBuffer(VkSharingMode sharingMode) {
-    VkBufferCreateInfo bufferInfo =
-        create_info::bufferCreateInfo(size, usageFlags, sharingMode);
+void Buffer::m_makeBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
+                          VkMemoryPropertyFlags properties, VkBuffer &buffer,
+                          VkDeviceMemory &bufferMemory,
+                          VkSharingMode sharingMode) {
+    VkBufferCreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = size;
+    bufferInfo.usage = usage;
+    bufferInfo.sharingMode = sharingMode;
 
     VK_CHECK(vkCreateBuffer(m_deviceHandler->logicalDevice, &bufferInfo,
                             nullptr, &buffer));
@@ -25,14 +32,18 @@ void Buffer::m_createBuffer(VkSharingMode sharingMode) {
     vkGetBufferMemoryRequirements(m_deviceHandler->logicalDevice, buffer,
                                   &memRequirements);
 
-    VkMemoryAllocateInfo allocInfo = create_info::memoryAllocInfo(
-        size,
-        m_findMemoryType(memRequirements.memoryTypeBits, memoryPropertyFlags));
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex =
+        m_findMemoryType(memRequirements.memoryTypeBits, properties);
 
-    VK_CHECK(vkAllocateMemory(m_deviceHandler->logicalDevice, &allocInfo,
-                              nullptr, &memory));
+    if (vkAllocateMemory(m_deviceHandler->logicalDevice, &allocInfo, nullptr,
+                         &bufferMemory) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate buffer memory!");
+    }
 
-    vkBindBufferMemory(m_deviceHandler->logicalDevice, buffer, memory, 0);
+    vkBindBufferMemory(m_deviceHandler->logicalDevice, buffer, bufferMemory, 0);
 }
 
 uint32_t Buffer::m_findMemoryType(uint32_t typeFilter,
@@ -52,9 +63,9 @@ uint32_t Buffer::m_findMemoryType(uint32_t typeFilter,
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
-void Buffer::map(VkDeviceSize size, VkDeviceSize offset) {
-    VK_CHECK(vkMapMemory(m_deviceHandler->logicalDevice, memory, offset, size,
-                         0, &mapped));
+void Buffer::map() {
+    VK_CHECK(vkMapMemory(m_deviceHandler->logicalDevice, memory, 0, size, 0,
+                         &mapped));
 }
 
 void Buffer::unmap() {
@@ -75,9 +86,24 @@ void Buffer::setupDescriptor(VkDeviceSize size, VkDeviceSize offset) {
     descriptor.range = size;
 }
 
-void Buffer::copy(void *data, VkDeviceSize size) const {
-    assert(mapped != nullptr);
-    memcpy(mapped, data, size);
+void Buffer::copy(void *data, VkDeviceSize size) {
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    m_makeBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                     VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                 stagingBuffer, stagingBufferMemory, VK_SHARING_MODE_EXCLUSIVE);
+
+    void *mem;
+    vkMapMemory(m_deviceHandler->logicalDevice, stagingBufferMemory, 0, size, 0,
+                &mem);
+    memcpy(mem, data, (size_t)size);
+    vkUnmapMemory(m_deviceHandler->logicalDevice, stagingBufferMemory);
+
+    copyFrom(stagingBuffer, size);
+
+    vkDestroyBuffer(m_deviceHandler->logicalDevice, stagingBuffer, nullptr);
+    vkFreeMemory(m_deviceHandler->logicalDevice, stagingBufferMemory, nullptr);
 }
 
 void Buffer::flush(VkDeviceSize size, VkDeviceSize offset) {

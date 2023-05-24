@@ -16,12 +16,7 @@
 #include "vulkan_utils/vk_instance.hpp"
 #include "vulkan_utils/window.hpp"
 
-const std::vector<Vertex> vertices = {{{-0.5F, -0.5F}, {1.0F, 0.0F, 0.0F}},
-                                      {{0.5F, -0.5F}, {0.0F, 1.0F, 0.0F}},
-                                      {{0.5F, 0.5F}, {0.0F, 0.0F, 1.0F}},
-                                      {{-0.5F, 0.5F}, {1.0F, 1.0F, 1.0F}}};
-
-const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
+// graphics_pipeline::CustomGraphicsPipeline makePipeline();
 
 int main() {
   std::vector<const char *> validation = {"VK_LAYER_KHRONOS_validation"};
@@ -47,20 +42,13 @@ int main() {
   VkDescriptorSetLayoutBinding uboBinding =
       create_info::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                                               VK_SHADER_STAGE_VERTEX_BIT, 0, 1);
-
   std::shared_ptr<descriptor_set::DescriptorSetLayout> layout{
       new descriptor_set::DescriptorSetLayout(deviceHandler, &uboBinding, 1)};
-
-  std::shared_ptr<buffer::IndexBuffer> indexBuffer{
-      new buffer::IndexBuffer(deviceHandler, commandBuffer)};
-  indexBuffer->copy((void *)indices.data(), sizeof(uint32_t) * indices.size());
-
-  std::shared_ptr<buffer::VertexBuffer> vertexBuffer;
-  vertexBuffer->copy((void *)vertices.data(), sizeof(Vertex) * vertices.size());
 
   std::vector<buffer::UniformBuffer> uniformBuffers;
   for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
     uniformBuffers.emplace_back(deviceHandler, commandBuffer);
+    uniformBuffers[i].copy({10}, sizaeof({10}));
   }
 
   renderer::Renderer<graphics_pipeline::RasterGraphicsPipeline> renderer =

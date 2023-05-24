@@ -59,5 +59,6 @@ descriptorSetLayoutBinding(VkDescriptorType descType,
                            uint32_t descriptors);
 
 VkDescriptorSetLayoutCreateInfo
-descriptorSetLayoutInfo(VkDescriptorSetLayoutBinding *bindings);
+descriptorSetLayoutInfo(VkDescriptorSetLayoutBinding *bindings,
+                        uint32_t bind_count);
 } // namespace create_info

@@ -1,6 +1,7 @@
 #include "common.hpp"
 #include "geometry/uniform_buffer_object.hpp"
 #include "geometry/vertex.hpp"
+#include "renderer/custom_graphics_pipeline.hpp"
 #include "renderer/renderer.hpp"
 #include "vulkan_utils/buffer.hpp"
 #include "vulkan_utils/command_buffer.hpp"
@@ -39,13 +40,6 @@ int main() {
     std::shared_ptr<swap_chain::SwapChain> swapChain{
         new swap_chain::SwapChain(window, surface->surface, deviceHandler)};
 
-    std::shared_ptr<graphics_pipeline::RasterGraphicsPipeline> pipeline{
-        new graphics_pipeline::RasterGraphicsPipeline(swapChain,
-                                                      deviceHandler)};
-    std::shared_ptr<command_buffer::CommandBufferHandler> commandBuffer{
-        new command_buffer::CommandBufferHandler(deviceHandler, swapChain,
-                                                 pipeline)};
-
     VkDescriptorSetLayoutBinding uboBinding =
         create_info::descriptorSetLayoutBinding(
             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0,
@@ -53,6 +47,16 @@ int main() {
 
     std::shared_ptr<descriptor_set::DescriptorSetLayout> layout{
         new descriptor_set::DescriptorSetLayout(deviceHandler, &uboBinding, 1)};
+
+    // std::shared_ptr<graphics_pipeline::RasterGraphicsPipeline> pipeline{
+    //     new graphics_pipeline::RasterGraphicsPipeline(swapChain,
+    //                                                   deviceHandler)};
+    std::shared_ptr<graphics_pipeline::CustomRasterPipeline> pipeline{
+        new graphics_pipeline::CustomRasterPipeline(swapChain, deviceHandler,
+                                                    &layout->layout)};
+    std::shared_ptr<command_buffer::CommandBufferHandler> commandBuffer{
+        new command_buffer::CommandBufferHandler(deviceHandler, swapChain,
+                                                 pipeline)};
 
     std::shared_ptr<buffer::IndexBuffer> indexBuffer{new buffer::IndexBuffer(
         deviceHandler, commandBuffer, sizeof(uint32_t) * indices.size())};
@@ -71,7 +75,7 @@ int main() {
         buffer::UniformBuffer(deviceHandler, commandBuffer,
                               sizeof(UniformBufferObject)));
 
-    renderer::Renderer<graphics_pipeline::RasterGraphicsPipeline> renderer =
+    renderer::Renderer<graphics_pipeline::CustomRasterPipeline> renderer =
         renderer::Renderer(window, instance->instance, surface->surface,
                            deviceHandler, swapChain, commandBuffer, pipeline,
                            nullptr, vertexBuffer, indexBuffer);

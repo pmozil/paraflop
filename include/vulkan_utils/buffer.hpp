@@ -16,13 +16,12 @@ class Buffer {
     void map();
     void unmap();
     void bind(VkDeviceSize offset = 0);
-    void setupDescriptor(VkDeviceSize size = VK_WHOLE_SIZE,
-                         VkDeviceSize offset = 0);
+    void setupDescriptor();
     void copy(void *data, VkDeviceSize size);
     void flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
     void invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
-    void copyFrom(VkBuffer srcBuffer, VkDeviceSize size);
-    void copyTo(VkBuffer dstBuffer, VkDeviceSize size);
+    void copyFrom(VkBuffer srcBuffer);
+    void copyTo(VkBuffer dstBuffer);
     void destroy();
 
     VkBuffer buffer = VK_NULL_HANDLE;

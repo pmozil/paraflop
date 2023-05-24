@@ -80,8 +80,8 @@ void Buffer::bind(VkDeviceSize offset) {
                                 offset));
 }
 
-void Buffer::setupDescriptor(VkDeviceSize size, VkDeviceSize offset) {
-    descriptor.offset = offset;
+void Buffer::setupDescriptor() {
+    descriptor.offset = 0;
     descriptor.buffer = buffer;
     descriptor.range = size;
 }
@@ -100,7 +100,7 @@ void Buffer::copy(void *data, VkDeviceSize size) {
     memcpy(mem, data, (size_t)size);
     vkUnmapMemory(m_deviceHandler->logicalDevice, stagingBufferMemory);
 
-    copyFrom(stagingBuffer, size);
+    copyFrom(stagingBuffer);
 
     vkDestroyBuffer(m_deviceHandler->logicalDevice, stagingBuffer, nullptr);
     vkFreeMemory(m_deviceHandler->logicalDevice, stagingBufferMemory, nullptr);
@@ -136,7 +136,7 @@ void Buffer::destroy() {
     }
 }
 
-void Buffer::copyFrom(VkBuffer srcBuffer, VkDeviceSize size) {
+void Buffer::copyFrom(VkBuffer srcBuffer) {
     VkCommandBufferAllocateInfo allocInfo =
         create_info::commandBuffferAllocInfo(m_commandBuffer->commandPool, 1);
 
@@ -163,7 +163,7 @@ void Buffer::copyFrom(VkBuffer srcBuffer, VkDeviceSize size) {
                          m_commandBuffer->commandPool, 1, &cmdBuffer);
 }
 
-void Buffer::copyTo(VkBuffer dstBuffer, VkDeviceSize size) {
+void Buffer::copyTo(VkBuffer dstBuffer) {
     VkCommandBufferBeginInfo beginInfo = create_info::commabdBufferBeginInfo();
 
     vkBeginCommandBuffer(m_commandBuffer->transferBuffer, &beginInfo);

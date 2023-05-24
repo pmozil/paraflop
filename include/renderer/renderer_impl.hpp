@@ -1,5 +1,6 @@
 #pragma once
 #include "renderer/renderer.hpp"
+#include <iostream>
 
 namespace renderer {
 template <typename GraphicsPipeline>

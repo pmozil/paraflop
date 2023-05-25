@@ -38,10 +38,8 @@ void Buffer::m_makeBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
     allocInfo.memoryTypeIndex =
         m_findMemoryType(memRequirements.memoryTypeBits, properties);
 
-    if (vkAllocateMemory(m_deviceHandler->logicalDevice, &allocInfo, nullptr,
-                         &bufferMemory) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate buffer memory!");
-    }
+    VK_CHECK(vkAllocateMemory(m_deviceHandler->logicalDevice, &allocInfo,
+                              nullptr, &bufferMemory));
 
     vkBindBufferMemory(m_deviceHandler->logicalDevice, buffer, bufferMemory, 0);
 }

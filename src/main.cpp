@@ -16,6 +16,7 @@
 #include "vulkan_utils/vertex_buffer.hpp"
 #include "vulkan_utils/vk_instance.hpp"
 #include "vulkan_utils/window.hpp"
+#include <iostream>
 
 const std::vector<Vertex> vertices = {{{-0.5F, -0.5F}, {1.0F, 0.0F, 0.0F}},
                                       {{0.5F, -0.5F}, {0.0F, 1.0F, 0.0F}},
@@ -40,22 +41,29 @@ int main() {
     std::shared_ptr<swap_chain::SwapChain> swapChain{
         new swap_chain::SwapChain(window, surface->surface, deviceHandler)};
 
-    // VkDescriptorSetLayoutBinding uboBinding =
-    //     create_info::descriptorSetLayoutBinding(
-    //         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0,
-    //         1);
+    VkDescriptorSetLayoutBinding uboBinding =
+        create_info::descriptorSetLayoutBinding(
+            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0,
+            1);
 
-    // std::shared_ptr<descriptor_set::DescriptorSetLayout> layout{
-    //     new descriptor_set::DescriptorSetLayout(deviceHandler, &uboBinding,
-    //     1)};
+    std::shared_ptr<descriptor_set::DescriptorSetLayout> layout{
+        new descriptor_set::DescriptorSetLayout(deviceHandler, &uboBinding, 1)};
 
     std::shared_ptr<graphics_pipeline::CustomRasterPipeline> pipeline{
         new graphics_pipeline::CustomRasterPipeline(swapChain, deviceHandler,
-                                                    nullptr)};
-    // &layout->layout)};
+                                                    &layout->layout)};
     std::shared_ptr<command_buffer::CommandBufferHandler> commandBuffer{
         new command_buffer::CommandBufferHandler(deviceHandler, swapChain,
                                                  pipeline)};
+
+    std::vector<buffer::UniformBuffer> uniformBuffers(
+        MAX_FRAMES_IN_FLIGHT,
+        buffer::UniformBuffer(deviceHandler, commandBuffer,
+                              sizeof(UniformBufferObject)));
+
+    // for (auto &buffer : uniformBuffers) {
+    //     buffer.bind(0);
+    // }
 
     std::shared_ptr<buffer::IndexBuffer> indexBuffer{new buffer::IndexBuffer(
         deviceHandler, commandBuffer, sizeof(indices[0]) * indices.size())};
@@ -66,11 +74,6 @@ int main() {
         deviceHandler, commandBuffer, sizeof(vertices[0]) * vertices.size())};
     vertexBuffer->copy((void *)vertices.data(),
                        sizeof(vertices[0]) * vertices.size());
-
-    std::vector<buffer::UniformBuffer> uniformBuffers(
-        MAX_FRAMES_IN_FLIGHT,
-        buffer::UniformBuffer(deviceHandler, commandBuffer,
-                              sizeof(UniformBufferObject)));
 
     renderer::Renderer<graphics_pipeline::CustomRasterPipeline> renderer =
         renderer::Renderer(window, instance->instance, surface->surface,

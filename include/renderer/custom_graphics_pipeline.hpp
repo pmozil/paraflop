@@ -138,11 +138,9 @@ class CustomRasterPipeline : public AbstractGraphicsPipeline {
         pipelineInfo.subpass = 0;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-        if (vkCreateGraphicsPipelines(m_deviceHandler->logicalDevice,
+        VK_CHECK(vkCreateGraphicsPipelines(m_deviceHandler->logicalDevice,
                                       VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
-                                      &graphicsPipeline) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create graphics pipeline!");
-        }
+                                      &graphicsPipeline));
 
         vkDestroyShaderModule(m_deviceHandler->logicalDevice, fragShaderModule,
                               nullptr);

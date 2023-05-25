@@ -126,6 +126,9 @@ void Buffer::invalidate(VkDeviceSize size, VkDeviceSize offset) {
 }
 
 void Buffer::destroy() {
+    if (mapped != nullptr) {
+        unmap();
+    }
     if (buffer != VK_NULL_HANDLE) {
         vkDestroyBuffer(m_deviceHandler->logicalDevice, buffer, nullptr);
     }

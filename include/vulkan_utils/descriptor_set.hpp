@@ -24,10 +24,10 @@ class DescriptorSetHandler {
   public:
     DescriptorSetHandler(std::shared_ptr<device::DeviceHandler> m_deviceHandler,
                          std::shared_ptr<DescriptorSetLayout> m_layout,
-                         std::vector<buffer::Buffer> &buffers);
+                         std::shared_ptr<buffer::Buffer> buffer);
     ~DescriptorSetHandler() { cleanup(); }
     VkDescriptorPool descriptorPool;
-    std::vector<VkDescriptorSet> descriptorSets;
+    VkDescriptorSet descriptorSet;
     void cleanup();
 
   private:
@@ -35,6 +35,6 @@ class DescriptorSetHandler {
     void m_createDescriptorPool();
     std::shared_ptr<device::DeviceHandler> m_deviceHandler;
     std::shared_ptr<DescriptorSetLayout> m_layout;
-    std::vector<buffer::Buffer> &m_buffers;
+    std::shared_ptr<buffer::Buffer> m_buffer;
 };
 } // namespace descriptor_set

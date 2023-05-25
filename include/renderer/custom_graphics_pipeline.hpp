@@ -113,8 +113,9 @@ class CustomRasterPipeline : public AbstractGraphicsPipeline {
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType =
             VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = 0;
         pipelineLayoutInfo.pushConstantRangeCount = 0;
+        pipelineLayoutInfo.setLayoutCount = 1;
+        pipelineLayoutInfo.pSetLayouts = m_descriptorSetLayout;
 
         if (vkCreatePipelineLayout(m_deviceHandler->logicalDevice,
                                    &pipelineLayoutInfo, nullptr,
@@ -139,8 +140,8 @@ class CustomRasterPipeline : public AbstractGraphicsPipeline {
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
         VK_CHECK(vkCreateGraphicsPipelines(m_deviceHandler->logicalDevice,
-                                      VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
-                                      &graphicsPipeline));
+                                           VK_NULL_HANDLE, 1, &pipelineInfo,
+                                           nullptr, &graphicsPipeline));
 
         vkDestroyShaderModule(m_deviceHandler->logicalDevice, fragShaderModule,
                               nullptr);

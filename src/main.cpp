@@ -18,10 +18,11 @@
 #include "vulkan_utils/window.hpp"
 #include <iostream>
 
-const std::vector<Vertex> vertices = {{{-0.5F, -0.5F}, {1.0F, 0.0F, 0.0F}},
-                                      {{0.5F, -0.5F}, {0.0F, 1.0F, 0.0F}},
-                                      {{0.5F, 0.5F}, {0.0F, 0.0F, 1.0F}},
-                                      {{-0.5F, 0.5F}, {1.0F, 1.0F, 1.0F}}};
+const std::vector<Vertex> vertices = {
+    {{-0.5F, -0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}},
+    {{0.5F, -0.5F, 0.0F}, {0.0F, 1.0F, 0.0F}},
+    {{0.5F, 0.5F, 0.0F}, {0.0F, 0.0F, 1.0F}},
+    {{-0.5F, 0.5F, 0.0F}, {1.0F, 1.0F, 1.0F}}};
 
 const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
 
@@ -56,14 +57,30 @@ int main() {
         new command_buffer::CommandBufferHandler(deviceHandler, swapChain,
                                                  pipeline)};
 
-    std::vector<buffer::UniformBuffer> uniformBuffers(
-        MAX_FRAMES_IN_FLIGHT,
-        buffer::UniformBuffer(deviceHandler, commandBuffer,
-                              sizeof(UniformBufferObject)));
+    std::shared_ptr<buffer::UniformBuffer> uniformBuffer{
+        new buffer::UniformBuffer(deviceHandler, commandBuffer,
+                                  sizeof(UniformBufferObject))};
+    uniformBuffer->map();
 
-    // for (auto &buffer : uniformBuffers) {
-    //     buffer.bind(0);
-    // }
+    UniformBufferObject ubo{};
+    ubo.model = glm::rotate(glm::mat4(1.0F), glm::radians(90.0F),
+                            glm::vec3(0.0F, 0.0F, 1.0F));
+    ubo.view =
+        glm::lookAt(glm::vec3(2.0F, 2.0F, 2.0F), glm::vec3(0.0F, 0.0F, 0.0F),
+                    glm::vec3(0.0F, 0.0F, 1.0F));
+    ubo.proj = glm::perspective(glm::radians(45.0F),
+                                swapChain->swapChainExtent.width /
+                                    (float)swapChain->swapChainExtent.height,
+                                0.1f, 10.0F);
+    ubo.proj[1][1] *= -1;
+
+    uniformBuffer->copy((void *)&ubo, sizeof(ubo));
+
+    std::vector<buffer::UniformBuffer> buffs = {};
+
+    std::shared_ptr<descriptor_set::DescriptorSetHandler> descriptorSets{
+        new descriptor_set::DescriptorSetHandler(deviceHandler, layout,
+                                                 uniformBuffer)};
 
     std::shared_ptr<buffer::IndexBuffer> indexBuffer{new buffer::IndexBuffer(
         deviceHandler, commandBuffer, sizeof(indices[0]) * indices.size())};
@@ -78,7 +95,7 @@ int main() {
     renderer::Renderer<graphics_pipeline::CustomRasterPipeline> renderer =
         renderer::Renderer(window, instance->instance, surface->surface,
                            deviceHandler, swapChain, commandBuffer, pipeline,
-                           nullptr, vertexBuffer, indexBuffer);
+                           descriptorSets, vertexBuffer, indexBuffer);
 
     while (!static_cast<bool>(glfwWindowShouldClose(window))) {
         glfwPollEvents();

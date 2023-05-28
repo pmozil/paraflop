@@ -11,176 +11,186 @@ Buffer::Buffer(
       memoryPropertyFlags(memoryPropertyFlags),
       m_commandBuffer(std::move(m_commandBuffer)),
       m_deviceHandler(std::move(m_deviceHandler)) {
-    m_makeBuffer(size, usageFlags, memoryPropertyFlags, buffer, memory,
-                 sharingMode);
+  m_makeBuffer(size, usageFlags, memoryPropertyFlags, buffer, memory,
+               sharingMode);
 }
 
 void Buffer::m_makeBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
                           VkMemoryPropertyFlags properties, VkBuffer &buffer,
                           VkDeviceMemory &bufferMemory,
                           VkSharingMode sharingMode) {
-    VkBufferCreateInfo bufferInfo{};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = size;
-    bufferInfo.usage = usage;
-    bufferInfo.sharingMode = sharingMode;
+  VkBufferCreateInfo bufferInfo{};
+  bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+  bufferInfo.size = size;
+  bufferInfo.usage = usage;
+  bufferInfo.sharingMode = sharingMode;
 
-    VK_CHECK(vkCreateBuffer(m_deviceHandler->logicalDevice, &bufferInfo,
-                            nullptr, &buffer));
+  VK_CHECK(vkCreateBuffer(m_deviceHandler->logicalDevice, &bufferInfo, nullptr,
+                          &buffer));
 
-    VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(m_deviceHandler->logicalDevice, buffer,
-                                  &memRequirements);
+  VkMemoryRequirements memRequirements;
+  vkGetBufferMemoryRequirements(m_deviceHandler->logicalDevice, buffer,
+                                &memRequirements);
 
-    VkMemoryAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex =
-        m_findMemoryType(memRequirements.memoryTypeBits, properties);
+  VkMemoryAllocateInfo allocInfo{};
+  allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+  allocInfo.allocationSize = memRequirements.size;
+  allocInfo.memoryTypeIndex =
+      m_findMemoryType(memRequirements.memoryTypeBits, properties);
 
-    VK_CHECK(vkAllocateMemory(m_deviceHandler->logicalDevice, &allocInfo,
-                              nullptr, &bufferMemory));
+  VK_CHECK(vkAllocateMemory(m_deviceHandler->logicalDevice, &allocInfo, nullptr,
+                            &bufferMemory));
 
-    vkBindBufferMemory(m_deviceHandler->logicalDevice, buffer, bufferMemory, 0);
+  vkBindBufferMemory(m_deviceHandler->logicalDevice, buffer, bufferMemory, 0);
 }
 
 uint32_t Buffer::m_findMemoryType(uint32_t typeFilter,
                                   VkMemoryPropertyFlags properties) {
-    VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(m_deviceHandler->physicalDevice,
-                                        &memProperties);
+  VkPhysicalDeviceMemoryProperties memProperties;
+  vkGetPhysicalDeviceMemoryProperties(m_deviceHandler->physicalDevice,
+                                      &memProperties);
 
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-        if (static_cast<bool>(typeFilter & (1 << i)) &&
-            (memProperties.memoryTypes[i].propertyFlags & properties) ==
-                properties) {
-            return i;
-        }
+  for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+    if (static_cast<bool>(typeFilter & (1 << i)) &&
+        (memProperties.memoryTypes[i].propertyFlags & properties) ==
+            properties) {
+      return i;
     }
+  }
 
-    throw std::runtime_error("failed to find suitable memory type!");
+  throw std::runtime_error("failed to find suitable memory type!");
 }
 
 void Buffer::map() {
-    VK_CHECK(vkMapMemory(m_deviceHandler->logicalDevice, memory, 0, size, 0,
-                         &mapped));
+  VK_CHECK(
+      vkMapMemory(m_deviceHandler->logicalDevice, memory, 0, size, 0, &mapped));
 }
 
 void Buffer::unmap() {
-    if (mapped != nullptr) {
-        vkUnmapMemory(m_deviceHandler->logicalDevice, memory);
-        mapped = nullptr;
-    }
+  if (mapped != nullptr) {
+    vkUnmapMemory(m_deviceHandler->logicalDevice, memory);
+    mapped = nullptr;
+  }
 }
 
 void Buffer::bind(VkDeviceSize offset) {
-    VK_CHECK(vkBindBufferMemory(m_deviceHandler->logicalDevice, buffer, memory,
-                                offset));
+  VK_CHECK(vkBindBufferMemory(m_deviceHandler->logicalDevice, buffer, memory,
+                              offset));
 }
 
 void Buffer::setupDescriptor() {
-    descriptor.offset = 0;
-    descriptor.buffer = buffer;
-    descriptor.range = size;
+  descriptor.offset = 0;
+  descriptor.buffer = buffer;
+  descriptor.range = size;
 }
 
 void Buffer::copy(void *data, VkDeviceSize size) {
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-    m_makeBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                     VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                 stagingBuffer, stagingBufferMemory, VK_SHARING_MODE_EXCLUSIVE);
+  VkBuffer stagingBuffer;
+  VkDeviceMemory stagingBufferMemory;
+  m_makeBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                   VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+               stagingBuffer, stagingBufferMemory, VK_SHARING_MODE_EXCLUSIVE);
 
-    void *mem;
-    vkMapMemory(m_deviceHandler->logicalDevice, stagingBufferMemory, 0, size, 0,
-                &mem);
-    memcpy(mem, data, (size_t)size);
-    vkUnmapMemory(m_deviceHandler->logicalDevice, stagingBufferMemory);
+  void *mem;
+  vkMapMemory(m_deviceHandler->logicalDevice, stagingBufferMemory, 0, size, 0,
+              &mem);
+  memcpy(mem, data, (size_t)size);
+  vkUnmapMemory(m_deviceHandler->logicalDevice, stagingBufferMemory);
 
-    copyFrom(stagingBuffer);
+  copyFrom(stagingBuffer);
 
-    vkDestroyBuffer(m_deviceHandler->logicalDevice, stagingBuffer, nullptr);
-    vkFreeMemory(m_deviceHandler->logicalDevice, stagingBufferMemory, nullptr);
+  vkDestroyBuffer(m_deviceHandler->logicalDevice, stagingBuffer, nullptr);
+  vkFreeMemory(m_deviceHandler->logicalDevice, stagingBufferMemory, nullptr);
+}
+
+void Buffer::fastCopy(void *data, VkDeviceSize size) {
+  if (mapped == nullptr) {
+    map();
+  }
+  memcpy(mapped, data, (size_t)size);
 }
 
 void Buffer::flush(VkDeviceSize size, VkDeviceSize offset) {
-    VkMappedMemoryRange mappedRange = {};
-    mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-    mappedRange.memory = memory;
-    mappedRange.offset = offset;
-    mappedRange.size = size;
+  VkMappedMemoryRange mappedRange = {};
+  mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+  mappedRange.memory = memory;
+  mappedRange.offset = offset;
+  mappedRange.size = size;
 
-    VK_CHECK(vkFlushMappedMemoryRanges(m_deviceHandler->logicalDevice, 1,
-                                       &mappedRange));
+  VK_CHECK(vkFlushMappedMemoryRanges(m_deviceHandler->logicalDevice, 1,
+                                     &mappedRange));
 }
 
 void Buffer::invalidate(VkDeviceSize size, VkDeviceSize offset) {
-    VkMappedMemoryRange mappedRange = {};
-    mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-    mappedRange.memory = memory;
-    mappedRange.offset = offset;
-    mappedRange.size = size;
-    VK_CHECK(vkInvalidateMappedMemoryRanges(m_deviceHandler->logicalDevice, 1,
-                                            &mappedRange));
+  VkMappedMemoryRange mappedRange = {};
+  mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+  mappedRange.memory = memory;
+  mappedRange.offset = offset;
+  mappedRange.size = size;
+  VK_CHECK(vkInvalidateMappedMemoryRanges(m_deviceHandler->logicalDevice, 1,
+                                          &mappedRange));
 }
 
 void Buffer::destroy() {
-    if (buffer != VK_NULL_HANDLE) {
-        vkDestroyBuffer(m_deviceHandler->logicalDevice, buffer, nullptr);
-    }
-    if (memory != nullptr) {
-        vkFreeMemory(m_deviceHandler->logicalDevice, memory, nullptr);
-    }
+  if (mapped != nullptr) {
+    unmap();
+  }
+  if (buffer != VK_NULL_HANDLE) {
+    vkDestroyBuffer(m_deviceHandler->logicalDevice, buffer, nullptr);
+  }
+  if (memory != nullptr) {
+    vkFreeMemory(m_deviceHandler->logicalDevice, memory, nullptr);
+  }
 }
 
 void Buffer::copyFrom(VkBuffer srcBuffer) {
-    VkCommandBufferAllocateInfo allocInfo =
-        create_info::commandBuffferAllocInfo(m_commandBuffer->commandPool, 1);
+  VkCommandBufferAllocateInfo allocInfo =
+      create_info::commandBuffferAllocInfo(m_commandBuffer->commandPool, 1);
 
-    VkCommandBuffer cmdBuffer;
-    vkAllocateCommandBuffers(m_deviceHandler->logicalDevice, &allocInfo,
-                             &cmdBuffer);
+  VkCommandBuffer cmdBuffer;
+  vkAllocateCommandBuffers(m_deviceHandler->logicalDevice, &allocInfo,
+                           &cmdBuffer);
 
-    VkCommandBufferBeginInfo beginInfo = create_info::commabdBufferBeginInfo();
+  VkCommandBufferBeginInfo beginInfo = create_info::commabdBufferBeginInfo();
 
-    vkBeginCommandBuffer(cmdBuffer, &beginInfo);
+  vkBeginCommandBuffer(cmdBuffer, &beginInfo);
 
-    VkBufferCopy copyRegion = create_info::copyRegion(size);
-    vkCmdCopyBuffer(cmdBuffer, srcBuffer, buffer, 1, &copyRegion);
+  VkBufferCopy copyRegion = create_info::copyRegion(size);
+  vkCmdCopyBuffer(cmdBuffer, srcBuffer, buffer, 1, &copyRegion);
 
-    vkEndCommandBuffer(cmdBuffer);
+  vkEndCommandBuffer(cmdBuffer);
 
-    VkSubmitInfo submitInfo = create_info::submitInfo(1, &cmdBuffer);
+  VkSubmitInfo submitInfo = create_info::submitInfo(1, &cmdBuffer);
 
-    VkQueue transferQueue = m_deviceHandler->getTransferQueue();
-    vkQueueSubmit(transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(transferQueue);
+  VkQueue transferQueue = m_deviceHandler->getTransferQueue();
+  vkQueueSubmit(transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
+  vkQueueWaitIdle(transferQueue);
 
-    vkFreeCommandBuffers(m_deviceHandler->logicalDevice,
-                         m_commandBuffer->commandPool, 1, &cmdBuffer);
+  vkFreeCommandBuffers(m_deviceHandler->logicalDevice,
+                       m_commandBuffer->commandPool, 1, &cmdBuffer);
 }
 
 void Buffer::copyTo(VkBuffer dstBuffer) {
-    VkCommandBufferBeginInfo beginInfo = create_info::commabdBufferBeginInfo();
+  VkCommandBufferBeginInfo beginInfo = create_info::commabdBufferBeginInfo();
 
-    vkBeginCommandBuffer(m_commandBuffer->transferBuffer, &beginInfo);
+  vkBeginCommandBuffer(m_commandBuffer->transferBuffer, &beginInfo);
 
-    VkBufferCopy copyRegion = create_info::copyRegion(size);
-    vkCmdCopyBuffer(m_commandBuffer->transferBuffer, buffer, dstBuffer, 1,
-                    &copyRegion);
+  VkBufferCopy copyRegion = create_info::copyRegion(size);
+  vkCmdCopyBuffer(m_commandBuffer->transferBuffer, buffer, dstBuffer, 1,
+                  &copyRegion);
 
-    vkEndCommandBuffer(m_commandBuffer->transferBuffer);
+  vkEndCommandBuffer(m_commandBuffer->transferBuffer);
 
-    VkSubmitInfo submitInfo =
-        create_info::submitInfo(1, &m_commandBuffer->transferBuffer);
+  VkSubmitInfo submitInfo =
+      create_info::submitInfo(1, &m_commandBuffer->transferBuffer);
 
-    VkQueue transferQueue = m_deviceHandler->getTransferQueue();
-    vkQueueSubmit(transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(transferQueue);
+  VkQueue transferQueue = m_deviceHandler->getTransferQueue();
+  vkQueueSubmit(transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
+  vkQueueWaitIdle(transferQueue);
 
-    vkFreeCommandBuffers(m_deviceHandler->logicalDevice,
-                         m_commandBuffer->commandPool, 1,
-                         &m_commandBuffer->transferBuffer);
+  vkFreeCommandBuffers(m_deviceHandler->logicalDevice,
+                       m_commandBuffer->commandPool, 1,
+                       &m_commandBuffer->transferBuffer);
 }
 } // namespace buffer

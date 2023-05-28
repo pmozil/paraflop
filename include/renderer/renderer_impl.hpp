@@ -173,13 +173,14 @@ void Renderer<GraphicsPipeline>::m_recordCommandBuffers(uint32_t imageIndex) {
 
   vkCmdBindIndexBuffer(m_commandBuffer->commandBuffers[m_currentFrame],
                        m_indexBuffer->buffer, 0, VK_INDEX_TYPE_UINT16);
-  // std::cout << "DEBUG: " << m_vertexBuffer->size << "\n";
 
-  // vkCmdBindDescriptorSets(
-  //     m_commandBuffer->commandBuffers[m_currentFrame],
-  //     VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline->pipelineLayout,
-  //     0, 1, &m_descriptorSetHandler->descriptorSets[m_currentFrame], 0,
-  //     nullptr);
+  // std::cout << "DEBUG: " << sizeof(m_descriptorSetHandler->descriptorSet)
+  //           << "\n";
+
+  vkCmdBindDescriptorSets(m_commandBuffer->commandBuffers[m_currentFrame],
+                          VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          m_graphicsPipeline->pipelineLayout, 0, 1,
+                          &m_descriptorSetHandler->descriptorSet, 0, nullptr);
 
   vkCmdDrawIndexed(
       m_commandBuffer->commandBuffers[m_currentFrame],

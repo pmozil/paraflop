@@ -35,30 +35,31 @@ void CommandBufferHandler::createCommandBuffers() {
     VK_CHECK(vkAllocateCommandBuffers(m_devicehandler->logicalDevice,
                                       &allocInfo, commandBuffers.data()))
 
-    for (size_t i = 0; i < commandBuffers.size(); i++) {
-        VkCommandBufferBeginInfo beginInfo =
-            create_info::commabdBufferBeginInfo();
+    // VkClearValue clearColor = {0.0F, 0.0F, 0.0F, 1.0F};
 
-        VK_CHECK(vkBeginCommandBuffer(commandBuffers[i], &beginInfo));
 
-        VkClearValue clearColor = {0.0F, 0.0F, 0.0F, 1.0F};
+    // for (size_t i = 0; i < commandBuffers.size(); i++) {
+    //     VkCommandBufferBeginInfo beginInfo =
+    //         create_info::commabdBufferBeginInfo();
 
-        VkRenderPassBeginInfo renderPassInfo = create_info::renderPassBeginInfo(
-            m_swapChain->getRenderPass(), m_swapChain->swapChainFramebuffers[i],
-            m_swapChain->swapChainExtent, &clearColor);
+    //     VK_CHECK(vkBeginCommandBuffer(commandBuffers[i], &beginInfo));
 
-        vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo,
-                             VK_SUBPASS_CONTENTS_INLINE);
+    //     VkRenderPassBeginInfo renderPassInfo = create_info::renderPassBeginInfo(
+    //         m_swapChain->getRenderPass(), m_swapChain->swapChainFramebuffers[i],
+    //         m_swapChain->swapChainExtent, &clearColor);
 
-        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          m_graphicsPipeline->graphicsPipeline);
+    //     vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo,
+    //                          VK_SUBPASS_CONTENTS_INLINE);
 
-        vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+    //     vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
+    //                       m_graphicsPipeline->graphicsPipeline);
 
-        vkCmdEndRenderPass(commandBuffers[i]);
+    //     vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
 
-        VK_CHECK(vkEndCommandBuffer(commandBuffers[i]));
-    }
+    //     vkCmdEndRenderPass(commandBuffers[i]);
+
+    //     VK_CHECK(vkEndCommandBuffer(commandBuffers[i]));
+    // }
 
     VkCommandBufferAllocateInfo transferAllocInfo =
         create_info::commandBuffferAllocInfo(commandPool, 1);

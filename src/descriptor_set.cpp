@@ -8,71 +8,68 @@ DescriptorSetLayout::DescriptorSetLayout(
     std::shared_ptr<device::DeviceHandler> m_deviceHandler,
     VkDescriptorSetLayoutBinding *bindings, uint32_t bind_count)
     : m_deviceHandler(std::move(m_deviceHandler)) {
-  m_createLayout(bindings, bind_count);
+    m_createLayout(bindings, bind_count);
 }
 
 void DescriptorSetLayout::m_createLayout(VkDescriptorSetLayoutBinding *bindings,
                                          uint32_t bind_count) {
-  VkDescriptorSetLayoutCreateInfo createInfo =
-      create_info::descriptorSetLayoutInfo(bindings, bind_count);
+    VkDescriptorSetLayoutCreateInfo createInfo =
+        create_info::descriptorSetLayoutInfo(bindings, bind_count);
 
-  VK_CHECK(vkCreateDescriptorSetLayout(m_deviceHandler->logicalDevice,
-                                       &createInfo, nullptr, &layout));
+    VK_CHECK(vkCreateDescriptorSetLayout(m_deviceHandler->logicalDevice,
+                                         &createInfo, nullptr, &layout));
 }
 
 void DescriptorSetLayout::cleanup() {
-  vkDestroyDescriptorSetLayout(m_deviceHandler->logicalDevice, layout, nullptr);
+    vkDestroyDescriptorSetLayout(m_deviceHandler->logicalDevice, layout,
+                                 nullptr);
 }
 
 DescriptorSetHandler::DescriptorSetHandler(
     std::shared_ptr<device::DeviceHandler> m_deviceHandler,
     std::shared_ptr<DescriptorSetLayout> m_layout,
-    std::vector<buffer::Buffer> &buffers)
+    std::shared_ptr<buffer::Buffer> buffer)
     : m_deviceHandler(std::move(m_deviceHandler)),
-      m_layout(std::move(m_layout)), m_buffers(buffers) {
-  m_createDescriptorPool();
-  m_createDescriptorSets();
+      m_layout(std::move(m_layout)), m_buffer(std::move(buffer)) {
+    m_createDescriptorPool();
+    m_createDescriptorSets();
 }
 
 void DescriptorSetHandler::m_createDescriptorPool() {
-  VkDescriptorPoolSize poolSize{};
-  poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    VkDescriptorPoolSize poolSize{};
+    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
-  VkDescriptorPoolCreateInfo poolInfo{};
-  poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-  poolInfo.poolSizeCount = 1;
-  poolInfo.pPoolSizes = &poolSize;
-  poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
-  VK_CHECK(vkCreateDescriptorPool(m_deviceHandler->logicalDevice, &poolInfo,
-                                  nullptr, &descriptorPool));
+    VK_CHECK(vkCreateDescriptorPool(m_deviceHandler->logicalDevice, &poolInfo,
+                                    nullptr, &descriptorPool));
 }
 
 void DescriptorSetHandler::m_createDescriptorSets() {
-  std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT,
-                                             m_layout->layout);
-  VkDescriptorSetAllocateInfo allocInfo{};
-  allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-  allocInfo.descriptorPool = descriptorPool;
-  allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-  allocInfo.pSetLayouts = layouts.data();
+    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT,
+                                               m_layout->layout);
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = descriptorPool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = layouts.data();
 
-  descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-  if (vkAllocateDescriptorSets(m_deviceHandler->logicalDevice, &allocInfo,
-                               descriptorSets.data()) != VK_SUCCESS) {
-    throw std::runtime_error("failed to allocate descriptor sets!");
-  }
+    VK_CHECK(vkAllocateDescriptorSets(m_deviceHandler->logicalDevice,
+                                      &allocInfo, &descriptorSet));
 
-  for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
     VkDescriptorBufferInfo bufferInfo{};
-    bufferInfo.buffer = m_buffers[i].buffer;
+    bufferInfo.buffer = m_buffer->buffer;
     bufferInfo.offset = 0;
     bufferInfo.range = sizeof(UniformBufferObject);
 
     VkWriteDescriptorSet descriptorWrite{};
     descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrite.dstSet = descriptorSets[i];
+    descriptorWrite.dstSet = descriptorSet;
     descriptorWrite.dstBinding = 0;
     descriptorWrite.dstArrayElement = 0;
     descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -81,11 +78,10 @@ void DescriptorSetHandler::m_createDescriptorSets() {
 
     vkUpdateDescriptorSets(m_deviceHandler->logicalDevice, 1, &descriptorWrite,
                            0, nullptr);
-  }
 }
 
 void DescriptorSetHandler::cleanup() {
-  vkDestroyDescriptorPool(m_deviceHandler->logicalDevice, descriptorPool,
-                          nullptr);
+    vkDestroyDescriptorPool(m_deviceHandler->logicalDevice, descriptorPool,
+                            nullptr);
 }
 } // namespace descriptor_set

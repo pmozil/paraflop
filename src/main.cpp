@@ -60,13 +60,16 @@ int main() {
                                 sizeof(UniformBufferObject))};
   UniformBufferObject ubo{};
   ubo.model = glm::identity<glm::mat4>();
+
   ubo.view =
-      glm::lookAt(glm::vec3(2.0F, 2.0F, 2.0F), glm::vec3(0.0F, 0.0F, 0.0F),
-                  glm::vec3(0.0F, 0.0F, 1.0F));
-  ubo.proj = glm::perspective(glm::radians(45.0F),
+      glm::lookAt(glm::vec3(0.0F, 0.0F, 1.0F), glm::vec3(0.0F, 0.0F, 0.0F),
+                  glm::vec3(0.0F, 1.0F, 0.0F));
+
+  ubo.proj = glm::perspective(glm::radians(90.0F),
                               swapChain->swapChainExtent.width /
                                   (float)swapChain->swapChainExtent.height,
                               0.1f, 10.0F);
+
   uniformBuffer->fastCopy((void *)&ubo, sizeof(ubo));
 
   static auto startTime = std::chrono::system_clock::now();
@@ -101,13 +104,7 @@ int main() {
 
     ubo.model = glm::rotate(glm::mat4(1.0F), time * glm::radians(90.0F),
                             glm::vec3(0.0F, 0.0F, 1.0F));
-    ubo.view =
-        glm::lookAt(glm::vec3(2.0F, 2.0F, 2.0F), glm::vec3(0.0F, 0.0F, 0.0F),
-                    glm::vec3(0.0F, 0.0F, 1.0F));
-    ubo.proj = glm::perspective(glm::radians(45.0F),
-                                swapChain->swapChainExtent.width /
-                                    (float)swapChain->swapChainExtent.height,
-                                0.1f, 10.0F);
+
     uniformBuffer->fastCopy((void *)&ubo, sizeof(ubo));
 
     renderer.drawFrame();

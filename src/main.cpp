@@ -17,9 +17,6 @@
 #include "vulkan_utils/vk_instance.hpp"
 #include "vulkan_utils/window.hpp"
 #include <chrono>
-#include <iostream>
-#include <mutex>
-#include <thread>
 
 const std::vector<Vertex> vertices = {
     {{-0.5F, -0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}},
@@ -28,40 +25,6 @@ const std::vector<Vertex> vertices = {
     {{-0.5F, 0.5F, 0.0F}, {1.0F, 1.0F, 1.0F}}};
 
 const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
-
-std::mutex useBuffer;
-
-void updateUniforms(std::weak_ptr<buffer::UniformBuffer> buf,
-                    std::weak_ptr<bool> shouldUpdate) {
-  UniformBufferObject ubo{};
-  ubo.model = glm::identity<glm::mat4>();
-  ubo.view = glm::identity<glm::mat4>();
-  ubo.proj = glm::identity<glm::mat4>();
-  static auto startTime = std::chrono::system_clock::now();
-
-  useBuffer.lock();
-  bool carryOn = *shouldUpdate.lock();
-  std::shared_ptr<buffer::UniformBuffer> uniformBuffer = buf.lock();
-  useBuffer.unlock();
-  while (carryOn) {
-
-    auto currentTime = std::chrono::system_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(
-                     currentTime - startTime)
-                     .count();
-
-    useBuffer.lock();
-    carryOn = *shouldUpdate.lock();
-    uniformBuffer = buf.lock();
-    ubo.model = glm::rotate(glm::mat4(1.0F), time * glm::radians(90.0F),
-                            glm::vec3(0.0F, 0.0F, 1.0F));
-    ubo.proj[1][1] *= -1;
-    uniformBuffer->copy((void *)&ubo, sizeof(ubo));
-    useBuffer.unlock();
-
-    std::cout << "DEBUG: " << (float)time << "\n";
-  }
-}
 
 int main() {
   std::vector<const char *> validation = {"VK_LAYER_KHRONOS_validation"};
@@ -97,12 +60,18 @@ int main() {
                                 sizeof(UniformBufferObject))};
   UniformBufferObject ubo{};
   ubo.model = glm::identity<glm::mat4>();
-  ubo.view = glm::identity<glm::mat4>();
-  ubo.proj = glm::identity<glm::mat4>();
-  uniformBuffer->copy((void *)&ubo, sizeof(ubo));
+  ubo.view =
+      glm::lookAt(glm::vec3(2.0F, 2.0F, 2.0F), glm::vec3(0.0F, 0.0F, 0.0F),
+                  glm::vec3(0.0F, 0.0F, 1.0F));
+  ubo.proj = glm::perspective(glm::radians(45.0F),
+                              swapChain->swapChainExtent.width /
+                                  (float)swapChain->swapChainExtent.height,
+                              0.1f, 10.0F);
+  uniformBuffer->fastCopy((void *)&ubo, sizeof(ubo));
+
+  static auto startTime = std::chrono::system_clock::now();
 
   std::vector<buffer::UniformBuffer> buffs = {};
-  std::shared_ptr<bool> carryOn{new bool(true)};
 
   std::shared_ptr<descriptor_set::DescriptorSetHandler> descriptorSets{
       new descriptor_set::DescriptorSetHandler(deviceHandler, layout,
@@ -123,18 +92,26 @@ int main() {
                          deviceHandler, swapChain, commandBuffer, pipeline,
                          descriptorSets, vertexBuffer, indexBuffer);
 
-  std::thread bufUpdateThread(updateUniforms, uniformBuffer, carryOn);
-
   while (!static_cast<bool>(glfwWindowShouldClose(window))) {
     glfwPollEvents();
-    useBuffer.lock();
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(
+                     currentTime - startTime)
+                     .count();
+
+    ubo.model = glm::rotate(glm::mat4(1.0F), time * glm::radians(90.0F),
+                            glm::vec3(0.0F, 0.0F, 1.0F));
+    ubo.view =
+        glm::lookAt(glm::vec3(2.0F, 2.0F, 2.0F), glm::vec3(0.0F, 0.0F, 0.0F),
+                    glm::vec3(0.0F, 0.0F, 1.0F));
+    ubo.proj = glm::perspective(glm::radians(45.0F),
+                                swapChain->swapChainExtent.width /
+                                    (float)swapChain->swapChainExtent.height,
+                                0.1f, 10.0F);
+    uniformBuffer->fastCopy((void *)&ubo, sizeof(ubo));
+
     renderer.drawFrame();
-    useBuffer.unlock();
   }
-
-  *carryOn = false;
-
-  bufUpdateThread.join();
 
   glfwDestroyWindow(window);
   glfwTerminate();

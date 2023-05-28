@@ -16,7 +16,10 @@
 #include "vulkan_utils/vertex_buffer.hpp"
 #include "vulkan_utils/vk_instance.hpp"
 #include "vulkan_utils/window.hpp"
+#include <chrono>
 #include <iostream>
+#include <mutex>
+#include <thread>
 
 const std::vector<Vertex> vertices = {
     {{-0.5F, -0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}},
@@ -26,84 +29,115 @@ const std::vector<Vertex> vertices = {
 
 const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
 
-int main() {
-    std::vector<const char *> validation = {"VK_LAYER_KHRONOS_validation"};
+std::mutex useBuffer;
 
-    std::vector<const char *> devExt = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-    GLFWwindow *window = window::initWindow(nullptr, nullptr);
-    std::unique_ptr<vk_instance::Instance> instance{
-        new vk_instance::Instance()};
-    debug::createDebugMessenger(instance->instance);
-    std::unique_ptr<surface::Surface> surface{
-        new surface::Surface(instance->instance, window, nullptr)};
-    std::shared_ptr<device::DeviceHandler> deviceHandler{
-        new device::DeviceHandler(devExt, validation, instance->instance,
-                                  surface->surface)};
-    std::shared_ptr<swap_chain::SwapChain> swapChain{
-        new swap_chain::SwapChain(window, surface->surface, deviceHandler)};
+void updateUniforms(std::weak_ptr<buffer::UniformBuffer> buf,
+                    std::weak_ptr<bool> shouldUpdate) {
+  UniformBufferObject ubo{};
+  ubo.model = glm::identity<glm::mat4>();
+  ubo.view = glm::identity<glm::mat4>();
+  ubo.proj = glm::identity<glm::mat4>();
+  static auto startTime = std::chrono::system_clock::now();
 
-    VkDescriptorSetLayoutBinding uboBinding =
-        create_info::descriptorSetLayoutBinding(
-            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0,
-            1);
+  useBuffer.lock();
+  bool carryOn = *shouldUpdate.lock();
+  std::shared_ptr<buffer::UniformBuffer> uniformBuffer = buf.lock();
+  useBuffer.unlock();
+  while (carryOn) {
 
-    std::shared_ptr<descriptor_set::DescriptorSetLayout> layout{
-        new descriptor_set::DescriptorSetLayout(deviceHandler, &uboBinding, 1)};
+    auto currentTime = std::chrono::system_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(
+                     currentTime - startTime)
+                     .count();
 
-    std::shared_ptr<graphics_pipeline::CustomRasterPipeline> pipeline{
-        new graphics_pipeline::CustomRasterPipeline(swapChain, deviceHandler,
-                                                    &layout->layout)};
-    std::shared_ptr<command_buffer::CommandBufferHandler> commandBuffer{
-        new command_buffer::CommandBufferHandler(deviceHandler, swapChain,
-                                                 pipeline)};
-
-    std::shared_ptr<buffer::UniformBuffer> uniformBuffer{
-        new buffer::UniformBuffer(deviceHandler, commandBuffer,
-                                  sizeof(UniformBufferObject))};
-    uniformBuffer->map();
-
-    UniformBufferObject ubo{};
-    ubo.model = glm::rotate(glm::mat4(1.0F), glm::radians(90.0F),
+    useBuffer.lock();
+    carryOn = *shouldUpdate.lock();
+    uniformBuffer = buf.lock();
+    ubo.model = glm::rotate(glm::mat4(1.0F), time * glm::radians(90.0F),
                             glm::vec3(0.0F, 0.0F, 1.0F));
-    ubo.view =
-        glm::lookAt(glm::vec3(2.0F, 2.0F, 2.0F), glm::vec3(0.0F, 0.0F, 0.0F),
-                    glm::vec3(0.0F, 0.0F, 1.0F));
-    ubo.proj = glm::perspective(glm::radians(45.0F),
-                                swapChain->swapChainExtent.width /
-                                    (float)swapChain->swapChainExtent.height,
-                                0.1f, 10.0F);
     ubo.proj[1][1] *= -1;
-
     uniformBuffer->copy((void *)&ubo, sizeof(ubo));
+    useBuffer.unlock();
 
-    std::vector<buffer::UniformBuffer> buffs = {};
+    std::cout << "DEBUG: " << (float)time << "\n";
+  }
+}
 
-    std::shared_ptr<descriptor_set::DescriptorSetHandler> descriptorSets{
-        new descriptor_set::DescriptorSetHandler(deviceHandler, layout,
-                                                 uniformBuffer)};
+int main() {
+  std::vector<const char *> validation = {"VK_LAYER_KHRONOS_validation"};
 
-    std::shared_ptr<buffer::IndexBuffer> indexBuffer{new buffer::IndexBuffer(
-        deviceHandler, commandBuffer, sizeof(indices[0]) * indices.size())};
-    indexBuffer->copy((void *)indices.data(),
-                      sizeof(indices[0]) * indices.size());
+  std::vector<const char *> devExt = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+  GLFWwindow *window = window::initWindow(nullptr, nullptr);
+  std::unique_ptr<vk_instance::Instance> instance{new vk_instance::Instance()};
+  debug::createDebugMessenger(instance->instance);
+  std::unique_ptr<surface::Surface> surface{
+      new surface::Surface(instance->instance, window, nullptr)};
+  std::shared_ptr<device::DeviceHandler> deviceHandler{
+      new device::DeviceHandler(devExt, validation, instance->instance,
+                                surface->surface)};
+  std::shared_ptr<swap_chain::SwapChain> swapChain{
+      new swap_chain::SwapChain(window, surface->surface, deviceHandler)};
 
-    std::shared_ptr<buffer::VertexBuffer> vertexBuffer{new buffer::VertexBuffer(
-        deviceHandler, commandBuffer, sizeof(vertices[0]) * vertices.size())};
-    vertexBuffer->copy((void *)vertices.data(),
-                       sizeof(vertices[0]) * vertices.size());
+  VkDescriptorSetLayoutBinding uboBinding =
+      create_info::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                              VK_SHADER_STAGE_VERTEX_BIT, 0, 1);
 
-    renderer::Renderer<graphics_pipeline::CustomRasterPipeline> renderer =
-        renderer::Renderer(window, instance->instance, surface->surface,
-                           deviceHandler, swapChain, commandBuffer, pipeline,
-                           descriptorSets, vertexBuffer, indexBuffer);
+  std::shared_ptr<descriptor_set::DescriptorSetLayout> layout{
+      new descriptor_set::DescriptorSetLayout(deviceHandler, &uboBinding, 1)};
 
-    while (!static_cast<bool>(glfwWindowShouldClose(window))) {
-        glfwPollEvents();
-        renderer.drawFrame();
-    }
+  std::shared_ptr<graphics_pipeline::CustomRasterPipeline> pipeline{
+      new graphics_pipeline::CustomRasterPipeline(swapChain, deviceHandler,
+                                                  &layout->layout)};
+  std::shared_ptr<command_buffer::CommandBufferHandler> commandBuffer{
+      new command_buffer::CommandBufferHandler(deviceHandler, swapChain,
+                                               pipeline)};
 
-    glfwDestroyWindow(window);
-    glfwTerminate();
+  std::shared_ptr<buffer::UniformBuffer> uniformBuffer{
+      new buffer::UniformBuffer(deviceHandler, commandBuffer,
+                                sizeof(UniformBufferObject))};
+  UniformBufferObject ubo{};
+  ubo.model = glm::identity<glm::mat4>();
+  ubo.view = glm::identity<glm::mat4>();
+  ubo.proj = glm::identity<glm::mat4>();
+  uniformBuffer->copy((void *)&ubo, sizeof(ubo));
 
-    return 0;
+  std::vector<buffer::UniformBuffer> buffs = {};
+  std::shared_ptr<bool> carryOn{new bool(true)};
+
+  std::shared_ptr<descriptor_set::DescriptorSetHandler> descriptorSets{
+      new descriptor_set::DescriptorSetHandler(deviceHandler, layout,
+                                               uniformBuffer)};
+
+  std::shared_ptr<buffer::IndexBuffer> indexBuffer{new buffer::IndexBuffer(
+      deviceHandler, commandBuffer, sizeof(indices[0]) * indices.size())};
+  indexBuffer->copy((void *)indices.data(),
+                    sizeof(indices[0]) * indices.size());
+
+  std::shared_ptr<buffer::VertexBuffer> vertexBuffer{new buffer::VertexBuffer(
+      deviceHandler, commandBuffer, sizeof(vertices[0]) * vertices.size())};
+  vertexBuffer->copy((void *)vertices.data(),
+                     sizeof(vertices[0]) * vertices.size());
+
+  renderer::Renderer<graphics_pipeline::CustomRasterPipeline> renderer =
+      renderer::Renderer(window, instance->instance, surface->surface,
+                         deviceHandler, swapChain, commandBuffer, pipeline,
+                         descriptorSets, vertexBuffer, indexBuffer);
+
+  std::thread bufUpdateThread(updateUniforms, uniformBuffer, carryOn);
+
+  while (!static_cast<bool>(glfwWindowShouldClose(window))) {
+    glfwPollEvents();
+    useBuffer.lock();
+    renderer.drawFrame();
+    useBuffer.unlock();
+  }
+
+  *carryOn = false;
+
+  bufUpdateThread.join();
+
+  glfwDestroyWindow(window);
+  glfwTerminate();
+
+  return 0;
 }

@@ -64,7 +64,7 @@ int main() {
     ubo.model = glm::identity<glm::mat4>();
 
     ubo.view =
-        glm::lookAt(glm::vec3(0.0F, 0.0F, 2.0F), glm::vec3(0.0F, 0.0F, 0.0F),
+        glm::lookAt(glm::vec3(1.0F, 1.0F, 2.0F), glm::vec3(0.0F, 0.0F, 0.0F),
                     glm::vec3(0.0F, 1.0F, 0.0F));
 
     ubo.proj = glm::perspective(glm::radians(45.0F),

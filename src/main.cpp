@@ -1,4 +1,5 @@
 #include "common.hpp"
+#include "geometry/camera.h"
 #include "geometry/uniform_buffer_object.hpp"
 #include "geometry/vertex.hpp"
 #include "renderer/custom_graphics_pipeline.hpp"
@@ -17,8 +18,9 @@
 #include "vulkan_utils/vk_instance.hpp"
 #include "vulkan_utils/window.hpp"
 #include <chrono>
+#include <iostream>
 
-const std::vector<Vertex> vertices = {
+const std::vector<geometry::Vertex> vertices = {
     {{-0.5F, -0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}},
     {{0.5F, -0.5F, 0.0F}, {0.0F, 1.0F, 0.0F}},
     {{0.5F, 0.5F, 0.0F}, {0.0F, 0.0F, 1.0F}},
@@ -59,18 +61,16 @@ int main() {
 
     std::shared_ptr<buffer::UniformBuffer> uniformBuffer{
         new buffer::UniformBuffer(deviceHandler, commandBuffer,
-                                  sizeof(UniformBufferObject))};
-    UniformBufferObject ubo{};
-    ubo.model = glm::identity<glm::mat4>();
+                                  sizeof(geometry::UniformBufferObject))};
 
-    ubo.view =
-        glm::lookAt(glm::vec3(1.0F, 1.0F, 2.0F), glm::vec3(0.0F, 0.0F, 0.0F),
-                    glm::vec3(0.0F, 1.0F, 0.0F));
+    auto camera = geometry::Camera{};
 
-    ubo.proj = glm::perspective(glm::radians(45.0F),
-                                swapChain->swapChainExtent.width /
-                                    (float)swapChain->swapChainExtent.height,
-                                0.1F, 10.0F);
+    camera.position = {0.0F, 0.0F, 2.0F};
+    camera.rotation = {0.0F, 0.0F, -1.0F};
+    camera.up = {0.0F, 1.0F, 0.0F};
+
+    geometry::UniformBufferObject ubo = camera.transformMatrices(
+        swapChain->swapChainExtent.width, swapChain->swapChainExtent.height);
 
     uniformBuffer->fastCopy((void *)&ubo, sizeof(ubo));
 
@@ -100,9 +100,13 @@ int main() {
     while (!static_cast<bool>(glfwWindowShouldClose(window))) {
         glfwPollEvents();
         auto currentTime = std::chrono::high_resolution_clock::now();
+
         float time = std::chrono::duration<float, std::chrono::seconds::period>(
                          currentTime - startTime)
                          .count();
+
+        ubo = camera.transformMatrices(swapChain->swapChainExtent.width,
+                                       swapChain->swapChainExtent.height);
 
         ubo.model = glm::rotate(glm::mat4(1.0F), time * glm::radians(90.0F),
                                 glm::vec3(0.0F, 0.0F, 1.0F));

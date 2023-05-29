@@ -35,7 +35,7 @@ endif()
 if(MSVC)
     add_compile_options(/W4 /Ox)
 else()
-    add_compile_options(-Wall -Wextra -Wpedantic -O3 -ffast-math -march=native -g)
+    add_compile_options(-Wall -Wextra -Wpedantic -Ofast -ffast-math -march=native -g)
 endif()
 
 file(COPY 

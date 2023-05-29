@@ -1,6 +1,7 @@
 #pragma once
 #include "common.hpp"
 
+namespace geometry {
 struct Vertex {
     glm::vec3 pos;
     glm::vec3 color;
@@ -32,3 +33,4 @@ struct Vertex {
         return attributeDescriptions;
     }
 };
+} // namespace geometry

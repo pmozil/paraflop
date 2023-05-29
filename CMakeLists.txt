@@ -44,7 +44,9 @@ file(COPY
     DESTINATION
     "${CMAKE_BINARY_DIR}")
 
-include_directories("${CMAKE_SOURCE_DIR}/include")
+include_directories("${CMAKE_SOURCE_DIR}/include"
+    "${PROJECT_SOURCE_DIR}/external/stb")
+
 file(GLOB SOURCE_FILES "${CMAKE_SOURCE_DIR}/src/*.cpp" "${CMAKE_SOURCE_DIR}/include/*")
 set(APP_SOURCE_FILES ${SOURCE_FILES} CACHE INTERNAL STRINGS)
 

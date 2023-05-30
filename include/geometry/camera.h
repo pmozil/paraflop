@@ -19,8 +19,8 @@ struct Camera {
     transformMatrices(float width, float height) const {
         UniformBufferObject ubo{};
 
-        ubo.model = glm::lookAt(position, position + rotation, up);
-        ubo.view = glm::translate(glm::mat4(1.0F), -position);
+        ubo.model = glm::identity<glm::mat4>();
+        ubo.view = glm::lookAt(position, position + rotation, up);
         ubo.proj = glm::perspective(fov, width / height, focal_len, focus);
 
         return ubo;

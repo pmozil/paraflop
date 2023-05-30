@@ -18,6 +18,7 @@
 #include "vulkan_utils/vk_instance.hpp"
 #include "vulkan_utils/window.hpp"
 #include <chrono>
+#include <cmath>
 #include <iostream>
 
 const std::vector<geometry::Vertex> vertices = {
@@ -64,10 +65,11 @@ int main() {
                                   sizeof(geometry::UniformBufferObject))};
 
     auto camera = geometry::Camera{};
+    camera.up = {0.0F, 0.0F, 1.0F};
 
-    camera.position = {0.0F, 1.0F, 1.0F};
-    camera.rotation = {0.0F, -1.0F, -1.0F};
-    camera.up = {0.0F, 1.0F, 0.0F};
+    glm::vec3 pos = {0.0F, 0.0F, 2.0F};
+    camera.position = pos;
+    camera.rotation = -pos;
 
     geometry::UniformBufferObject ubo = camera.transformMatrices(
         swapChain->swapChainExtent.width, swapChain->swapChainExtent.height);
@@ -106,11 +108,14 @@ int main() {
                          currentTime - startTime)
                          .count();
 
+        auto rotation = std::fmod((time * glm::radians(180.0F)), 180.0F);
+
+        glm::vec3 translate = {std::cos(rotation), std::sin(rotation), 0.0F};
+        camera.position = translate + pos;
+        camera.rotation = -camera.position;
+
         ubo = camera.transformMatrices(swapChain->swapChainExtent.width,
                                        swapChain->swapChainExtent.height);
-
-        ubo.model *= glm::rotate(glm::mat4(1.0F), time * glm::radians(90.0F),
-                                 glm::vec3(0.0F, 0.0F, 1.0F));
 
         uniformBuffer->fastCopy((void *)&ubo, sizeof(ubo));
 

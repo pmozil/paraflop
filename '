@@ -65,8 +65,8 @@ int main() {
 
     auto camera = geometry::Camera{};
 
-    camera.position = {0.0F, 1.0F, 1.0F};
-    camera.rotation = {0.0F, -1.0F, -1.0F};
+    camera.position = {2.0F, 1.0F, 3.0F};
+    camera.rotation = {0.0F, 1.0F, -1.0F};
     camera.up = {0.0F, 1.0F, 0.0F};
 
     geometry::UniformBufferObject ubo = camera.transformMatrices(
@@ -99,7 +99,6 @@ int main() {
 
     while (!static_cast<bool>(glfwWindowShouldClose(window))) {
         glfwPollEvents();
-
         auto currentTime = std::chrono::high_resolution_clock::now();
 
         float time = std::chrono::duration<float, std::chrono::seconds::period>(

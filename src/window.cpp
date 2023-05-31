@@ -2,7 +2,7 @@
 #include <GLFW/glfw3.h>
 
 GLFWwindow *window::initWindow(GLFWframebuffersizefun framebufferResizeCallback,
-                               void *pUserData) {
+                               GLFWkeyfun keyCallback, void *pUserData) {
     glfwInit();
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -14,6 +14,9 @@ GLFWwindow *window::initWindow(GLFWframebuffersizefun framebufferResizeCallback,
     }
     if (framebufferResizeCallback != nullptr) {
         glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+    }
+    if (keyCallback != nullptr) {
+        glfwSetKeyCallback(window, keyCallback);
     }
     return window;
 }

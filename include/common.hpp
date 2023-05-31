@@ -10,6 +10,8 @@
 #include <glm/gtx/hash.hpp>
 
 #include <algorithm>
+#include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -20,8 +22,8 @@
 #include <optional>
 #include <set>
 #include <stdexcept>
+#include <thread>
 #include <type_traits>
-#include <vector>
 
 const int WIDTH = 800;
 const int HEIGHT = 600;
@@ -46,34 +48,34 @@ const bool enableValidationLayers = false;
 #endif
 
 struct QueueFamilyIndices {
-  std::optional<uint32_t> graphicsFamily;
-  std::optional<uint32_t> presentFamily;
-  std::optional<uint32_t> computeFamily;
-  std::optional<uint32_t> transferFamily;
+    std::optional<uint32_t> graphicsFamily;
+    std::optional<uint32_t> presentFamily;
+    std::optional<uint32_t> computeFamily;
+    std::optional<uint32_t> transferFamily;
 
-  [[nodiscard]] inline bool isComplete() const {
-    return graphicsFamily.has_value() && presentFamily.has_value();
-  }
+    [[nodiscard]] inline bool isComplete() const {
+        return graphicsFamily.has_value() && presentFamily.has_value();
+    }
 
-  [[nodiscard]] inline bool hasDedicatedTransfer() const {
-    return transferFamily.has_value();
-  }
+    [[nodiscard]] inline bool hasDedicatedTransfer() const {
+        return transferFamily.has_value();
+    }
 };
 
 struct SwapChainSupportDetails {
-  VkSurfaceCapabilitiesKHR capabilities;
-  std::vector<VkSurfaceFormatKHR> formats;
-  std::vector<VkPresentModeKHR> presentModes;
+    VkSurfaceCapabilitiesKHR capabilities;
+    std::vector<VkSurfaceFormatKHR> formats;
+    std::vector<VkPresentModeKHR> presentModes;
 };
 
 #define VK_CHECK(f)                                                            \
-  {                                                                            \
-    VkResult res = (f);                                                        \
-    if (res != VK_SUCCESS) {                                                   \
-      std::cout << "Fatal : VkResult is \"" << res << "\" in " << __FILE__     \
-                << " at line " << __LINE__ << "\n";                            \
-      assert(res == VK_SUCCESS);                                               \
-    }                                                                          \
-  }
+    {                                                                          \
+        VkResult res = (f);                                                    \
+        if (res != VK_SUCCESS) {                                               \
+            std::cout << "Fatal : VkResult is \"" << res << "\" in "           \
+                      << __FILE__ << " at line " << __LINE__ << "\n";          \
+            assert(res == VK_SUCCESS);                                         \
+        }                                                                      \
+    }
 
 static const size_t GLM_16_BYTE_ALIGN = 16;

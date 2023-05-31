@@ -17,9 +17,6 @@
 #include "vulkan_utils/vertex_buffer.hpp"
 #include "vulkan_utils/vk_instance.hpp"
 #include "vulkan_utils/window.hpp"
-#include <chrono>
-#include <cmath>
-#include <iostream>
 
 struct CameraState {
     std::shared_ptr<geometry::Camera> camera;
@@ -41,33 +38,23 @@ void handleKeyPress(GLFWwindow *window, int key, int sancode, int action,
                     int mods) {
     auto *cam = (CameraState *)glfwGetWindowUserPointer(window);
     if (key == GLFW_KEY_W) {
-        cam->camera->position +=
-            cam->camera->rotation * cam->timePassed * cam->camera->focus;
+        cam->camera->moveForward(cam->timePassed);
     }
     if (key == GLFW_KEY_S) {
-        cam->camera->position -=
-            cam->camera->rotation * cam->timePassed * cam->camera->focus;
+        cam->camera->moveForward(-cam->timePassed);
     }
     if (key == GLFW_KEY_A) {
-        cam->camera->position +=
-            glm::cross(cam->camera->up, cam->camera->rotation) *
-            cam->timePassed * cam->camera->focus;
+        cam->camera->moveLeft(cam->timePassed);
     }
     if (key == GLFW_KEY_D) {
-        cam->camera->position -=
-            glm::cross(cam->camera->up, cam->camera->rotation) *
-            cam->timePassed * cam->camera->focus;
+        cam->camera->moveLeft(-cam->timePassed);
     }
     if (key == GLFW_KEY_Q) {
-        cam->camera->position -=
-            glm::vec3(cam->camera->focus) * cam->camera->up * cam->timePassed;
+        cam->camera->moveUp(cam->timePassed);
     }
     if (key == GLFW_KEY_E) {
-        cam->camera->position +=
-            glm::vec3(cam->camera->focus) * cam->camera->up * cam->timePassed;
+        cam->camera->moveUp(-cam->timePassed);
     }
-    std::cout << cam->camera->position.x << " " << cam->camera->position.y
-              << " " << cam->camera->position.z << "\n";
 }
 
 int main() {
@@ -116,9 +103,10 @@ int main() {
     cam->camera = camera;
 
     glm::vec3 pos = {0.0F, 0.0F, 1.0F};
+
     camera->position = pos;
-    camera->rotation = glm::normalize(-pos);
-    camera->up = {0.0F, 1.0F, 0.0F};
+
+    camera->calcRotation(geometry::HALF_ROTATION, 45.0F);
 
     geometry::UniformBufferObject ubo = camera->transformMatrices(
         swapChain->swapChainExtent.width, swapChain->swapChainExtent.height);
@@ -156,27 +144,27 @@ int main() {
         glfwPollEvents();
 
         auto currentTime = std::chrono::high_resolution_clock::now();
+
+        float time = std::chrono::duration<float, std::chrono::seconds::period>(
+                         currentTime - startTime)
+                         .count();
+
         cam->timePassed =
             std::chrono::duration<float, std::chrono::seconds::period>(
                 currentTime - prevTime)
                 .count();
-
-        // float time = std::chrono::duration<float,
-        // std::chrono::seconds::period>(
-        //                  currentTime - startTime)
-        //                  .count();
+        prevTime = currentTime;
 
         ubo = camera->transformMatrices(swapChain->swapChainExtent.width,
                                         swapChain->swapChainExtent.height);
-        // ubo.model *=
-        //     glm::rotate(glm::mat4(1.0F), 3 * time * glm::radians(90.0F),
-        //                 glm::vec3(0.0F, 0.0F, 1.0F));
+
+        ubo.model *= glm::rotate(glm::mat4(1.0F),
+                                 time * glm::radians(geometry::HALF_ROTATION),
+                                 glm::vec3(0.0F, 0.0F, 1.0F));
 
         uniformBuffer->fastCopy((void *)&ubo, sizeof(ubo));
 
         renderer.drawFrame();
-
-        prevTime = currentTime;
     }
 
     glfwDestroyWindow(window);

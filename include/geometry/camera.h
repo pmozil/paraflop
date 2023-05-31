@@ -43,7 +43,7 @@ struct Camera {
     }
 
     inline void moveUp(float timePassed) {
-        position -= glm::vec3({0.0, 1.0, 0.0}) * timePassed;
+        position -= glm::vec3(focus) * up * timePassed;
     }
 
     inline void calcTurn(float dVert, float dHoriz) {

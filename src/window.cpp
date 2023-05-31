@@ -4,6 +4,7 @@
 GLFWwindow *window::initWindow(GLFWframebuffersizefun framebufferResizeCallback,
                                GLFWkeyfun keyCallback,
                                GLFWcursorposfun cursorCallback,
+                               GLFWwindowfocusfun focusCallback,
                                void *pUserData) {
     glfwInit();
 
@@ -23,5 +24,9 @@ GLFWwindow *window::initWindow(GLFWframebuffersizefun framebufferResizeCallback,
     if (cursorCallback != nullptr) {
         glfwSetCursorPosCallback(window, cursorCallback);
     }
+    if (focusCallback != nullptr) {
+        glfwSetWindowFocusCallback(window, focusCallback);
+    }
+
     return window;
 }

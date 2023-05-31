@@ -58,6 +58,23 @@ void handleKeyPress(GLFWwindow *window, int key, int sancode, int action,
     }
 }
 
+void handleFocus(GLFWwindow *window, int focused) {
+    double xpos;
+    double ypos;
+    int width;
+    int height;
+
+    glfwGetWindowSize(window, &width, &height);
+    glfwGetCursorPos(window, &xpos, &ypos);
+
+    auto *cam = (AppState *)glfwGetWindowUserPointer(window);
+
+    if (static_cast<bool>(focused)) {
+        cam->mouseX = xpos / width;
+        cam->mouseY = ypos / height;
+    }
+}
+
 void handleCursor(GLFWwindow *window, double xpos, double ypos) {
     int width;
     int height;
@@ -77,9 +94,10 @@ void handleCursor(GLFWwindow *window, double xpos, double ypos) {
         cam->camera->calcTurn(diffX * cam->camera->focus * cam->camera->focus,
                               diffY * cam->camera->focus * cam->camera->focus);
     }
-    std::cout << xpos / width << " " << ypos / height << "\n";
     cam->mouseX = relX;
     cam->mouseY = relY;
+
+    glfwSetCursorPos(window, width / 2, height / 2);
 }
 
 int main() {
@@ -88,8 +106,8 @@ int main() {
     auto *cam = new AppState(nullptr);
 
     std::vector<const char *> devExt = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-    GLFWwindow *window =
-        window::initWindow(nullptr, handleKeyPress, handleCursor, cam);
+    GLFWwindow *window = window::initWindow(nullptr, handleKeyPress,
+                                            handleCursor, handleFocus, cam);
     std::unique_ptr<vk_instance::Instance> instance =
         std::make_unique<vk_instance::Instance>();
     debug::createDebugMessenger(instance->instance);

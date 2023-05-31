@@ -3,5 +3,6 @@
 
 namespace window {
 GLFWwindow *initWindow(GLFWframebuffersizefun framebufferResizeCallback,
-                       GLFWkeyfun keyCallback, void *pUserData);
+                       GLFWkeyfun keyCallback, GLFWcursorposfun cursorCallback,
+                       void *pUserData);
 } // namespace window

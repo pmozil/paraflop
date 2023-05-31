@@ -43,7 +43,7 @@ struct Camera {
     }
 
     inline void moveUp(float timePassed) {
-        position -= glm::vec3(focus) * up * timePassed;
+        position -= glm::vec3({0.0, 1.0, 0.0}) * timePassed;
     }
 
     inline void calcTurn(float dVert, float dHoriz) {
@@ -55,8 +55,8 @@ struct Camera {
         float hCos = std::cos(rotationHoriz * INTO_RADIANS);
         float hSin = std::sin(rotationHoriz * INTO_RADIANS);
 
-        rotation = -glm::normalize(glm::vec3({vCos * hSin, vSin * hSin, hCos}));
-        up = glm::normalize(glm::vec3({vCos * hSin, vSin, vSin * hSin}));
+        rotation = glm::normalize(glm::vec3({vSin * hCos, hSin, vCos * hCos}));
+        up = glm::normalize(glm::vec3({hSin * vSin, vCos, -hCos * vSin}));
     }
 
     inline void calcRotation(float dVert, float dHoriz) {
@@ -68,8 +68,9 @@ struct Camera {
         float hCos = std::cos(rotationHoriz * INTO_RADIANS);
         float hSin = std::sin(rotationHoriz * INTO_RADIANS);
 
-        rotation = -glm::normalize(glm::vec3({vCos * hSin, vSin * hSin, hCos}));
-        up = glm::normalize(glm::vec3({vCos * hSin, vSin, vSin * hSin}));
+        // y z x
+        rotation = glm::normalize(glm::vec3({vSin * hCos, hSin, vCos * hCos}));
+        up = glm::normalize(glm::vec3({hSin * vSin, vCos, -hCos * vSin}));
     }
 };
 } // namespace geometry

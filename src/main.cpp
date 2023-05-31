@@ -18,12 +18,13 @@
 #include "vulkan_utils/vk_instance.hpp"
 #include "vulkan_utils/window.hpp"
 
-struct CameraState {
+struct AppState {
     std::shared_ptr<geometry::Camera> camera;
     float timePassed = 0.0F;
+    float mouseX = 0.0F;
+    float mouseY = 0.0F;
 
-    CameraState(std::shared_ptr<geometry::Camera> cam)
-        : camera(std::move(cam)) {}
+    AppState(std::shared_ptr<geometry::Camera> cam) : camera(std::move(cam)) {}
 };
 
 const std::vector<geometry::Vertex> vertices = {
@@ -36,7 +37,7 @@ const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
 
 void handleKeyPress(GLFWwindow *window, int key, int sancode, int action,
                     int mods) {
-    auto *cam = (CameraState *)glfwGetWindowUserPointer(window);
+    auto *cam = (AppState *)glfwGetWindowUserPointer(window);
     if (key == GLFW_KEY_W) {
         cam->camera->moveForward(cam->timePassed);
     }
@@ -57,13 +58,38 @@ void handleKeyPress(GLFWwindow *window, int key, int sancode, int action,
     }
 }
 
+void handleCursor(GLFWwindow *window, double xpos, double ypos) {
+    int width;
+    int height;
+
+    glfwGetWindowSize(window, &width, &height);
+
+    auto *cam = (AppState *)glfwGetWindowUserPointer(window);
+
+    float relX = xpos / width;
+    float relY = ypos / height;
+
+    float diffX = cam->mouseX - relX;
+    float diffY = relY - cam->mouseY;
+
+    if ((cam->mouseX != 0.0 || cam->mouseY != 0.0) &&
+        (diffX * diffX + diffY * diffY < 1)) {
+        cam->camera->calcTurn(diffX * cam->camera->focus * cam->camera->focus,
+                              diffY * cam->camera->focus * cam->camera->focus);
+    }
+    std::cout << xpos / width << " " << ypos / height << "\n";
+    cam->mouseX = relX;
+    cam->mouseY = relY;
+}
+
 int main() {
     std::vector<const char *> validation = {"VK_LAYER_KHRONOS_validation"};
 
-    auto *cam = new CameraState(nullptr);
+    auto *cam = new AppState(nullptr);
 
     std::vector<const char *> devExt = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-    GLFWwindow *window = window::initWindow(nullptr, handleKeyPress, cam);
+    GLFWwindow *window =
+        window::initWindow(nullptr, handleKeyPress, handleCursor, cam);
     std::unique_ptr<vk_instance::Instance> instance =
         std::make_unique<vk_instance::Instance>();
     debug::createDebugMessenger(instance->instance);
@@ -106,7 +132,7 @@ int main() {
 
     camera->position = pos;
 
-    camera->calcRotation(geometry::HALF_ROTATION, 45.0F);
+    camera->calcRotation(geometry::HALF_ROTATION, 0.0F);
 
     geometry::UniformBufferObject ubo = camera->transformMatrices(
         swapChain->swapChainExtent.width, swapChain->swapChainExtent.height);

@@ -220,7 +220,7 @@ DeviceHandler::createCommandPool(uint32_t queueFamilyIndex,
 DeviceHandler::createCommandBuffer(VkCommandBufferLevel level,
                                    VkCommandPool pool, bool begin) const {
     VkCommandBufferAllocateInfo allocInfo =
-        create_info::commandBuffferAllocInfo(pool, 1);
+        create_info::commandBufferAllocInfo(pool, 1);
     allocInfo.level = level;
 
     VkCommandBuffer cmdBuffer;

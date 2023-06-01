@@ -25,20 +25,26 @@
 #include <thread>
 #include <type_traits>
 
+// Window dimensions
 const int WIDTH = 800;
 const int HEIGHT = 600;
 
+// Maximum number of frames in flight
 const int MAX_FRAMES_IN_FLIGHT = 3;
 
+// Validation layers
 const std::vector<const char *> VALIDATION_LAYERS = {
     "VK_LAYER_KHRONOS_validation"};
 
+// Device extensions required for swap chain
 const std::vector<const char *> DEVICE_EXTENSIONS = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
+// Vulkan API version and global version
 #define PARAFLOP_VK_API_VERSION VK_API_VERSION_1_3
 #define GLOBAL_VERSION VK_MAKE_VERSION(1, 0, 0)
 
+// Enable or disable validation layers based on build mode
 #define NDEBUG
 
 #ifdef NDEBUG
@@ -47,27 +53,32 @@ const bool enableValidationLayers = true;
 const bool enableValidationLayers = false;
 #endif
 
+// Data structure to store queue family indices
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily;
     std::optional<uint32_t> computeFamily;
     std::optional<uint32_t> transferFamily;
 
+    // Check if all required queue families are present
     [[nodiscard]] inline bool isComplete() const {
         return graphicsFamily.has_value() && presentFamily.has_value();
     }
 
+    // Check if a dedicated transfer queue family is available
     [[nodiscard]] inline bool hasDedicatedTransfer() const {
         return transferFamily.has_value();
     }
 };
 
+// Structure to store swap chain support details
 struct SwapChainSupportDetails {
     VkSurfaceCapabilitiesKHR capabilities;
     std::vector<VkSurfaceFormatKHR> formats;
     std::vector<VkPresentModeKHR> presentModes;
 };
 
+// Macro for checking Vulkan function calls for errors
 #define VK_CHECK(f)                                                            \
     {                                                                          \
         VkResult res = (f);                                                    \
@@ -78,5 +89,8 @@ struct SwapChainSupportDetails {
         }                                                                      \
     }
 
+// Alignment requirement for GLM types in bytes
 static const size_t GLM_16_BYTE_ALIGN = 16;
+
+// Up vector in the world coordinate system
 static const glm::vec3 WORLD_UP = glm::vec3({0.0F, 1.0F, 0.0F});

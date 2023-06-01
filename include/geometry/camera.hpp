@@ -39,7 +39,7 @@ struct Camera {
      * \param width - the screen width
      * \param height - the screen height
      *
-     * \returns The transform matrices for current camera position
+     * \return The transform matrices for current camera position
      */
     [[nodiscard]] TransformMatrices transformMatrices(float width,
                                                       float height) const;

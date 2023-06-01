@@ -1,4 +1,3 @@
-#pragma once
 #include "geometry/camera.hpp"
 
 namespace geometry {
@@ -24,8 +23,8 @@ void Camera::moveLeft(float timePassed) {
 void Camera::moveUp(float timePassed) { position += up * timePassed * focus; }
 
 void Camera::calcTurn(float dVert, float dHoriz) {
-    calcRotation(std::fmod(rotationVert + dVert, FULL_ROTATION),
-                 std::fmod(rotationHoriz + dHoriz, HALF_ROTATION));
+    calcRotation(rotationVert + ROTATION_SENSITIVITY * dVert,
+                 rotationHoriz + ROTATION_SENSITIVITY * dHoriz);
 }
 
 void Camera::calcRotation(float dVert, float dHoriz) {
@@ -48,7 +47,9 @@ void Camera::calcRotation(float dVert, float dHoriz) {
      * it's (y, z, x) instead of  (x, y, z)
      *
      */
-    direction = glm::normalize(glm::vec3({vSin * hCos, hSin, vCos * hCos}));
-    up = glm::normalize(glm::cross(glm::cross(WORLD_UP, direction), direction));
+    direction = {-vSin * hCos, -hSin, vCos * hCos};
+    direction = glm::normalize(direction);
+    up = {hSin * vSin, hCos, hSin * vCos};
+    up = glm::normalize(-up);
 }
 } // namespace geometry

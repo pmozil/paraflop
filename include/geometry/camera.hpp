@@ -9,6 +9,8 @@ static const float FULL_ROTATION = 360.0F;
 static const float PI = 3.141592654;
 static constexpr float INTO_RADIANS = 3.141592654 / 180.0F;
 
+static const float ROTATION_SENSITIVITY = 2.0F;
+
 /* Default camera properties */
 static const float DEFAULT_FOCAL_LEN = 0.1F;
 static const float DEFAULT_FOCUS = 10.0F;

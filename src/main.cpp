@@ -20,12 +20,17 @@
 #include "vulkan_utils/window.hpp"
 
 const std::vector<geometry::Vertex> vertices = {
-    {{-0.5F, -0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}},
-    {{0.5F, -0.5F, 0.0F}, {0.0F, 1.0F, 0.0F}},
-    {{0.5F, 0.5F, 0.0F}, {0.0F, 0.0F, 1.0F}},
-    {{-0.5F, 0.5F, 0.0F}, {1.0F, 1.0F, 1.0F}}};
+    {{-0.5F, -0.5F, 1.0F}, {1.0F, 0.0F, 0.0F}},
+    {{0.5F, -0.5F, 1.0F}, {0.0F, 1.0F, 0.0F}},
+    {{0.5F, 0.5F, 1.0F}, {0.0F, 0.0F, 1.0F}},
+    {{-0.5F, 0.5F, 1.0F}, {1.0F, 1.0F, 1.0F}},
 
-const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
+    {{-0.5F, -0.5F, -1.0F}, {1.0F, 0.0F, 0.0F}},
+    {{0.5F, -0.5F, -1.0F}, {0.0F, 1.0F, 0.0F}},
+    {{0.5F, 0.5F, -1.0F}, {0.0F, 0.0F, 1.0F}},
+    {{-0.5F, 0.5F, -1.0F}, {1.0F, 1.0F, 1.0F}}};
+
+const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4};
 
 int main() {
     std::vector<const char *> validation = {"VK_LAYER_KHRONOS_validation"};

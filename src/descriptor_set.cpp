@@ -1,7 +1,4 @@
 #include "vulkan_utils/descriptor_set.hpp"
-#include "geometry/uniform_buffer_object.hpp"
-#include "vulkan_utils/create_info.hpp"
-#include "vulkan_utils/device.hpp"
 
 namespace descriptor_set {
 DescriptorSetLayout::DescriptorSetLayout(
@@ -65,7 +62,7 @@ void DescriptorSetHandler::m_createDescriptorSets() {
     VkDescriptorBufferInfo bufferInfo{};
     bufferInfo.buffer = m_buffer->buffer;
     bufferInfo.offset = 0;
-    bufferInfo.range = sizeof(geometry::UniformBufferObject);
+    bufferInfo.range = sizeof(geometry::TransformMatrices);
 
     VkWriteDescriptorSet descriptorWrite{};
     descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

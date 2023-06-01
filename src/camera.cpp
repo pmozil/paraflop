@@ -1,13 +1,14 @@
 #include "geometry/camera.hpp"
 
 namespace geometry {
-[[nodiscard]] UniformBufferObject
-Camera::transformMatrices(float width, float height) const {
-    UniformBufferObject ubo{};
+[[nodiscard]] TransformMatrices Camera::transformMatrices(float width,
+                                                          float height) const {
+    TransformMatrices ubo{};
 
     ubo.model = glm::identity<glm::mat4>();
     ubo.view = glm::lookAt(position, position + direction, up);
-    ubo.proj = glm::perspective(fov, width / height, focal_len, focus);
+    ubo.proj =
+        glm::perspective(glm::radians(fov), width / height, 1 / focus, focus);
 
     return ubo;
 }
@@ -20,21 +21,21 @@ void Camera::moveLeft(float timePassed) {
     position += glm::cross(up, direction) * timePassed * focus;
 }
 
-void Camera::moveUp(float timePassed) { position += up * timePassed * focus; }
+void Camera::moveUp(float timePassed) { position -= up * timePassed * focus; }
 
-void Camera::calcTurn(float dVert, float dHoriz) {
-    calcRotation(rotationVert + ROTATION_SENSITIVITY * dVert,
-                 rotationHoriz + ROTATION_SENSITIVITY * dHoriz);
+void Camera::calcTurn(float dHoriz, float dVert) {
+    calcRotation(rotationVert + sensitivity * dHoriz,
+                 rotationHoriz + sensitivity * dVert);
 }
 
-void Camera::calcRotation(float dVert, float dHoriz) {
-    rotationVert = std::fmod(dVert, FULL_ROTATION);
-    rotationHoriz = std::fmod(dHoriz, HALF_ROTATION);
+void Camera::calcRotation(float dHoriz, float dVert) {
+    rotationVert = std::fmod(dHoriz, FULL_ROTATION);
+    rotationHoriz = std::fmod(dVert, HALF_ROTATION);
 
-    float vCos = std::cos(rotationVert * INTO_RADIANS);
-    float vSin = std::sin(rotationVert * INTO_RADIANS);
-    float hCos = std::cos(rotationHoriz * INTO_RADIANS);
-    float hSin = std::sin(rotationHoriz * INTO_RADIANS);
+    float vCos = std::cos(glm::radians(rotationVert));
+    float vSin = std::sin(glm::radians(rotationVert));
+    float hCos = std::cos(glm::radians(rotationHoriz));
+    float hSin = std::sin(glm::radians(rotationHoriz));
 
     /*
      * Spherical coordinates, baby

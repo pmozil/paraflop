@@ -1,6 +1,6 @@
 #include "common.hpp"
 #include "geometry/camera.hpp"
-#include "geometry/uniform_buffer_object.hpp"
+#include "geometry/uniform_buffer_objects.hpp"
 #include "geometry/vertex.hpp"
 #include "interface/custom_graphics_pipeline.hpp"
 #include "interface/glfw_callbacks.hpp"
@@ -70,8 +70,7 @@ int main() {
 
     std::shared_ptr<buffer::UniformBuffer> uniformBuffer =
         std::make_shared<buffer::UniformBuffer>(
-            deviceHandler, commandBuffer,
-            sizeof(geometry::UniformBufferObject));
+            deviceHandler, commandBuffer, sizeof(geometry::TransformMatrices));
 
     std::shared_ptr<geometry::Camera> camera =
         std::make_shared<geometry::Camera>();
@@ -84,7 +83,7 @@ int main() {
 
     camera->calcRotation(geometry::HALF_ROTATION, 0.0F);
 
-    geometry::UniformBufferObject ubo = camera->transformMatrices(
+    geometry::TransformMatrices ubo = camera->transformMatrices(
         swapChain->swapChainExtent.width, swapChain->swapChainExtent.height);
 
     uniformBuffer->fastCopy((void *)&ubo, sizeof(ubo));

@@ -1,7 +1,9 @@
 #pragma once
 
 #include "common.hpp"
+#include "geometry/uniform_buffer_objects.hpp"
 #include "vulkan_utils/buffer.hpp"
+#include "vulkan_utils/create_info.hpp"
 #include "vulkan_utils/device.hpp"
 
 namespace descriptor_set {

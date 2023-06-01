@@ -1,5 +1,5 @@
 #pragma once
-#include "geometry/camera.h"
+#include "geometry/camera.hpp"
 
 struct AppState {
     std::shared_ptr<geometry::Camera> camera;

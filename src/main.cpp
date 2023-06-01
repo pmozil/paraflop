@@ -1,5 +1,5 @@
 #include "common.hpp"
-#include "geometry/camera.h"
+#include "geometry/camera.hpp"
 #include "geometry/uniform_buffer_object.hpp"
 #include "geometry/vertex.hpp"
 #include "interface/custom_graphics_pipeline.hpp"

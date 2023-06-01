@@ -79,3 +79,4 @@ struct SwapChainSupportDetails {
     }
 
 static const size_t GLM_16_BYTE_ALIGN = 16;
+static const glm::vec3 WORLD_UP = glm::vec3({0.0F, 1.0F, 0.0F});

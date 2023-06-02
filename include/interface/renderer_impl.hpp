@@ -4,36 +4,6 @@
 
 namespace renderer {
 template <typename GraphicsPipeline>
-void Renderer<GraphicsPipeline>::m_createSyncObjects() {
-    m_imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    m_renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    m_inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
-    m_imagesInFlight.resize(m_swapChain->swapChainImages.size(),
-                            VK_NULL_HANDLE);
-
-    VkSemaphoreCreateInfo semaphoreInfo = {};
-    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-    VkFenceCreateInfo fenceInfo = {};
-    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        if (vkCreateSemaphore(m_deviceHandler->logicalDevice, &semaphoreInfo,
-                              nullptr,
-                              &m_imageAvailableSemaphores[i]) != VK_SUCCESS ||
-            vkCreateSemaphore(m_deviceHandler->logicalDevice, &semaphoreInfo,
-                              nullptr,
-                              &m_renderFinishedSemaphores[i]) != VK_SUCCESS ||
-            vkCreateFence(m_deviceHandler->logicalDevice, &fenceInfo, nullptr,
-                          &m_inFlightFences[i]) != VK_SUCCESS) {
-            throw std::runtime_error(
-                "failed to create synchronization objects for a frame!");
-        }
-    }
-}
-
-template <typename GraphicsPipeline>
 void Renderer<GraphicsPipeline>::handleWindowUpdate() {
     int width = 0;
     int height = 0;
@@ -56,13 +26,11 @@ void Renderer<GraphicsPipeline>::handleWindowUpdate() {
 template <typename GraphicsPipeline>
 void Renderer<GraphicsPipeline>::drawFrame() {
     vkWaitForFences(m_deviceHandler->logicalDevice, 1,
-                    &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
+                    &m_swapChain->inFlightFences[m_currentFrame], VK_TRUE,
+                    UINT64_MAX);
 
     uint32_t imageIndex;
-    VkResult result = vkAcquireNextImageKHR(
-        m_deviceHandler->logicalDevice, m_swapChain->swapChain, UINT64_MAX,
-        m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE,
-        &imageIndex);
+    VkResult result = m_swapChain->getNextImage(m_currentFrame, &imageIndex);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         handleWindowUpdate();
@@ -75,7 +43,7 @@ void Renderer<GraphicsPipeline>::drawFrame() {
     // updateUniformBuffer(m_currentFrame);
 
     vkResetFences(m_deviceHandler->logicalDevice, 1,
-                  &m_inFlightFences[m_currentFrame]);
+                  &m_swapChain->inFlightFences[m_currentFrame]);
 
     vkResetCommandBuffer(m_commandBuffer->commandBuffers[m_currentFrame],
                          /*VkCommandBufferResetFlagBits*/ 0);
@@ -85,7 +53,7 @@ void Renderer<GraphicsPipeline>::drawFrame() {
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
     std::array<VkSemaphore, 1> waitSemaphores = {
-        m_imageAvailableSemaphores[m_currentFrame]};
+        m_swapChain->imageAvailableSemaphores[m_currentFrame]};
     std::array<VkPipelineStageFlags, 1> waitStages = {
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     submitInfo.waitSemaphoreCount = 1;
@@ -97,12 +65,12 @@ void Renderer<GraphicsPipeline>::drawFrame() {
         &m_commandBuffer->commandBuffers[m_currentFrame];
 
     std::array<VkSemaphore, 1> signalSemaphores = {
-        m_renderFinishedSemaphores[m_currentFrame]};
+        m_swapChain->renderFinishedSemaphores[m_currentFrame]};
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores.data();
 
     VK_CHECK(vkQueueSubmit(m_deviceHandler->graphicsQueue, 1, &submitInfo,
-                           m_inFlightFences[m_currentFrame]));
+                           m_swapChain->inFlightFences[m_currentFrame]));
 
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -194,17 +162,5 @@ void Renderer<GraphicsPipeline>::m_recordCommandBuffers(uint32_t imageIndex) {
 
     VK_CHECK(
         vkEndCommandBuffer(m_commandBuffer->commandBuffers[m_currentFrame]));
-}
-
-template <typename GraphicsPipeline>
-void Renderer<GraphicsPipeline>::cleanup() {
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroySemaphore(m_deviceHandler->logicalDevice,
-                           m_renderFinishedSemaphores[i], nullptr);
-        vkDestroySemaphore(m_deviceHandler->logicalDevice,
-                           m_imageAvailableSemaphores[i], nullptr);
-        vkDestroyFence(m_deviceHandler->logicalDevice, m_inFlightFences[i],
-                       nullptr);
-    }
 }
 } // namespace renderer

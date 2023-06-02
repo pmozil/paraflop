@@ -70,18 +70,7 @@ template <typename GraphicsPipeline> class Renderer {
           m_graphicsPipeline(std::move(m_graphicsPipeline)),
           m_descriptorSetHandler(std::move(m_descriptorSetHandler)),
           m_vertexBuffer(std::move(m_vertexBuffer)),
-          m_indexBuffer(std::move(m_indexBuffer)) {
-        m_createSyncObjects();
-    }
-
-    /**
-     * \fn ~Renderer()
-     *
-     * \brief Destructor for the Renderer object.
-     *
-     * Cleans up and releases resources used by the Renderer.
-     */
-    ~Renderer() { cleanup(); }
+          m_indexBuffer(std::move(m_indexBuffer)) {}
 
     /**
      * \fn void handleWindowUpdate()
@@ -105,16 +94,6 @@ template <typename GraphicsPipeline> class Renderer {
      */
     void drawFrame();
 
-    /**
-     * \fn void cleanup()
-     *
-     * \brief Cleans up the Renderer and releases resources.
-     *
-     * This function cleans up and releases any resources used by the Renderer.
-     * It is typically called when the Renderer is no longer needed.
-     */
-    void cleanup();
-
   private:
     GLFWwindow *window;
     VkInstance m_instance;
@@ -123,26 +102,12 @@ template <typename GraphicsPipeline> class Renderer {
     std::shared_ptr<command_buffer::CommandBufferHandler> m_commandBuffer;
     std::shared_ptr<swap_chain::SwapChain> m_swapChain;
     std::shared_ptr<GraphicsPipeline> m_graphicsPipeline;
-    std::vector<VkSemaphore> m_imageAvailableSemaphores;
-    std::vector<VkSemaphore> m_renderFinishedSemaphores;
-    std::vector<VkFence> m_inFlightFences;
-    std::vector<VkFence> m_imagesInFlight;
     std::shared_ptr<descriptor_set::DescriptorSetHandler>
         m_descriptorSetHandler;
     std::shared_ptr<buffer::VertexBuffer> m_vertexBuffer;
     std::shared_ptr<buffer::IndexBuffer> m_indexBuffer;
     size_t m_currentFrame = 0;
     bool m_framebufferResized = false;
-
-    /**
-     * \fn void m_createSyncObjects()
-     *
-     * \brief Creates synchronization objects.
-     *
-     * This function creates the semaphores and fences used for synchronization
-     * between the CPU and GPU.
-     */
-    void m_createSyncObjects();
 
     /**
      * \fn void m_recordCommandBuffers(uint32_t imageIndex)

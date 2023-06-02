@@ -33,7 +33,10 @@ class SwapChain {
      *
      * \brief Destructor for the SwapChain class.
      */
-    ~SwapChain() { cleanup(); }
+    ~SwapChain() {
+        cleanup();
+        m_destroySyncObjects();
+    }
 
     VkSwapchainKHR swapChain;                     /**< The swap chain */
     VkFormat swapChainImageFormat;                /**< The image format */
@@ -42,6 +45,10 @@ class SwapChain {
     std::vector<VkImage> swapChainImages;         /**< The swap chain images */
     std::vector<VkImageView> swapChainImageViews; /**< The image views */
     std::vector<VkFramebuffer> swapChainFramebuffers; /**< The image buffers */
+    std::vector<VkSemaphore> imageAvailableSemaphores;
+    std::vector<VkSemaphore> renderFinishedSemaphores;
+    std::vector<VkFence> inFlightFences;
+    std::vector<VkFence> imagesInFlight;
 
     /**
      * \fn VkRenderPass getRenderPass()
@@ -63,6 +70,18 @@ class SwapChain {
      * \return The render pass at the specified index.
      */
     inline VkRenderPass getRenderPass(int n) { return renderPasses[n]; };
+
+    /**
+     * \fn VkResult getNextImage()
+     *
+     * \brief A wrapper for VkAcquireNextImageKHR
+     *
+     * \param frameIdx The frame index
+     * \param imageIndex A pointer to int, containing new image index
+     *
+     * \return A VkResult - mey not be an image
+     */
+    VkResult getNextImage(uint32_t frameIdx, uint32_t *imageIndex);
 
     /**
      * \fn int renderPassesLength() const
@@ -164,6 +183,22 @@ class SwapChain {
      * \return The chosen swap extent.
      */
     VkExtent2D m_chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
-};
 
+    /**
+     * \fn void m_createSyncObjects()
+     *
+     * \brief Creates synchronization objects.
+     *
+     * This function creates the semaphores and fences used for synchronization
+     * between the CPU and GPU.
+     */
+    void m_createSyncObjects();
+
+    /**
+     * \fn void m_destroySyncObjects();
+     *
+     * \brief Clean up sync objects
+     */
+    void m_destroySyncObjects();
+};
 } // namespace swap_chain

@@ -12,6 +12,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  ${CMAKE_BINARY_DIR})
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -pthread")
 
+include_directories("${CMAKE_SOURCE_DIR}/include")
+include_directories("${CMAKE_SOURCE_DIR}/external/ktx/include")
+# include_directories("${CMAKE_SOURCE_DIR}/external/ktx/other_include")
+
 find_package(Vulkan REQUIRED)
 find_package(glfw3 3.3 REQUIRED)
 find_package(glm CONFIG REQUIRED)
@@ -43,9 +47,6 @@ file(COPY
     "${CMAKE_SOURCE_DIR}/assets/shaders/vert.spv"
     DESTINATION
     "${CMAKE_BINARY_DIR}")
-
-include_directories("${CMAKE_SOURCE_DIR}/include"
-    "${PROJECT_SOURCE_DIR}/external/stb")
 
 file(GLOB SOURCE_FILES "${CMAKE_SOURCE_DIR}/src/*.cpp" "${CMAKE_SOURCE_DIR}/include/*")
 set(APP_SOURCE_FILES ${SOURCE_FILES} CACHE INTERNAL STRINGS)

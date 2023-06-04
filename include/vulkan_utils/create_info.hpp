@@ -91,7 +91,8 @@ VkCommandBufferBeginInfo commandBufferBeginInfo();
  *
  * \brief Create a Vulkan submit info structure.
  *
- * This function creates a VkSubmitInfo structure with the specified parameters.
+ * \brief This function creates a VkSubmitInfo structure with the specified
+ * parameters.
  *
  * \param commandBufferCount The number of command buffers to submit.
  * \param buffers An array of command buffers to submit.
@@ -105,7 +106,8 @@ VkSubmitInfo submitInfo(uint32_t commandBufferCount, VkCommandBuffer *buffers);
  *
  * \brief Create a Vulkan buffer copy region structure.
  *
- * This function creates a VkBufferCopy structure with the specified size.
+ * \brief This function creates a VkBufferCopy structure with the specified
+ * size.
  *
  * \param size The size of the buffer region to copy.
  *
@@ -119,8 +121,8 @@ VkBufferCopy copyRegion(VkDeviceSize size);
  *
  * \brief Create a Vulkan render pass begin info structure.
  *
- * This function creates a VkRenderPassBeginInfo structure with the specified
- * parameters.
+ * \brief This function creates a VkRenderPassBeginInfo structure with the
+ * specified parameters.
  *
  * \param renderPass The Vulkan render pass to begin.
  * \param framebuffer The Vulkan framebuffer to render into.
@@ -141,8 +143,8 @@ VkRenderPassBeginInfo renderPassBeginInfo(VkRenderPass renderPass,
  *
  * \brief Create a Vulkan device queue create info structure.
  *
- * This function creates a VkDeviceQueueCreateInfo structure with the specified
- * parameters.
+ * \brief This function creates a VkDeviceQueueCreateInfo structure with the
+ * specified parameters.
  *
  * \param queueFamily The index of the queue family.
  * \param queuePriority The priority of the queue.
@@ -159,8 +161,8 @@ VkDeviceQueueCreateInfo queueCreateInfo(uint32_t queueFamily,
  * \brief Create a Vulkan
  * pipeline shader stage create info structure.
  *
- * This function creates a VkPipelineShaderStageCreateInfo structure with the
- * specified parameters.
+ * \brief This function creates a VkPipelineShaderStageCreateInfo structure with
+ * the specified parameters.
  *
  * \param shaderModule The Vulkan shader module containing the shader code.
  * \param shaderStage The stage of the shader (e.g., vertex shader, fragment
@@ -178,8 +180,8 @@ shaderStageInfo(VkShaderModule shaderModule, VkShaderStageFlagBits shaderStage);
  * validationLayers, const VkPhysicalDeviceFeatures* deviceFeatures) \brief
  * Creates a Vulkan device create info structure.
  *
- * This function creates a VkDeviceCreateInfo structure with the specified
- * parameters.
+ * \brief This function creates a VkDeviceCreateInfo structure with the
+ * specified parameters.
  *
  * \param queueCreateInfos The vector of VkDeviceQueueCreateInfo structures for
  * specifying device queue creation. \param deviceExtensions The vector of
@@ -200,8 +202,8 @@ deviceCreateInfo(std::vector<VkDeviceQueueCreateInfo> &queueCreateInfos,
  * \fn VkImageViewCreateInfo imageViewCreateInfo(VkImage image, VkFormat format)
  * \brief Creates a Vulkan image view create info structure.
  *
- * This function creates a VkImageViewCreateInfo structure with the specified
- * parameters.
+ * \brief This function creates a VkImageViewCreateInfo structure with the
+ * specified parameters.
  *
  * \param image The Vulkan image to create a view for.
  * \param format The format of the image view.
@@ -219,8 +221,8 @@ VkImageViewCreateInfo imageViewCreateInfo(VkImage image, VkFormat format);
  * currentTransform, VkPresentModeKHR presentMode) \brief Creates a Vulkan
  * swapchain create info structure.
  *
- * This function creates a VkSwapchainCreateInfoKHR structure with the specified
- * parameters.
+ * \brief This function creates a VkSwapchainCreateInfoKHR structure with the
+ * specified parameters.
  *
  * \param surface The Vulkan surface associated with the swapchain.
  * \param imageCount The number of images in the swapchain.
@@ -248,7 +250,7 @@ swapChainCreateInfo(VkSurfaceKHR surface, uint32_t imageCount, VkFormat format,
  * type, uint32_t poolSizeInt) \brief Creates a Vulkan descriptor pool create
  * info structure.
  *
- * This function creates a VkDescriptorPoolCreateInfo structure with the
+ * \brief This function creates a VkDescriptorPoolCreateInfo structure with the
  * specified parameters.
  *
  * \param type The type of descriptor stored in the pool.
@@ -264,7 +266,7 @@ VkDescriptorPoolCreateInfo descriptorPoolCreateInfo(VkDescriptorType type,
  * descriptorPool, std::vector<VkDescriptorSetLayout> &layouts) \brief Creates a
  * Vulkan descriptor set allocate info structure.
  *
- * This function creates a VkDescriptorSetAllocateInfo structure with the
+ * \brief This function creates a VkDescriptorSetAllocateInfo structure with the
  * specified parameters.
  *
  * \param descriptorPool The Vulkan descriptor pool from which to allocate
@@ -282,8 +284,8 @@ descriptorSetAllocInfo(VkDescriptorPool descriptorPool,
  * descType, VkShaderStageFlags stageFlags, uint32_t binding, uint32_t
  * descriptors) \brief Creates a Vulkan descriptor set layout binding.
  *
- * This function creates a VkDescriptorSetLayoutBinding structure with the
- * specified parameters.
+ * \brief This function creates a VkDescriptorSetLayoutBinding structure with
+ * the specified parameters.
  *
  * \param descType The type of the descriptors in the binding.
  * \param stageFlags The shader stages that can access this binding.
@@ -303,8 +305,8 @@ descriptorSetLayoutBinding(VkDescriptorType descType,
  * bind_count) \brief Creates a Vulkan descriptor set layout create info
  * structure.
  *
- * This function creates a VkDescriptorSetLayoutCreateInfo structure with the
- * specified parameters.
+ * \brief This function creates a VkDescriptorSetLayoutCreateInfo structure with
+ * the specified parameters.
  *
  * \param bindings An array of VkDescriptorSetLayoutBinding structures
  * describing the layout of the descriptor set. \param bind_count The number of
@@ -315,5 +317,20 @@ descriptorSetLayoutBinding(VkDescriptorType descType,
 VkDescriptorSetLayoutCreateInfo
 descriptorSetLayoutInfo(VkDescriptorSetLayoutBinding *bindings,
                         uint32_t bind_count);
+
+/**
+ * \fn VkImageCreateInfo imageCreateInfo(VkImageType type, VkFormat format,
+ * VkImageUsageFlags usageFlags)
+ *
+ * \brief Create a default VkImageCreateInfo object
+ *
+ * \param type the image type (e.g. VK_IMAGE_TYPE_2D)
+ * \param format The image format
+ * \usageFlags the image usage flags (e. g. use for texture)
+ *
+ * \return A default image create info
+ */
+VkImageCreateInfo imageCreateInfo(VkImageType type, VkFormat format,
+                                  VkImageUsageFlags usageFlags);
 
 } // namespace create_info

@@ -226,4 +226,23 @@ descriptorSetAllocInfo(VkDescriptorPool descriptorPool,
     allocInfo.pSetLayouts = layouts.data();
     return allocInfo;
 }
+
+VkImageCreateInfo imageCreateInfo(VkImageType type, VkFormat format,
+                                  VkImageUsageFlags usageFlags) {
+    VkImageCreateInfo createInfo{};
+
+    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    createInfo.imageType = type;
+    createInfo.format = format;
+    createInfo.mipLevels = 1;
+    createInfo.arrayLayers = 1;
+    createInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    createInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    createInfo.extent = {0, 0, 1};
+    createInfo.usage = usageFlags;
+
+    return createInfo;
+}
 } // namespace create_info

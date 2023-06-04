@@ -2,7 +2,7 @@
 
 void handleKeyPress(GLFWwindow *window, int key, int sancode, int action,
                     int mods) {
-    auto *cam = (AppState *)glfwGetWindowUserPointer(window);
+    auto *cam = (CameraRotation *)glfwGetWindowUserPointer(window);
     if (key == GLFW_KEY_W) {
         cam->camera->moveForward(cam->timePassed);
     }
@@ -32,7 +32,7 @@ void handleFocus(GLFWwindow *window, int focused) {
     glfwGetWindowSize(window, &width, &height);
     glfwGetCursorPos(window, &xpos, &ypos);
 
-    auto *cam = (AppState *)glfwGetWindowUserPointer(window);
+    auto *cam = (CameraRotation *)glfwGetWindowUserPointer(window);
 
     if (static_cast<bool>(focused)) {
         cam->mouseX = xpos / width;
@@ -46,7 +46,7 @@ void handleCursor(GLFWwindow *window, double xpos, double ypos) {
 
     glfwGetWindowSize(window, &width, &height);
 
-    auto *cam = (AppState *)glfwGetWindowUserPointer(window);
+    auto *cam = (CameraRotation *)glfwGetWindowUserPointer(window);
 
     float relX = xpos / width;
     float relY = ypos / height;

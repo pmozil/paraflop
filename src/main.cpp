@@ -2,6 +2,7 @@
 #include "geometry/camera.hpp"
 #include "geometry/uniform_buffer_objects.hpp"
 #include "geometry/vertex.hpp"
+#include "interface/camera_rotation.hpp"
 #include "interface/custom_graphics_pipeline.hpp"
 #include "interface/glfw_callbacks.hpp"
 #include "interface/renderer.hpp"
@@ -35,7 +36,7 @@ const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4};
 int main() {
     std::vector<const char *> validation = {"VK_LAYER_KHRONOS_validation"};
 
-    auto *cam = new AppState(nullptr);
+    auto *cam = new CameraRotation(nullptr);
 
     std::vector<const char *> devExt = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
     GLFWwindow *window = window::initWindow(nullptr, handleKeyPress,

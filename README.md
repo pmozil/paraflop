@@ -66,8 +66,14 @@ I mean, it's a CMake project. I'll still leave the commands here, just in case
 you're lazy.
 
 ```bash
-git clone https://github.com/pmozil/paraflop
+git clone --recursive https://github.com/pmozil/paraflop
 cd paraflop
+
+git submodule init
+git submodule update
+```
+
+```bash
 mkdir build
 cd build
 cmake ..

@@ -43,6 +43,15 @@ class DeviceHandler {
     ~DeviceHandler() { cleanupDevice(nullptr); }
 
     /**
+     * \fn VkDevice()
+     *
+     * \brief Operator for DeviceHandler to be used like VkDevice
+     *
+     * \return A VkDevice
+     * */
+    operator VkDevice() const { return logicalDevice; };
+
+    /**
      * \fn QueueFamilyIndices getQueueFamilyIndices(VkPhysicalDevice &device)
      *
      * \brief Retrieves the queue family indices for the specified physical

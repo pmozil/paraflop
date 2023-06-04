@@ -44,6 +44,16 @@ class DescriptorSetLayout {
      */
     void cleanup();
 
+    /**
+     * \fn VkDescriptorSetLayout()
+     *
+     * \brief Operator for DescriptorSetLayout to be used as
+     * VkDescriptorSetLayout
+     *
+     * \returns The VkDescriptorSetLayout that the class wraps
+     */
+    operator VkDescriptorSetLayout() const { return layout; }
+
   private:
     std::shared_ptr<device::DeviceHandler>
         m_deviceHandler; /**< The device handler used to create the descriptor*/

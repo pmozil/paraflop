@@ -13,13 +13,12 @@ void DescriptorSetLayout::m_createLayout(VkDescriptorSetLayoutBinding *bindings,
     VkDescriptorSetLayoutCreateInfo createInfo =
         create_info::descriptorSetLayoutInfo(bindings, bind_count);
 
-    VK_CHECK(vkCreateDescriptorSetLayout(m_deviceHandler->logicalDevice,
-                                         &createInfo, nullptr, &layout));
+    VK_CHECK(vkCreateDescriptorSetLayout(*m_deviceHandler, &createInfo, nullptr,
+                                         &layout));
 }
 
 void DescriptorSetLayout::cleanup() {
-    vkDestroyDescriptorSetLayout(m_deviceHandler->logicalDevice, layout,
-                                 nullptr);
+    vkDestroyDescriptorSetLayout(*m_deviceHandler, layout, nullptr);
 }
 
 DescriptorSetHandler::DescriptorSetHandler(
@@ -43,24 +42,23 @@ void DescriptorSetHandler::m_createDescriptorPool() {
     poolInfo.pPoolSizes = &poolSize;
     poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
-    VK_CHECK(vkCreateDescriptorPool(m_deviceHandler->logicalDevice, &poolInfo,
-                                    nullptr, &descriptorPool));
+    VK_CHECK(vkCreateDescriptorPool(*m_deviceHandler, &poolInfo, nullptr,
+                                    &descriptorPool));
 }
 
 void DescriptorSetHandler::m_createDescriptorSets() {
-    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT,
-                                               m_layout->layout);
+    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, *m_layout);
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.descriptorPool = descriptorPool;
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = layouts.data();
 
-    VK_CHECK(vkAllocateDescriptorSets(m_deviceHandler->logicalDevice,
-                                      &allocInfo, &descriptorSet));
+    VK_CHECK(
+        vkAllocateDescriptorSets(*m_deviceHandler, &allocInfo, &descriptorSet));
 
     VkDescriptorBufferInfo bufferInfo{};
-    bufferInfo.buffer = m_buffer->buffer;
+    bufferInfo.buffer = *m_buffer;
     bufferInfo.offset = 0;
     bufferInfo.range = sizeof(geometry::TransformMatrices);
 
@@ -73,12 +71,10 @@ void DescriptorSetHandler::m_createDescriptorSets() {
     descriptorWrite.descriptorCount = 1;
     descriptorWrite.pBufferInfo = &bufferInfo;
 
-    vkUpdateDescriptorSets(m_deviceHandler->logicalDevice, 1, &descriptorWrite,
-                           0, nullptr);
+    vkUpdateDescriptorSets(*m_deviceHandler, 1, &descriptorWrite, 0, nullptr);
 }
 
 void DescriptorSetHandler::cleanup() {
-    vkDestroyDescriptorPool(m_deviceHandler->logicalDevice, descriptorPool,
-                            nullptr);
+    vkDestroyDescriptorPool(*m_deviceHandler, descriptorPool, nullptr);
 }
 } // namespace descriptor_set

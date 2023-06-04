@@ -169,6 +169,15 @@ class Buffer {
      */
     void destroy();
 
+    /**
+     * \fn VkBuffer()
+     *
+     * \brief Operator for Buffer to be used as VkBuffer
+     *
+     * \return The buffer that the class wraps
+     */
+    operator VkBuffer() const { return buffer; }
+
     VkBuffer buffer = VK_NULL_HANDLE; /**< The Vulkan buffer handle. */
     VkDeviceMemory memory =
         VK_NULL_HANDLE;                /**< The Vulkan device memory handle. */

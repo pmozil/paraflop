@@ -23,7 +23,7 @@ void SwapChain::createImageViews() {
         VkImageViewCreateInfo createInfo = create_info::imageViewCreateInfo(
             swapChainImages[i], swapChainImageFormat);
 
-        VK_CHECK(vkCreateImageView(m_deviceHandler->logicalDevice, &createInfo,
+        VK_CHECK(vkCreateImageView(*m_deviceHandler, &createInfo,
                                    nullptr, &swapChainImageViews[i]));
     }
 }
@@ -52,13 +52,13 @@ void SwapChain::createSwapChain() {
         extent, 1, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, indices,
         swapChainSupport.capabilities.currentTransform, presentMode);
 
-    VK_CHECK(vkCreateSwapchainKHR(m_deviceHandler->logicalDevice, &createInfo,
+    VK_CHECK(vkCreateSwapchainKHR(*m_deviceHandler, &createInfo,
                                   nullptr, &swapChain));
 
-    vkGetSwapchainImagesKHR(m_deviceHandler->logicalDevice, swapChain,
+    vkGetSwapchainImagesKHR(*m_deviceHandler, swapChain,
                             &imageCount, nullptr);
     swapChainImages.resize(imageCount);
-    vkGetSwapchainImagesKHR(m_deviceHandler->logicalDevice, swapChain,
+    vkGetSwapchainImagesKHR(*m_deviceHandler, swapChain,
                             &imageCount, swapChainImages.data());
 
     swapChainImageFormat = surfaceFormat.format;
@@ -104,14 +104,14 @@ void SwapChain::createRenderPass() {
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
 
-    VK_CHECK(vkCreateRenderPass(m_deviceHandler->logicalDevice, &renderPassInfo,
+    VK_CHECK(vkCreateRenderPass(*m_deviceHandler, &renderPassInfo,
                                 nullptr, &renderPass));
     renderPasses.push_back(renderPass);
 }
 
 int SwapChain::createRenderPass(VkRenderPassCreateInfo renderPassInfo) {
     VkRenderPass renderPass;
-    VK_CHECK(vkCreateRenderPass(m_deviceHandler->logicalDevice, &renderPassInfo,
+    VK_CHECK(vkCreateRenderPass(*m_deviceHandler, &renderPassInfo,
                                 nullptr, &renderPass));
     renderPasses.push_back(renderPass);
     return renderPasses.size() - 1;
@@ -132,7 +132,7 @@ void SwapChain::createFrameBuffers() {
         framebufferInfo.height = swapChainExtent.height;
         framebufferInfo.layers = 1;
 
-        VK_CHECK(vkCreateFramebuffer(m_deviceHandler->logicalDevice,
+        VK_CHECK(vkCreateFramebuffer(*m_deviceHandler,
                                      &framebufferInfo, nullptr,
                                      &swapChainFramebuffers[i]));
     }
@@ -184,22 +184,22 @@ SwapChain::m_chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) {
 
 void SwapChain::cleanup() {
     for (auto *framebuffer : swapChainFramebuffers) {
-        vkDestroyFramebuffer(m_deviceHandler->logicalDevice, framebuffer,
+        vkDestroyFramebuffer(*m_deviceHandler, framebuffer,
                              nullptr);
     }
     swapChainFramebuffers.clear();
 
     for (auto *renderPass : renderPasses) {
-        vkDestroyRenderPass(m_deviceHandler->logicalDevice, renderPass,
+        vkDestroyRenderPass(*m_deviceHandler, renderPass,
                             nullptr);
     }
     renderPasses.clear();
 
     for (auto *imageView : swapChainImageViews) {
-        vkDestroyImageView(m_deviceHandler->logicalDevice, imageView, nullptr);
+        vkDestroyImageView(*m_deviceHandler, imageView, nullptr);
     }
     swapChainImageViews.clear();
-    vkDestroySwapchainKHR(m_deviceHandler->logicalDevice, swapChain, nullptr);
+    vkDestroySwapchainKHR(*m_deviceHandler, swapChain, nullptr);
 }
 
 void SwapChain::m_createSyncObjects() {
@@ -216,13 +216,13 @@ void SwapChain::m_createSyncObjects() {
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        if (vkCreateSemaphore(m_deviceHandler->logicalDevice, &semaphoreInfo,
+        if (vkCreateSemaphore(*m_deviceHandler, &semaphoreInfo,
                               nullptr,
                               &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-            vkCreateSemaphore(m_deviceHandler->logicalDevice, &semaphoreInfo,
+            vkCreateSemaphore(*m_deviceHandler, &semaphoreInfo,
                               nullptr,
                               &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-            vkCreateFence(m_deviceHandler->logicalDevice, &fenceInfo, nullptr,
+            vkCreateFence(*m_deviceHandler, &fenceInfo, nullptr,
                           &inFlightFences[i]) != VK_SUCCESS) {
             throw std::runtime_error(
                 "failed to create synchronization objects for a frame!");
@@ -231,18 +231,18 @@ void SwapChain::m_createSyncObjects() {
 }
 
 VkResult SwapChain::getNextImage(uint32_t frameIdx, uint32_t *imageIndex) {
-    return vkAcquireNextImageKHR(m_deviceHandler->logicalDevice, swapChain,
+    return vkAcquireNextImageKHR(*m_deviceHandler, swapChain,
                                  UINT64_MAX, imageAvailableSemaphores[frameIdx],
                                  VK_NULL_HANDLE, imageIndex);
 }
 
 void SwapChain::m_destroySyncObjects() {
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroySemaphore(m_deviceHandler->logicalDevice,
+        vkDestroySemaphore(*m_deviceHandler,
                            renderFinishedSemaphores[i], nullptr);
-        vkDestroySemaphore(m_deviceHandler->logicalDevice,
+        vkDestroySemaphore(*m_deviceHandler,
                            imageAvailableSemaphores[i], nullptr);
-        vkDestroyFence(m_deviceHandler->logicalDevice, inFlightFences[i],
+        vkDestroyFence(*m_deviceHandler, inFlightFences[i],
                        nullptr);
     }
 }

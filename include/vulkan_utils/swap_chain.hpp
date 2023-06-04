@@ -38,6 +38,15 @@ class SwapChain {
         m_destroySyncObjects();
     }
 
+    /**
+     * \fn VkSwapchainKHR()
+     *
+     * \brief Operator for SwapChain clas to be used as VkSwapchainKHR
+     *
+     * \return A VkSwapchainKHR that the class wraps
+     */
+    operator VkSwapchainKHR() const { return swapChain; }
+
     VkSwapchainKHR swapChain;                     /**< The swap chain */
     VkFormat swapChainImageFormat;                /**< The image format */
     VkExtent2D swapChainExtent;                   /**< The swap chain extent */
@@ -45,10 +54,15 @@ class SwapChain {
     std::vector<VkImage> swapChainImages;         /**< The swap chain images */
     std::vector<VkImageView> swapChainImageViews; /**< The image views */
     std::vector<VkFramebuffer> swapChainFramebuffers; /**< The image buffers */
-    std::vector<VkSemaphore> imageAvailableSemaphores;
-    std::vector<VkSemaphore> renderFinishedSemaphores;
-    std::vector<VkFence> inFlightFences;
-    std::vector<VkFence> imagesInFlight;
+
+    std::vector<VkSemaphore>
+        imageAvailableSemaphores; /**< The semaphores for available image
+                                     buffers */
+    std::vector<VkSemaphore>
+        renderFinishedSemaphores; /**< The semaphores for rendered images */
+    std::vector<VkFence> inFlightFences; /**< The active fences */
+    std::vector<VkFence>
+        imagesInFlight; /**< The fences for images being rendered */
 
     /**
      * \fn VkRenderPass getRenderPass()

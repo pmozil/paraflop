@@ -110,42 +110,4 @@ class CustomGraphicsPipeline : public AbstractGraphicsPipeline {
      */
     ~CustomGraphicsPipeline() { cleanup(); }
 };
-
-/**
- * \class RasterGraphicsPipeline
- * \brief Raster graphics pipeline implementation.
- *
- * The RasterGraphicsPipeline class extends the AbstractGraphicsPipeline class
- * and provides an implementation for a raster graphics pipeline.
- */
-class RasterGraphicsPipeline : public AbstractGraphicsPipeline {
-  public:
-    /**
-     * \brief Constructs a RasterGraphicsPipeline object.
-     *
-     * \param m_swapChain The swap chain associated with the pipeline.
-     * \param m_deviceHandler The device handler used for pipeline operations.
-     */
-    RasterGraphicsPipeline(
-        std::shared_ptr<swap_chain::SwapChain> m_swapChain,
-        std::shared_ptr<device::DeviceHandler> m_deviceHandler);
-
-    /**
-     * \fn void createGraphicsPipeline() override
-     *
-     * \brief Creates the graphics pipeline.
-     *
-     * This function overrides the pure virtual function in the base class to
-     * create the graphics pipeline.
-     */
-    void createGraphicsPipeline() override;
-
-    /**
-     * \fn ~RasterGraphicsPipeline()
-     *
-     * \brief Destructor for the RasterGraphicsPipeline class.
-     */
-    ~RasterGraphicsPipeline() { cleanup(); }
-};
-
 } // namespace graphics_pipeline

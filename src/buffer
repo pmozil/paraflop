@@ -1,0 +1,94 @@
+main.cpp:    {{-0.5F, -0.5F, 1.0F}, {1.0F, 0.0F, 0.0F}},
+main.cpp:    {{0.5F, -0.5F, 1.0F}, {0.0F, 1.0F, 0.0F}},
+main.cpp:    {{-0.5F, 0.5F, 1.0F}, {1.0F, 1.0F, 1.0F}},
+main.cpp:    {{-0.5F, -0.5F, -1.0F}, {1.0F, 0.0F, 0.0F}},
+main.cpp:    {{0.5F, -0.5F, -1.0F}, {0.0F, 1.0F, 0.0F}},
+main.cpp:    {{0.5F, 0.5F, -1.0F}, {0.0F, 0.0F, 1.0F}},
+main.cpp:    {{-0.5F, 0.5F, -1.0F}, {1.0F, 1.0F, 1.0F}}};
+main.cpp:    debug::createDebugMessenger(instance->instance);
+main.cpp:        std::make_unique<surface::Surface>(instance->instance, window, nullptr);
+main.cpp:            devExt, validation, instance->instance, surface->surface);
+main.cpp:        std::make_shared<swap_chain::SwapChain>(window, surface->surface,
+main.cpp:            swapChain, deviceHandler, &layout->layout);
+main.cpp:    cam->camera = camera;
+main.cpp:    camera->position = pos;
+main.cpp:    camera->calcRotation(geometry::HALF_ROTATION, 0.0F);
+main.cpp:    geometry::TransformMatrices ubo = camera->transformMatrices(
+main.cpp:        swapChain->swapChainExtent.width, swapChain->swapChainExtent.height);
+main.cpp:    uniformBuffer->fastCopy((void *)&ubo, sizeof(ubo));
+main.cpp:    indexBuffer->copy((void *)indices.data(),
+main.cpp:    vertexBuffer->copy((void *)vertices.data(),
+main.cpp:        renderer::Renderer(window, instance->instance, surface->surface,
+main.cpp:                         currentTime - startTime)
+main.cpp:        cam->timePassed =
+main.cpp:                currentTime - prevTime)
+main.cpp:        ubo = camera->transformMatrices(swapChain->swapChainExtent.width,
+main.cpp:                                        swapChain->swapChainExtent.height);
+main.cpp:        uniformBuffer->fastCopy((void *)&ubo, sizeof(ubo));
+swap_chain.cpp:        m_deviceHandler->querySwapChainSupport(m_deviceHandler->physicalDevice);
+swap_chain.cpp:        m_deviceHandler->getQueueFamilyIndices(m_deviceHandler->physicalDevice);
+swap_chain.cpp:    return renderPasses.size() - 1;
+main.cpp.bak:    {{-0.5F, -0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}},
+main.cpp.bak:    {{0.5F, -0.5F, 0.0F}, {0.0F, 1.0F, 0.0F}},
+main.cpp.bak:    {{-0.5F, 0.5F, 0.0F}, {1.0F, 1.0F, 1.0F}}};
+main.cpp.bak:                         currentTime - startTime)
+main.cpp.bak:        ubo.proj[1][1] *= -1;
+main.cpp.bak:        uniformBuffer->copy((void *)&ubo, sizeof(ubo));
+main.cpp.bak:    debug::createDebugMessenger(instance->instance);
+main.cpp.bak:        new surface::Surface(instance->instance, window, nullptr)};
+main.cpp.bak:        new device::DeviceHandler(devExt, validation, instance->instance,
+main.cpp.bak:                                  surface->surface)};
+main.cpp.bak:        new swap_chain::SwapChain(window, surface->surface, deviceHandler)};
+main.cpp.bak:                                                    &layout->layout)};
+main.cpp.bak:    uniformBuffer->copy((void *)&ubo, sizeof(ubo));
+main.cpp.bak:    indexBuffer->copy((void *)indices.data(),
+main.cpp.bak:    vertexBuffer->copy((void *)vertices.data(),
+main.cpp.bak:        renderer::Renderer(window, instance->instance, surface->surface,
+camera.cpp:void Camera::moveUp(float timePassed) { position -= up * timePassed * focus; }
+camera.cpp:    direction = {-vSin * hCos, -hSin, vCos * hCos};
+camera.cpp:    up = glm::normalize(-up);
+glfw_callbacks.cpp:        cam->camera->moveForward(cam->timePassed);
+glfw_callbacks.cpp:        cam->camera->moveForward(-cam->timePassed);
+glfw_callbacks.cpp:        cam->camera->moveLeft(cam->timePassed);
+glfw_callbacks.cpp:        cam->camera->moveLeft(-cam->timePassed);
+glfw_callbacks.cpp:        cam->camera->moveUp(cam->timePassed);
+glfw_callbacks.cpp:        cam->camera->moveUp(-cam->timePassed);
+glfw_callbacks.cpp:        cam->mouseX = xpos / width;
+glfw_callbacks.cpp:        cam->mouseY = ypos / height;
+glfw_callbacks.cpp:    float diffX = cam->mouseX - relX;
+glfw_callbacks.cpp:    float diffY = relY - cam->mouseY;
+glfw_callbacks.cpp:    if ((cam->mouseX != 0.0 || cam->mouseY != 0.0) &&
+glfw_callbacks.cpp:        cam->camera->calcTurn(diffX * cam->camera->focus * cam->camera->focus,
+glfw_callbacks.cpp:                              diffY * cam->camera->focus * cam->camera->focus);
+glfw_callbacks.cpp:    cam->mouseX = relX;
+glfw_callbacks.cpp:    cam->mouseY = relY;
+command_buffer.cpp:        m_devicehandler->getQueueFamilyIndices(m_devicehandler->physicalDevice);
+command_buffer.cpp:    VK_CHECK(vkCreateCommandPool(m_devicehandler->logicalDevice, &poolInfo,
+command_buffer.cpp:    commandBuffers.resize(*m_swapChainFramebuffers.size());
+command_buffer.cpp:    VK_CHECK(vkAllocateCommandBuffers(m_devicehandler->logicalDevice,
+command_buffer.cpp:    vkAllocateCommandBuffers(m_devicehandler->logicalDevice, &transferAllocInfo,
+command_buffer.cpp:    vkFreeCommandBuffers(m_devicehandler->logicalDevice, commandPool,
+command_buffer.cpp:    vkDestroyCommandPool(m_devicehandler->logicalDevice, commandPool, nullptr);
+graphics_pipeline.cpp:    VkExtent2D m_swapChainExtent = *m_swapChainExtent;
+graphics_pipeline.cpp:    pipelineInfo.renderPass = m_swapChain->getRenderPass();
+device.cpp:        return -1;
+device.cpp:    if (candidates.rbegin()->first > 0) {
+device.cpp:        physicalDevice = candidates.rbegin()->second;
+buffer.cpp:    vkGetPhysicalDeviceMemoryProperties(m_deviceHandler->physicalDevice,
+buffer.cpp:        create_info::commandBufferAllocInfo(m_commandBuffer->commandPool, 1);
+buffer.cpp:    VkQueue transferQueue = m_deviceHandler->getTransferQueue();
+buffer.cpp:    vkFreeCommandBuffers(*m_deviceHandler, m_commandBuffer->commandPool, 1,
+buffer.cpp:    vkBeginCommandBuffer(m_commandBuffer->transferBuffer, &beginInfo);
+buffer.cpp:    vkCmdCopyBuffer(m_commandBuffer->transferBuffer, buffer, dstBuffer, 1,
+buffer.cpp:    vkEndCommandBuffer(m_commandBuffer->transferBuffer);
+buffer.cpp:        create_info::submitInfo(1, &m_commandBuffer->transferBuffer);
+buffer.cpp:    VkQueue transferQueue = m_deviceHandler->getTransferQueue();
+buffer.cpp:    vkFreeCommandBuffers(*m_deviceHandler, m_commandBuffer->commandPool, 1,
+buffer.cpp:                         &m_commandBuffer->transferBuffer);
+sample.cpp.bak:    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+sample.cpp.bak:    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+sample.cpp.bak:    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
+sample.cpp.bak:        app->framebufferResized = true;
+sample.cpp.bak:        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+sample.cpp.bak:        ubo.proj[1][1] *= -1;
+sample.cpp.bak:        std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;

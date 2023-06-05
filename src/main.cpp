@@ -16,6 +16,7 @@
 #include "vulkan_utils/index_buffer.hpp"
 #include "vulkan_utils/surface.hpp"
 #include "vulkan_utils/swap_chain.hpp"
+#include "vulkan_utils/texture.hpp"
 #include "vulkan_utils/vertex_buffer.hpp"
 #include "vulkan_utils/vk_instance.hpp"
 #include "vulkan_utils/window.hpp"

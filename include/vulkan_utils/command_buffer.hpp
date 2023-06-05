@@ -17,13 +17,13 @@ class CommandBufferHandler {
     /**
      * \brief Constructs a CommandBufferHandler object.
      *
-     * \param m_devicehandler The device handler used for command buffer
+     * \param m_deviceHandler The device handler used for command buffer
      * operations. \param m_swapChain The swap chain associated with the command
      * buffers. \param m_graphicsPipeline The graphics pipeline associated with
      * the command buffers.
      */
     CommandBufferHandler(
-        std::shared_ptr<device::DeviceHandler> m_devicehandler,
+        std::shared_ptr<device::DeviceHandler> m_deviceHandler,
         std::shared_ptr<swap_chain::SwapChain> m_swapChain,
         std::shared_ptr<graphics_pipeline::AbstractGraphicsPipeline>
             m_graphicsPipeline);
@@ -63,9 +63,57 @@ class CommandBufferHandler {
      */
     void cleanup();
 
+    /**
+     * \fn VkCommandPool createCommandPool(uint32_t
+     * queueFamilyIndex, VkCommandPoolCreateFlags createFlags =
+     * VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT)
+     *
+     * \brief Creates a
+     * command pool for the specified queue family index.
+     *
+     * \param queueFamilyIndex The index of the queue family associated with the
+     * command pool.
+     * \param createFlags The optional create flags for the
+     * command pool.
+     *
+     * \return The created command pool.
+     */
+    [[nodiscard]] VkCommandPool createCommandPool(
+        uint32_t queueFamilyIndex,
+        VkCommandPoolCreateFlags createFlags =
+            VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT) const;
+
+    /**
+     * \fn VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level,
+     * VkCommandPool pool, bool begin = false)
+     *
+     * \brief Creates a command
+     * buffer of the specified level from the given command pool.
+     *
+     * \param level The level of the command buffer.
+     * \param pool The command pool from which to allocate the command buffer.
+     * \param begin Whether to begin the command buffer recording.
+     *
+     * \return The created command buffer.
+     */
+    [[nodiscard]] VkCommandBuffer
+    createCommandBuffer(VkCommandBufferLevel level, bool begin = false) const;
+
+    /**
+     * \fn flushCommandBuffer(VkCommandBuffer buf, VkQueue queue)
+     *
+     * \brief Sends the command buffer to a queue
+     *
+     * \param buf The buffer
+     * \param queue The queue
+     * \param free Whether to free the buffer adter
+     */
+    void flushCommandBuffer(VkCommandBuffer buf, VkQueue queue,
+                            bool free = true);
+
   private:
     std::shared_ptr<device::DeviceHandler>
-        m_devicehandler; /**< The device handler used for command buffer
+        m_deviceHandler; /**< The device handler used for command buffer
                             operations. */
     std::shared_ptr<swap_chain::SwapChain>
         m_swapChain; /**< The swap chain associated with the command buffers. */

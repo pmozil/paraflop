@@ -17,6 +17,8 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <ktx.h>
+#include <ktxvulkan.h>
 #include <map>
 #include <memory>
 #include <optional>
@@ -94,3 +96,8 @@ static const size_t GLM_16_BYTE_ALIGN = 16;
 
 // Up vector in the world coordinate system
 static const glm::vec3 WORLD_UP = glm::vec3({0.0F, 1.0F, 0.0F});
+
+// Custom define for better code readability
+const uint32_t VK_FLAGS_NONE = 0;
+// Default fence timeout in nanoseconds
+const uint64_t DEFAULT_FENCE_TIMEOUT = 100000000000;

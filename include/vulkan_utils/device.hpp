@@ -82,6 +82,13 @@ class DeviceHandler {
     VkQueue graphicsQueue = VK_NULL_HANDLE; /**< The graphics queue. */
     VkQueue presentQueue = VK_NULL_HANDLE;  /**< The present queue. */
     VkQueue transferQueue = VK_NULL_HANDLE; /**< The transfer queue. */
+    VkPhysicalDeviceMemoryProperties
+        memoryProperties; /**< The device memory properties */
+    VkPhysicalDeviceFeatures
+        enabledFeatures; /**< Features that have been enabled for use on the
+                            physical device */
+    VkPhysicalDeviceProperties
+        properties; /**< The device physica properties, e. g. memory */
 
     /**
      * \fn inline VkQueue getTransferQueue()
@@ -100,43 +107,6 @@ class DeviceHandler {
     VkDevice logicalDevice = VK_NULL_HANDLE; /**< The logical device. */
 
     /**
-     * \fn VkCommandPool createCommandPool(uint32_t
-     * queueFamilyIndex, VkCommandPoolCreateFlags createFlags =
-     * VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT)
-     *
-     * \brief Creates a
-     * command pool for the specified queue family index.
-     *
-     * \param queueFamilyIndex The index of the queue family associated with the
-     * command pool.
-     * \param createFlags The optional create flags for the
-     * command pool.
-     *
-     * \return The created command pool.
-     */
-    [[nodiscard]] VkCommandPool createCommandPool(
-        uint32_t queueFamilyIndex,
-        VkCommandPoolCreateFlags createFlags =
-            VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT) const;
-
-    /**
-     * \fn VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level,
-     * VkCommandPool pool, bool begin = false)
-     *
-     * \brief Creates a command
-     * buffer of the specified level from the given command pool.
-     *
-     * \param level The level of the command buffer.
-     * \param pool The command pool from which to allocate the command buffer.
-     * \param begin Whether to begin the command buffer recording.
-     *
-     * \return The created command buffer.
-     */
-    [[nodiscard]] VkCommandBuffer
-    createCommandBuffer(VkCommandBufferLevel level, VkCommandPool pool,
-                        bool begin = false) const;
-
-    /**
      * \fn inline void cleanupDevice(VkAllocationCallbacks *pAllocator) const
      *
      * \brief Cleans up the logical device.
@@ -146,6 +116,25 @@ class DeviceHandler {
     inline void cleanupDevice(VkAllocationCallbacks *pAllocator) const {
         vkDestroyDevice(logicalDevice, pAllocator);
     }
+    /**
+     * Get the index of a memory type that has all the requested property bits
+     * set
+     * \fn uint32_t getMemoryType(uint32_t typeBits, VkMemoryPropertyFlags
+     *          properties, VkBool32 *memTypeFound) const;
+     *
+     * \param typeBits Bit mask with bits set for each memory type supported by
+     * the resource to request for (from VkMemoryRequirements) \param properties
+     * Bit mask of properties for the memory type to request \param (Optional)
+     * memTypeFound Pointer to a bool that is set to true if a matching memory
+     * type has been found
+     *
+     * \return Index of the requested memory type
+     *
+     * \throw Throws an exception if memTypeFound is null and no memory type
+     * could be found that supports the requested properties
+     */
+    uint32_t getMemoryType(uint32_t typeBits, VkMemoryPropertyFlags properties,
+                           VkBool32 *memTypeFound = nullptr) const;
 
   private:
     std::vector<const char *>

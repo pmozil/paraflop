@@ -33,30 +33,13 @@ void Buffer::m_makeBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex =
-        m_findMemoryType(memRequirements.memoryTypeBits, properties);
+    allocInfo.memoryTypeIndex = m_deviceHandler->getMemoryType(
+        memRequirements.memoryTypeBits, properties);
 
     VK_CHECK(
         vkAllocateMemory(*m_deviceHandler, &allocInfo, nullptr, &bufferMemory));
 
     vkBindBufferMemory(*m_deviceHandler, buffer, bufferMemory, 0);
-}
-
-uint32_t Buffer::m_findMemoryType(uint32_t typeFilter,
-                                  VkMemoryPropertyFlags properties) {
-    VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(m_deviceHandler->physicalDevice,
-                                        &memProperties);
-
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-        if (static_cast<bool>(typeFilter & (1 << i)) &&
-            (memProperties.memoryTypes[i].propertyFlags & properties) ==
-                properties) {
-            return i;
-        }
-    }
-
-    throw std::runtime_error("failed to find suitable memory type!");
 }
 
 void Buffer::map() {

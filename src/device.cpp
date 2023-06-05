@@ -75,17 +75,14 @@ int DeviceHandler::m_rateDevice(VkPhysicalDevice device) {
 
     int score = 0;
 
-    VkPhysicalDeviceProperties deviceProps;
-    VkPhysicalDeviceFeatures deviceFeatures;
+    vkGetPhysicalDeviceProperties(device, &properties);
+    vkGetPhysicalDeviceFeatures(device, &enabledFeatures);
 
-    vkGetPhysicalDeviceProperties(device, &deviceProps);
-    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-
-    score += deviceProps.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
+    score += properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
                  ? DISCRETE_GPU_BONUS
                  : INTEGRATED_GPU_BONUS;
-    score += deviceProps.limits.maxImageDimension2D;
-    score *= deviceFeatures.geometryShader;
+    score += properties.limits.maxImageDimension2D;
+    score *= enabledFeatures.geometryShader;
 
     return score;
 }
@@ -108,6 +105,8 @@ void DeviceHandler::m_pickDevice() {
     }
     if (candidates.rbegin()->first > 0) {
         physicalDevice = candidates.rbegin()->second;
+        vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
+
     } else {
         throw std::runtime_error("failed to find a suitable GPU!");
     }
@@ -204,33 +203,26 @@ DeviceHandler::DeviceHandler(std::vector<const char *> &devExt,
     m_createLogicalDevice(nullptr);
 }
 
-[[nodiscard]] VkCommandPool
-DeviceHandler::createCommandPool(uint32_t queueFamilyIndex,
-                                 VkCommandPoolCreateFlags createFlags) const {
-    VkCommandPoolCreateInfo commandPoolCreateInfo =
-        create_info::commandPoolCreateInfo(queueFamilyIndex);
-    commandPoolCreateInfo.flags = createFlags;
-    VkCommandPool commandPool;
-    VK_CHECK(vkCreateCommandPool(logicalDevice, &commandPoolCreateInfo, nullptr,
-                                 &commandPool));
-    return commandPool;
-}
-
-[[nodiscard]] VkCommandBuffer
-DeviceHandler::createCommandBuffer(VkCommandBufferLevel level,
-                                   VkCommandPool pool, bool begin) const {
-    VkCommandBufferAllocateInfo allocInfo =
-        create_info::commandBufferAllocInfo(pool, 1);
-    allocInfo.level = level;
-
-    VkCommandBuffer cmdBuffer;
-    VK_CHECK(vkAllocateCommandBuffers(logicalDevice, &allocInfo, &cmdBuffer));
-    // If requested, also start recording for the new command buffer
-    if (begin) {
-        VkCommandBufferBeginInfo bufferBeginInfo{};
-        bufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        VK_CHECK(vkBeginCommandBuffer(cmdBuffer, &bufferBeginInfo));
+uint32_t DeviceHandler::getMemoryType(uint32_t typeBits,
+                                      VkMemoryPropertyFlags properties,
+                                      VkBool32 *memTypeFound) const {
+    for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++) {
+        if ((typeBits & 1) == 1) {
+            if ((memoryProperties.memoryTypes[i].propertyFlags & properties) ==
+                properties) {
+                if (memTypeFound != nullptr) {
+                    *memTypeFound = static_cast<VkBool32>(true);
+                }
+                return i;
+            }
+        }
+        typeBits >>= 1;
     }
-    return cmdBuffer;
+
+    if (memTypeFound != nullptr) {
+        *memTypeFound = static_cast<VkBool32>(false);
+        return 0;
+    }
+    throw std::runtime_error("Could not find a matching memory type");
 }
 } // namespace device

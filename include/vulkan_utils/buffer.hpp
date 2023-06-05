@@ -217,23 +217,5 @@ class Buffer {
                           */
     std::shared_ptr<device::DeviceHandler>
         m_deviceHandler; /**< Device handler used to create the buffer. */
-
-    /**
-     * \fn uint32_t m_findMemoryType(uint32_t typeFilter,
-                              VkMemoryPropertyFlags properties)
-     *
-     * \brief Finds a memory type that satisfies the specified filter and
-     * properties.
-     *
-     * This function finds a suitable memory type index that satisfies the
-     * specified filter and properties.
-     *
-     * \param typeFilter The memory type filter.
-     * \param properties The desired memory properties.
-     * \return The index of the suitable memory type, or 0 if no suitable type
-     * is found.
-     */
-    uint32_t m_findMemoryType(uint32_t typeFilter,
-                              VkMemoryPropertyFlags properties);
 };
 } // namespace buffer

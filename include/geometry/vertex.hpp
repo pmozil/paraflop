@@ -9,8 +9,9 @@ namespace geometry {
  * It is used to describe the properties of individual vertices in a 3D mesh.
  */
 struct Vertex {
-    glm::vec3 pos;   /**< Position of the vertex */
-    glm::vec3 color; /**< Color of the vertex */
+    glm::vec3 pos;      /**< Position of the vertex */
+    glm::vec3 color;    /**< Color of the vertex */
+    glm::vec2 texCoord; /**< Coordinate on texture */
 
     /**
      * \brief Retrieves the binding description for vertex input.
@@ -38,9 +39,9 @@ struct Vertex {
      *
      * \return The attribute descriptions for the vertex input.
      */
-    static inline std::array<VkVertexInputAttributeDescription, 2>
+    static inline std::array<VkVertexInputAttributeDescription, 3>
     getAttributeDescriptions() {
-        std::array<VkVertexInputAttributeDescription, 2>
+        std::array<VkVertexInputAttributeDescription, 3>
             attributeDescriptions{};
 
         attributeDescriptions[0].binding = 0;
@@ -52,6 +53,11 @@ struct Vertex {
         attributeDescriptions[1].location = 1;
         attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
         attributeDescriptions[1].offset = offsetof(Vertex, color);
+
+        attributeDescriptions[2].binding = 0;
+        attributeDescriptions[2].location = 2;
+        attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
 
         return attributeDescriptions;
     }

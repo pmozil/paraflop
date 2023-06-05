@@ -53,16 +53,16 @@ template <typename GraphicsPipeline> class Renderer {
      * \param m_vertexBuffer The vertex buffer.
      * \param m_indexBuffer The index buffer.
      */
-    Renderer(
-        GLFWwindow *window, VkInstance m_instance, VkSurfaceKHR m_surface,
-        std::shared_ptr<device::DeviceHandler> m_deviceHandler,
-        std::shared_ptr<swap_chain::SwapChain> m_swapChain,
-        std::shared_ptr<command_buffer::CommandBufferHandler> m_commandBuffer,
-        std::shared_ptr<GraphicsPipeline> m_graphicsPipeline,
-        std::shared_ptr<descriptor_set::DescriptorSetHandler>
-            m_descriptorSetHandler,
-        std::shared_ptr<buffer::VertexBuffer> m_vertexBuffer,
-        std::shared_ptr<buffer::IndexBuffer> m_indexBuffer)
+    Renderer(GLFWwindow *window, VkInstance m_instance, VkSurfaceKHR m_surface,
+             std::shared_ptr<device::DeviceHandler> m_deviceHandler,
+             std::shared_ptr<swap_chain::SwapChain> m_swapChain,
+             std::shared_ptr<command_buffer::ImageCommandBufferHandler>
+                 m_commandBuffer,
+             std::shared_ptr<GraphicsPipeline> m_graphicsPipeline,
+             std::shared_ptr<descriptor_set::DescriptorSetHandler>
+                 m_descriptorSetHandler,
+             std::shared_ptr<buffer::VertexBuffer> m_vertexBuffer,
+             std::shared_ptr<buffer::IndexBuffer> m_indexBuffer)
         : window(window), m_instance(m_instance), m_surface(m_surface),
           m_deviceHandler(std::move(m_deviceHandler)),
           m_commandBuffer(std::move(m_commandBuffer)),
@@ -99,7 +99,7 @@ template <typename GraphicsPipeline> class Renderer {
     VkInstance m_instance;
     VkSurfaceKHR m_surface;
     std::shared_ptr<device::DeviceHandler> m_deviceHandler;
-    std::shared_ptr<command_buffer::CommandBufferHandler> m_commandBuffer;
+    std::shared_ptr<command_buffer::ImageCommandBufferHandler> m_commandBuffer;
     std::shared_ptr<swap_chain::SwapChain> m_swapChain;
     std::shared_ptr<GraphicsPipeline> m_graphicsPipeline;
     std::shared_ptr<descriptor_set::DescriptorSetHandler>

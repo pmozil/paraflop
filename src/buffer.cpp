@@ -139,6 +139,7 @@ void Buffer::copyFrom(VkBuffer srcBuffer) {
     VkSubmitInfo submitInfo = create_info::submitInfo(1, &cmdBuffer);
 
     VkQueue transferQueue = m_deviceHandler->getTransferQueue();
+
     vkQueueSubmit(transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(transferQueue);
 
@@ -148,23 +149,23 @@ void Buffer::copyFrom(VkBuffer srcBuffer) {
 
 void Buffer::copyTo(VkBuffer dstBuffer) {
     VkCommandBufferBeginInfo beginInfo = create_info::commandBufferBeginInfo();
+    VkCommandBuffer transferBuffer = m_commandBuffer->createCommandBuffer(
+        VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
-    vkBeginCommandBuffer(m_commandBuffer->transferBuffer, &beginInfo);
+    vkBeginCommandBuffer(transferBuffer, &beginInfo);
 
     VkBufferCopy copyRegion = create_info::copyRegion(size);
-    vkCmdCopyBuffer(m_commandBuffer->transferBuffer, buffer, dstBuffer, 1,
-                    &copyRegion);
+    vkCmdCopyBuffer(transferBuffer, buffer, dstBuffer, 1, &copyRegion);
 
-    vkEndCommandBuffer(m_commandBuffer->transferBuffer);
+    vkEndCommandBuffer(transferBuffer);
 
-    VkSubmitInfo submitInfo =
-        create_info::submitInfo(1, &m_commandBuffer->transferBuffer);
+    VkSubmitInfo submitInfo = create_info::submitInfo(1, &transferBuffer);
 
     VkQueue transferQueue = m_deviceHandler->getTransferQueue();
     vkQueueSubmit(transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(transferQueue);
 
     vkFreeCommandBuffers(*m_deviceHandler, m_commandBuffer->commandPool, 1,
-                         &m_commandBuffer->transferBuffer);
+                         &transferBuffer);
 }
 } // namespace buffer

@@ -333,4 +333,18 @@ descriptorSetLayoutInfo(VkDescriptorSetLayoutBinding *bindings,
 VkImageCreateInfo imageCreateInfo(VkImageType type, VkFormat format,
                                   VkImageUsageFlags usageFlags);
 
+/**
+ * \fn VkSamplerCreateInfo samplerCreateInfo(VkFilter filter)
+ *
+ * \brief Returns a basic samplerCreateInfo
+ */
+VkSamplerCreateInfo samplerCreateInfo(VkFilter filter);
+
+/**
+ * \fn VkBufferImageCopy bufferImageCopy()
+ *
+ * \brief Returns a basic image copy info object
+ */
+VkBufferImageCopy bufferImageCopy(uint32_t width, uint32_t height);
+
 } // namespace create_info

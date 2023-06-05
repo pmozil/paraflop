@@ -22,15 +22,15 @@
 #include "vulkan_utils/window.hpp"
 
 const std::vector<geometry::Vertex> vertices = {
-    {{-0.5F, -0.5F, 1.0F}, {1.0F, 0.0F, 0.0F}},
-    {{0.5F, -0.5F, 1.0F}, {0.0F, 1.0F, 0.0F}},
-    {{0.5F, 0.5F, 1.0F}, {0.0F, 0.0F, 1.0F}},
-    {{-0.5F, 0.5F, 1.0F}, {1.0F, 1.0F, 1.0F}},
+    {{-0.5F, -0.5F, 1.0F}, {1.0F, 0.0F, 0.0F}, {1.0F, 0.0F}},
+    {{0.5F, -0.5F, 1.0F}, {0.0F, 1.0F, 0.0F}, {0.0F, 0.0F}},
+    {{0.5F, 0.5F, 1.0F}, {0.0F, 0.0F, 1.0F}, {0.0F, 1.0F}},
+    {{-0.5F, 0.5F, 1.0F}, {1.0F, 1.0F, 1.0F}, {1.0F, 1.0F}},
 
-    {{-0.5F, -0.5F, -1.0F}, {1.0F, 0.0F, 0.0F}},
-    {{0.5F, -0.5F, -1.0F}, {0.0F, 1.0F, 0.0F}},
-    {{0.5F, 0.5F, -1.0F}, {0.0F, 0.0F, 1.0F}},
-    {{-0.5F, 0.5F, -1.0F}, {1.0F, 1.0F, 1.0F}}};
+    {{-0.5F, -0.5F, -1.0F}, {1.0F, 0.0F, 0.0F}, {1.0F, 0.0F}},
+    {{0.5F, -0.5F, -1.0F}, {0.0F, 1.0F, 0.0F}, {0.0F, 0.0F}},
+    {{0.5F, 0.5F, -1.0F}, {0.0F, 0.0F, 1.0F}, {0.0F, 1.0F}},
+    {{-0.5F, 0.5F, -1.0F}, {1.0F, 1.0F, 1.0F}, {1.0F, 1.0F}}};
 
 const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4};
 
@@ -66,8 +66,8 @@ int main() {
     std::shared_ptr<graphics_pipeline::CustomRasterPipeline> pipeline =
         std::make_shared<graphics_pipeline::CustomRasterPipeline>(
             swapChain, deviceHandler, &layout->layout);
-    std::shared_ptr<command_buffer::CommandBufferHandler> commandBuffer =
-        std::make_shared<command_buffer::CommandBufferHandler>(
+    std::shared_ptr<command_buffer::ImageCommandBufferHandler> commandBuffer =
+        std::make_shared<command_buffer::ImageCommandBufferHandler>(
             deviceHandler, swapChain, pipeline);
 
     std::shared_ptr<buffer::UniformBuffer> uniformBuffer =

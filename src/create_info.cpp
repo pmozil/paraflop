@@ -245,4 +245,36 @@ VkImageCreateInfo imageCreateInfo(VkImageType type, VkFormat format,
 
     return createInfo;
 }
+
+VkSamplerCreateInfo samplerCreateInfo(VkFilter filter) {
+    VkSamplerCreateInfo samplerCreateInfo = {};
+    samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerCreateInfo.magFilter = filter;
+    samplerCreateInfo.minFilter = filter;
+    samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerCreateInfo.mipLodBias = 0.0F;
+    samplerCreateInfo.compareOp = VK_COMPARE_OP_NEVER;
+    samplerCreateInfo.minLod = 0.0F;
+    samplerCreateInfo.maxLod = 0.0F;
+    samplerCreateInfo.maxAnisotropy = 1.0F;
+
+    return samplerCreateInfo;
+}
+
+VkBufferImageCopy bufferImageCopy(uint32_t width, uint32_t height) {
+    VkBufferImageCopy bufferCopyRegion = {};
+    bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    bufferCopyRegion.imageSubresource.mipLevel = 0;
+    bufferCopyRegion.imageSubresource.baseArrayLayer = 0;
+    bufferCopyRegion.imageSubresource.layerCount = 1;
+    bufferCopyRegion.imageExtent.width = width;
+    bufferCopyRegion.imageExtent.height = height;
+    bufferCopyRegion.imageExtent.depth = 1;
+    bufferCopyRegion.bufferOffset = 0;
+
+    return bufferCopyRegion;
+}
 } // namespace create_info

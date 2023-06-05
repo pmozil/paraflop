@@ -4,14 +4,10 @@
 namespace command_buffer {
 CommandBufferHandler::CommandBufferHandler(
     std::shared_ptr<device::DeviceHandler> m_deviceHandler,
-    std::shared_ptr<swap_chain::SwapChain> m_swapChain,
-    std::shared_ptr<graphics_pipeline::AbstractGraphicsPipeline>
-        m_graphicsPipeline)
+    std::shared_ptr<swap_chain::SwapChain> m_swapChain)
     : m_deviceHandler(std::move(m_deviceHandler)),
-      m_swapChain(std::move(m_swapChain)),
-      m_graphicsPipeline(std::move(m_graphicsPipeline)) {
+      m_swapChain(std::move(m_swapChain)) {
     m_createCommandPool();
-    createCommandBuffers();
 }
 
 void CommandBufferHandler::m_createCommandPool() {
@@ -24,31 +20,7 @@ void CommandBufferHandler::m_createCommandPool() {
                                  nullptr, &commandPool));
 }
 
-void CommandBufferHandler::createCommandBuffers() {
-    commandBuffers.resize(m_swapChain->swapChainFramebuffers.size());
-
-    VkCommandBufferAllocateInfo allocInfo =
-        create_info::commandBufferAllocInfo(commandPool, commandBuffers.size());
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-
-    VK_CHECK(vkAllocateCommandBuffers(m_deviceHandler->logicalDevice,
-                                      &allocInfo, commandBuffers.data()))
-
-    VkCommandBufferAllocateInfo transferAllocInfo =
-        create_info::commandBufferAllocInfo(commandPool, 1);
-
-    vkAllocateCommandBuffers(m_deviceHandler->logicalDevice, &transferAllocInfo,
-                             &transferBuffer);
-}
-
-void CommandBufferHandler::cleanupCommandBuffers() {
-    vkFreeCommandBuffers(m_deviceHandler->logicalDevice, commandPool,
-                         static_cast<uint32_t>(commandBuffers.size()),
-                         commandBuffers.data());
-    commandBuffers.clear();
-}
 void CommandBufferHandler::cleanup() {
-    cleanupCommandBuffers();
     vkDestroyCommandPool(m_deviceHandler->logicalDevice, commandPool, nullptr);
 }
 
@@ -81,6 +53,7 @@ CommandBufferHandler::createCommandBuffer(VkCommandBufferLevel level,
     }
     return cmdBuffer;
 }
+
 void CommandBufferHandler::flushCommandBuffer(VkCommandBuffer buf,
                                               VkQueue queue, bool free) {
     if (buf == VK_NULL_HANDLE) {
@@ -109,6 +82,40 @@ void CommandBufferHandler::flushCommandBuffer(VkCommandBuffer buf,
     if (free) {
         vkFreeCommandBuffers(*m_deviceHandler, commandPool, 1, &buf);
     }
+}
+
+ImageCommandBufferHandler::ImageCommandBufferHandler(
+    std::shared_ptr<device::DeviceHandler> m_deviceHandler,
+    std::shared_ptr<swap_chain::SwapChain> m_swapChain,
+    std::shared_ptr<graphics_pipeline::AbstractGraphicsPipeline>
+        m_graphicsPipeline)
+    : CommandBufferHandler(std::move(m_deviceHandler), std::move(m_swapChain)),
+      m_graphicsPipeline(std::move(m_graphicsPipeline)) {
+    m_createCommandPool();
+    createCommandBuffers();
+}
+
+void ImageCommandBufferHandler::createCommandBuffers() {
+    commandBuffers.resize(m_swapChain->swapChainFramebuffers.size());
+
+    VkCommandBufferAllocateInfo allocInfo =
+        create_info::commandBufferAllocInfo(commandPool, commandBuffers.size());
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+    VK_CHECK(vkAllocateCommandBuffers(m_deviceHandler->logicalDevice,
+                                      &allocInfo, commandBuffers.data()))
+}
+
+void ImageCommandBufferHandler::cleanupCommandBuffers() {
+    vkFreeCommandBuffers(m_deviceHandler->logicalDevice, commandPool,
+                         static_cast<uint32_t>(commandBuffers.size()),
+                         commandBuffers.data());
+    commandBuffers.clear();
+}
+
+void ImageCommandBufferHandler::cleanup() {
+    cleanupCommandBuffers();
+    vkDestroyCommandPool(m_deviceHandler->logicalDevice, commandPool, nullptr);
 }
 
 } // namespace command_buffer

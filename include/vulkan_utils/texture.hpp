@@ -148,6 +148,24 @@ class Texture2D : public Texture {
      * \brief Destructor for Texture2D
      */
     ~Texture2D() { destroy(); }
+
+    /**
+     * \fn void createImageWithStaging();
+     *
+     * \brief Create the image for texture with a staging buffer
+     */
+    void createImageWithStaging(ktxTexture *ktxTexture,
+                                ktx_uint8_t *ktxTextureData,
+                                ktx_size_t ktxTextureSize, VkFormat format,
+                                VkImageUsageFlags imageUsageFlags);
+    /**
+     * \fn void createImageWithStaging();
+     *
+     * \brief Create the image for texture without a staging buffer
+     */
+    void createImageWithoutStaging(ktx_uint8_t *ktxTextureData, VkFormat format,
+                                   VkImageUsageFlags imageUsageFlags,
+                                   VkImageLayout layout);
 };
 
 /**

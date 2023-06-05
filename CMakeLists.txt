@@ -55,15 +55,13 @@ set(KTX_SOURCES
   ${KTX_DIR}/lib/filestream.c
   ${KTX_DIR}/lib/texture.c)
 
-add_library(${PROJECT} ktx STATIC ${KTX_SOURCES})
-
 file(COPY 
     "${CMAKE_SOURCE_DIR}/assets/shaders/frag.spv"
     "${CMAKE_SOURCE_DIR}/assets/shaders/vert.spv"
     DESTINATION
     "${CMAKE_BINARY_DIR}")
 
-file(GLOB SOURCE_FILES "${CMAKE_SOURCE_DIR}/src/*.cpp" "${CMAKE_SOURCE_DIR}/include/*")
+file(GLOB SOURCE_FILES ${KTX_SOURCES} "${CMAKE_SOURCE_DIR}/src/*.cpp" "${CMAKE_SOURCE_DIR}/include/*")
 
 set(APP_SOURCE_FILES ${SOURCE_FILES} CACHE INTERNAL STRINGS)
 

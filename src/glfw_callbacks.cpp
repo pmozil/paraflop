@@ -65,5 +65,5 @@ void handleCursor(GLFWwindow *window, double xpos, double ypos) {
     cam->mouseX = relX;
     cam->mouseY = relY;
 
-    glfwSetCursorPos(window, width / 2, height / 2);
+    // glfwSetCursorPos(window, width / 2, height / 2);
 }

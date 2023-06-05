@@ -1,5 +1,6 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.20)
 project(paraflop VERSION 0.1.0)
+
 set(CMAKE_BUILD_TYPE Debug)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -8,14 +9,13 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake_modules")
 set(CMAKE_BINARY_DIR "${PROJECT_SOURCE_DIR}/build")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  ${CMAKE_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -pthread")
+# SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
 include_directories("${CMAKE_SOURCE_DIR}/include")
 include_directories("${CMAKE_SOURCE_DIR}/external/ktx/include")
 include_directories("${CMAKE_SOURCE_DIR}/external/ktx/utils")
-
 
 find_package(Vulkan REQUIRED)
 find_package(glfw3 3.3 REQUIRED)
@@ -46,6 +46,17 @@ else()
     add_compile_options(-Wall -Wextra -Wpedantic -Ofast -ffast-math -march=native -g)
 endif()
 
+set(KTX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/ktx)
+set(KTX_SOURCES
+  ${KTX_DIR}/lib/hashlist.c
+  ${KTX_DIR}/lib/checkheader.c
+  ${KTX_DIR}/lib/swap.c
+  ${KTX_DIR}/lib/memstream.c
+  ${KTX_DIR}/lib/filestream.c
+  ${KTX_DIR}/lib/texture.c)
+
+add_library(${PROJECT} ktx STATIC ${KTX_SOURCES})
+
 file(COPY 
     "${CMAKE_SOURCE_DIR}/assets/shaders/frag.spv"
     "${CMAKE_SOURCE_DIR}/assets/shaders/vert.spv"
@@ -54,17 +65,7 @@ file(COPY
 
 file(GLOB SOURCE_FILES "${CMAKE_SOURCE_DIR}/src/*.cpp" "${CMAKE_SOURCE_DIR}/include/*")
 
-set(KTX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/ktx)
-set(KTX_SOURCES
-    ${KTX_DIR}/utils/unused.h
-    ${KTX_DIR}/lib/texture.c
-    ${KTX_DIR}/lib/hashlist.c
-    ${KTX_DIR}/lib/checkheader.c
-    ${KTX_DIR}/lib/swap.c
-    ${KTX_DIR}/lib/memstream.c
-    ${KTX_DIR}/lib/filestream.c)
-
-set(APP_SOURCE_FILES ${SOURCE_FILES} ${KTX_SOURCES} CACHE INTERNAL STRINGS)
+set(APP_SOURCE_FILES ${SOURCE_FILES} CACHE INTERNAL STRINGS)
 
 add_executable(paraflop ${APP_SOURCE_FILES})
 

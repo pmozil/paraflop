@@ -6,6 +6,8 @@
 #include "vulkan_utils/staging_buffer.hpp"
 #include "vulkan_utils/utils.hpp"
 
+#define ktxTexture_GetDataSize ktxTexture_GetSize
+
 namespace texture {
 void Texture::updateDescriptor() {
     descriptor.sampler = sampler;

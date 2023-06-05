@@ -22,6 +22,8 @@ them on some systems.
 
 I am not doing submodules to compile, because I am too lazy. Sorry
 
+### [There is no official glslc package for ubuntu, so just download this and copy it into `/usr/local/bin`](https://github.com/google/shaderc/blob/main/downloads.md)
+
 ### Ubuntu
 
 ```

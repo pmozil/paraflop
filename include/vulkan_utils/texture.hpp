@@ -34,6 +34,12 @@ class Texture {
     VkDescriptorImageInfo descriptor; /**< Descriptor image information. */
     VkSampler sampler;                /**< Texture sampler object. */
 
+    Texture(std::shared_ptr<device::DeviceHandler> m_deviceHandler,
+            std::shared_ptr<command_buffer::CommandBufferHandler>
+                m_commandBufferHandler)
+        : m_deviceHandler(std::move(m_deviceHandler)),
+          m_commandBufferHandler(std::move(m_commandBufferHandler)) {}
+
     /**
      * \fn void Texture::updateDescriptor()
      *
@@ -73,6 +79,13 @@ class Texture {
                             Vulkan operations. */
     std::shared_ptr<command_buffer::CommandBufferHandler>
         m_commandBufferHandler;
+
+    /**
+     * \fn void createViews();
+     *
+     * \brief Create image views
+     */
+    void m_createViews(VkFormat format, VkImageViewType viewType);
 };
 
 /**
@@ -104,9 +117,9 @@ class Texture2D : public Texture {
      */
     Texture2D(
         const std::string &filename, VkFormat format,
-        std::shared_ptr<device::DeviceHandler> deviceHandler,
+        std::shared_ptr<device::DeviceHandler> m_deviceHandler,
         std::shared_ptr<command_buffer::CommandBufferHandler>
-            commandBufferHandler,
+            m_commandBufferHandler,
         VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
         VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
         bool forceLinear = false);
@@ -136,7 +149,7 @@ class Texture2D : public Texture {
     Texture2D(
         void *buffer, VkDeviceSize bufferSize, VkFormat format,
         uint32_t texWidth, uint32_t texHeight,
-        std::shared_ptr<device::DeviceHandler> device,
+        std::shared_ptr<device::DeviceHandler> m_deviceHandler,
         std::shared_ptr<command_buffer::CommandBufferHandler>
             m_commandBufferHandler,
         VkFilter filter = VK_FILTER_LINEAR,

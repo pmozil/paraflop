@@ -3,6 +3,7 @@
  */
 #include "vulkan_utils/texture.hpp"
 #include "vulkan_utils/create_info.hpp"
+#include "vulkan_utils/staging_buffer.hpp"
 #include "vulkan_utils/utils.hpp"
 
 namespace texture {
@@ -35,6 +36,19 @@ ktxResult Texture::loadKTXFile(const std::string &filename,
     return result;
 }
 
+void Texture::m_createViews(VkFormat format, VkImageViewType viewType) {
+    VkImageViewCreateInfo viewCreateInfo{};
+    viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewCreateInfo.viewType = viewType;
+    viewCreateInfo.format = format;
+    viewCreateInfo.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    viewCreateInfo.subresourceRange.layerCount = layerCount;
+    viewCreateInfo.subresourceRange.levelCount = mipLevels;
+    viewCreateInfo.image = image;
+    VK_CHECK(
+        vkCreateImageView(*m_deviceHandler, &viewCreateInfo, nullptr, &view));
+}
+
 void Texture2D::createImageWithStaging(ktxTexture *ktxTexture,
                                        ktx_uint8_t *ktxTextureData,
                                        ktx_size_t ktxTextureSize,
@@ -50,40 +64,43 @@ void Texture2D::createImageWithStaging(ktxTexture *ktxTexture,
         VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
     // Create a host-visible staging buffer that contains the raw image data
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingMemory;
+    buffer::StagingBuffer buf = buffer::StagingBuffer(
+        m_deviceHandler, m_commandBufferHandler, ktxTextureSize);
+    // VkBuffer stagingBuffer;
+    // VkDeviceMemory stagingMemory;
 
-    VkBufferCreateInfo bufferCreateInfo{};
-    bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferCreateInfo.size = ktxTextureSize;
-    // This buffer is used as a transfer source for the buffer copy
-    bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    // VkBufferCreateInfo bufferCreateInfo{};
+    // bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    // bufferCreateInfo.size = ktxTextureSize;
+    // // This buffer is used as a transfer source for the buffer copy
+    // bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    // bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    VK_CHECK(vkCreateBuffer(*m_deviceHandler, &bufferCreateInfo, nullptr,
-                            &stagingBuffer));
+    // VK_CHECK(vkCreateBuffer(*m_deviceHandler, &bufferCreateInfo, nullptr,
+    //                         &stagingBuffer));
 
     // Get memory requirements for the staging buffer (alignment, memory
     // type bits)
-    vkGetBufferMemoryRequirements(*m_deviceHandler, stagingBuffer, &memReqs);
+    // vkGetBufferMemoryRequirements(*m_deviceHandler, buf.buffer, &memReqs);
 
-    memAllocInfo.allocationSize = memReqs.size;
-    // Get memory type index for a host visible buffer
-    memAllocInfo.memoryTypeIndex = m_deviceHandler->getMemoryType(
-        memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    // memAllocInfo.allocationSize = memReqs.size;
+    // // Get memory type index for a host visible buffer
+    // memAllocInfo.memoryTypeIndex = m_deviceHandler->getMemoryType(
+    //     memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+    //                                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    VK_CHECK(vkAllocateMemory(*m_deviceHandler, &memAllocInfo, nullptr,
-                              &stagingMemory));
-    VK_CHECK(
-        vkBindBufferMemory(*m_deviceHandler, stagingBuffer, stagingMemory, 0));
+    // VK_CHECK(vkAllocateMemory(*m_deviceHandler, &memAllocInfo, nullptr,
+    //                           &buf.memory));
+    // VK_CHECK(
+    //     vkBindBufferMemory(*m_deviceHandler, buf.buffer, buf.memory, 0));
 
-    // Copy texture data into staging buffer
-    uint8_t *data;
-    VK_CHECK(vkMapMemory(*m_deviceHandler, stagingMemory, 0, memReqs.size, 0,
-                         (void **)&data));
-    memcpy(data, ktxTextureData, ktxTextureSize);
-    vkUnmapMemory(*m_deviceHandler, stagingMemory);
+    // // Copy texture data into staging buffer
+    // uint8_t *data;
+    // VK_CHECK(vkMapMemory(*m_deviceHandler, buf.memory, 0, memReqs.size, 0,
+    //                      (void **)&data));
+    // memcpy(data, ktxTextureData, ktxTextureSize);
+    // vkUnmapMemory(*m_deviceHandler, buf.memory);
+    buf.copy(ktxTextureData, ktxTextureSize);
 
     // Setup buffer copy regions for each mip level
     std::vector<VkBufferImageCopy> bufferCopyRegions;
@@ -146,7 +163,7 @@ void Texture2D::createImageWithStaging(ktxTexture *ktxTexture,
                           subresourceRange);
 
     // Copy mip levels from staging buffer
-    vkCmdCopyBufferToImage(copyCmd, stagingBuffer, image,
+    vkCmdCopyBufferToImage(copyCmd, buf.buffer, image,
                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                            static_cast<uint32_t>(bufferCopyRegions.size()),
                            bufferCopyRegions.data());
@@ -161,8 +178,9 @@ void Texture2D::createImageWithStaging(ktxTexture *ktxTexture,
         copyCmd, m_deviceHandler->getTransferQueue());
 
     // Clean up staging resources
-    vkFreeMemory(*m_deviceHandler, stagingMemory, nullptr);
-    vkDestroyBuffer(*m_deviceHandler, stagingBuffer, nullptr);
+    // buf.copy(ktxTextureData, ktxTextureSize);
+    // vkFreeMemory(*m_deviceHandler, stagingMemory, nullptr);
+    // vkDestroyBuffer(*m_deviceHandler, stagingBuffer, nullptr);
 }
 
 void Texture2D::createImageWithoutStaging(ktx_uint8_t *ktxTextureData,
@@ -257,18 +275,17 @@ void Texture2D::createImageWithoutStaging(ktx_uint8_t *ktxTextureData,
         copyCmd, m_deviceHandler->getTransferQueue());
 }
 
-Texture2D::Texture2D(
-    const std::string &filename, VkFormat format,
-    std::shared_ptr<device::DeviceHandler> deviceHandler,
-    std::shared_ptr<command_buffer::CommandBufferHandler> commandBufferHandler,
-    VkImageUsageFlags imageUsageFlags, VkImageLayout imageLayout,
-    bool forceLinear) {
+Texture2D::Texture2D(const std::string &filename, VkFormat format,
+                     std::shared_ptr<device::DeviceHandler> m_deviceHandler,
+                     std::shared_ptr<command_buffer::CommandBufferHandler>
+                         m_commandBufferHandler,
+                     VkImageUsageFlags imageUsageFlags,
+                     VkImageLayout imageLayout, bool forceLinear)
+    : Texture(std::move(m_deviceHandler), std::move(m_commandBufferHandler)) {
     ktxTexture *ktxTexture;
     ktxResult result = loadKTXFile(filename, &ktxTexture);
     assert(result == KTX_SUCCESS);
 
-    m_deviceHandler = std::move(deviceHandler);
-    m_commandBufferHandler = std::move(commandBufferHandler);
     width = ktxTexture->baseWidth;
     height = ktxTexture->baseHeight;
     mipLevels = ktxTexture->numLevels;
@@ -359,15 +376,14 @@ Texture2D::Texture2D(
  */
 Texture2D::Texture2D(void *buffer, VkDeviceSize bufferSize, VkFormat format,
                      uint32_t texWidth, uint32_t texHeight,
-                     std::shared_ptr<device::DeviceHandler> device,
+                     std::shared_ptr<device::DeviceHandler> m_deviceHandler,
                      std::shared_ptr<command_buffer::CommandBufferHandler>
                          m_commandBufferHandler,
                      VkFilter filter, VkImageUsageFlags imageUsageFlags,
-                     VkImageLayout imageLayout) {
+                     VkImageLayout imageLayout)
+    : Texture(std::move(m_deviceHandler), std::move(m_commandBufferHandler)) {
     assert(buffer);
 
-    m_deviceHandler = std::move(device);
-    this->m_commandBufferHandler = std::move(m_commandBufferHandler);
     width = texWidth;
     height = texHeight;
     mipLevels = 1;
@@ -380,40 +396,44 @@ Texture2D::Texture2D(void *buffer, VkDeviceSize bufferSize, VkFormat format,
         VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
     // Create a host-visible staging buffer that contains the raw image data
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingMemory;
+    // VkBuffer stagingBuffer;
+    // VkDeviceMemory stagingMemory;
 
-    VkBufferCreateInfo bufferCreateInfo{};
-    bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferCreateInfo.size = bufferSize;
-    // This buffer is used as a transfer source for the buffer copy
-    bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    // VkBufferCreateInfo bufferCreateInfo{};
+    // bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    // bufferCreateInfo.size = bufferSize;
+    // // This buffer is used as a transfer source for the buffer copy
+    // bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    // bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    VK_CHECK(vkCreateBuffer(*m_deviceHandler, &bufferCreateInfo, nullptr,
-                            &stagingBuffer));
+    // VK_CHECK(vkCreateBuffer(*m_deviceHandler, &bufferCreateInfo, nullptr,
+    //                         &stagingBuffer));
 
-    // Get memory requirements for the staging buffer (alignment, memory type
-    // bits)
-    vkGetBufferMemoryRequirements(*m_deviceHandler, stagingBuffer, &memReqs);
+    // // Get memory requirements for the staging buffer (alignment, memory type
+    // // bits)
+    // vkGetBufferMemoryRequirements(*m_deviceHandler, stagingBuffer, &memReqs);
 
-    memAllocInfo.allocationSize = memReqs.size;
-    // Get memory type index for a host visible buffer
-    memAllocInfo.memoryTypeIndex = device->getMemoryType(
-        memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    // memAllocInfo.allocationSize = memReqs.size;
+    // // Get memory type index for a host visible buffer
+    // memAllocInfo.memoryTypeIndex = m_deviceHandler->getMemoryType(
+    //     memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+    //                                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    VK_CHECK(vkAllocateMemory(*m_deviceHandler, &memAllocInfo, nullptr,
-                              &stagingMemory));
-    VK_CHECK(
-        vkBindBufferMemory(*m_deviceHandler, stagingBuffer, stagingMemory, 0));
+    // VK_CHECK(vkAllocateMemory(*m_deviceHandler, &memAllocInfo, nullptr,
+    //                           &stagingMemory));
+    // VK_CHECK(
+    //     vkBindBufferMemory(*m_deviceHandler, stagingBuffer, stagingMemory,
+    //     0));
 
-    // Copy texture data into staging buffer
-    uint8_t *data;
-    VK_CHECK(vkMapMemory(*m_deviceHandler, stagingMemory, 0, memReqs.size, 0,
-                         (void **)&data));
-    memcpy(data, buffer, bufferSize);
-    vkUnmapMemory(*m_deviceHandler, stagingMemory);
+    // // Copy texture data into staging buffer
+    // uint8_t *data;
+    // VK_CHECK(vkMapMemory(*m_deviceHandler, stagingMemory, 0, memReqs.size, 0,
+    //                      (void **)&data));
+    // memcpy(data, buffer, bufferSize);
+    // vkUnmapMemory(*m_deviceHandler, stagingMemory);
+    buffer::StagingBuffer buf = buffer::StagingBuffer(
+        m_deviceHandler, m_commandBufferHandler, bufferSize);
+    buf.copy(buffer, bufferSize);
 
     VkBufferImageCopy bufferCopyRegion =
         create_info::bufferImageCopy(width, height);
@@ -435,7 +455,7 @@ Texture2D::Texture2D(void *buffer, VkDeviceSize bufferSize, VkFormat format,
 
     memAllocInfo.allocationSize = memReqs.size;
 
-    memAllocInfo.memoryTypeIndex = device->getMemoryType(
+    memAllocInfo.memoryTypeIndex = m_deviceHandler->getMemoryType(
         memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     VK_CHECK(vkAllocateMemory(*m_deviceHandler, &memAllocInfo, nullptr,
                               &deviceMemory));
@@ -454,7 +474,7 @@ Texture2D::Texture2D(void *buffer, VkDeviceSize bufferSize, VkFormat format,
                           subresourceRange);
 
     // Copy mip levels from staging buffer
-    vkCmdCopyBufferToImage(copyCmd, stagingBuffer, image,
+    vkCmdCopyBufferToImage(copyCmd, buf.buffer, image,
                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                            &bufferCopyRegion);
 
@@ -468,8 +488,8 @@ Texture2D::Texture2D(void *buffer, VkDeviceSize bufferSize, VkFormat format,
         copyCmd, m_deviceHandler->getTransferQueue());
 
     // Clean up staging resources
-    vkFreeMemory(*m_deviceHandler, stagingMemory, nullptr);
-    vkDestroyBuffer(*m_deviceHandler, stagingBuffer, nullptr);
+    // vkFreeMemory(*m_deviceHandler, stagingMemory, nullptr);
+    // vkDestroyBuffer(*m_deviceHandler, stagingBuffer, nullptr);
 
     // Create sampler
     VkSamplerCreateInfo samplerCreateInfo =
@@ -478,16 +498,7 @@ Texture2D::Texture2D(void *buffer, VkDeviceSize bufferSize, VkFormat format,
                              &sampler));
 
     // Create image view
-    VkImageViewCreateInfo viewCreateInfo = {};
-    viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewCreateInfo.pNext = nullptr;
-    viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    viewCreateInfo.format = format;
-    viewCreateInfo.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    viewCreateInfo.subresourceRange.levelCount = 1;
-    viewCreateInfo.image = image;
-    VK_CHECK(
-        vkCreateImageView(*m_deviceHandler, &viewCreateInfo, nullptr, &view));
+    m_createViews(format, VK_IMAGE_VIEW_TYPE_2D);
 
     // Update descriptor image info member that can be used for setting up
     // descriptor sets
@@ -513,13 +524,13 @@ Texture2DArray::Texture2DArray(
     std::shared_ptr<device::DeviceHandler> m_deviceHandler,
     std::shared_ptr<command_buffer::CommandBufferHandler>
         m_commandBufferHandler,
-    VkImageUsageFlags imageUsageFlags, VkImageLayout imageLayout) {
+    VkImageUsageFlags imageUsageFlags, VkImageLayout imageLayout)
+    : Texture(std::move(m_deviceHandler), std::move(m_commandBufferHandler)) {
+
     ktxTexture *ktxTexture;
     ktxResult result = loadKTXFile(filename, &ktxTexture);
     assert(result == KTX_SUCCESS);
 
-    this->m_deviceHandler = std::move(m_deviceHandler);
-    this->m_commandBufferHandler = std::move(m_commandBufferHandler);
     width = ktxTexture->baseWidth;
     height = ktxTexture->baseHeight;
     layerCount = ktxTexture->numLayers;
@@ -533,40 +544,44 @@ Texture2DArray::Texture2DArray(
     VkMemoryRequirements memReqs;
 
     // Create a host-visible staging buffer that contains the raw image data
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingMemory;
+    // VkBuffer stagingBuffer;
+    // VkDeviceMemory stagingMemory;
 
-    VkBufferCreateInfo bufferCreateInfo{};
-    bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferCreateInfo.size = ktxTextureSize;
-    // This buffer is used as a transfer source for the buffer copy
-    bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    // VkBufferCreateInfo bufferCreateInfo{};
+    // bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    // bufferCreateInfo.size = ktxTextureSize;
+    // // This buffer is used as a transfer source for the buffer copy
+    // bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    // bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    VK_CHECK(vkCreateBuffer(*m_deviceHandler, &bufferCreateInfo, nullptr,
-                            &stagingBuffer));
+    // VK_CHECK(vkCreateBuffer(*m_deviceHandler, &bufferCreateInfo, nullptr,
+    //                         &stagingBuffer));
 
-    // Get memory requirements for the staging buffer (alignment, memory type
-    // bits)
-    vkGetBufferMemoryRequirements(*m_deviceHandler, stagingBuffer, &memReqs);
+    // // Get memory requirements for the staging buffer (alignment, memory type
+    // // bits)
+    // vkGetBufferMemoryRequirements(*m_deviceHandler, stagingBuffer, &memReqs);
 
-    memAllocInfo.allocationSize = memReqs.size;
-    // Get memory type index for a host visible buffer
-    memAllocInfo.memoryTypeIndex = m_deviceHandler->getMemoryType(
-        memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    // memAllocInfo.allocationSize = memReqs.size;
+    // // Get memory type index for a host visible buffer
+    // memAllocInfo.memoryTypeIndex = m_deviceHandler->getMemoryType(
+    //     memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+    //                                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    VK_CHECK(vkAllocateMemory(*m_deviceHandler, &memAllocInfo, nullptr,
-                              &stagingMemory));
-    VK_CHECK(
-        vkBindBufferMemory(*m_deviceHandler, stagingBuffer, stagingMemory, 0));
+    // VK_CHECK(vkAllocateMemory(*m_deviceHandler, &memAllocInfo, nullptr,
+    //                           &stagingMemory));
+    // VK_CHECK(
+    //     vkBindBufferMemory(*m_deviceHandler, stagingBuffer, stagingMemory,
+    //     0));
 
-    // Copy texture data into staging buffer
-    uint8_t *data;
-    VK_CHECK(vkMapMemory(*m_deviceHandler, stagingMemory, 0, memReqs.size, 0,
-                         (void **)&data));
-    memcpy(data, ktxTextureData, ktxTextureSize);
-    vkUnmapMemory(*m_deviceHandler, stagingMemory);
+    // // Copy texture data into staging buffer
+    // uint8_t *data;
+    // VK_CHECK(vkMapMemory(*m_deviceHandler, stagingMemory, 0, memReqs.size, 0,
+    //                      (void **)&data));
+    // memcpy(data, ktxTextureData, ktxTextureSize);
+    // vkUnmapMemory(*m_deviceHandler, stagingMemory);
+    buffer::StagingBuffer buf = buffer::StagingBuffer(
+        m_deviceHandler, m_commandBufferHandler, ktxTextureSize);
+    buf.copy(ktxTextureData, ktxTextureSize);
 
     // Setup buffer copy regions for each layer including all of its miplevels
     std::vector<VkBufferImageCopy> bufferCopyRegions;
@@ -638,7 +653,7 @@ Texture2DArray::Texture2DArray(
 
     // Copy the layers and mip levels from the staging buffer to the optimal
     // tiled image
-    vkCmdCopyBufferToImage(copyCmd, stagingBuffer, image,
+    vkCmdCopyBufferToImage(copyCmd, buf.buffer, image,
                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                            static_cast<uint32_t>(bufferCopyRegions.size()),
                            bufferCopyRegions.data());
@@ -670,21 +685,12 @@ Texture2DArray::Texture2DArray(
                              &sampler));
 
     // Create image view
-    VkImageViewCreateInfo viewCreateInfo{};
-    viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-    viewCreateInfo.format = format;
-    viewCreateInfo.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    viewCreateInfo.subresourceRange.layerCount = layerCount;
-    viewCreateInfo.subresourceRange.levelCount = mipLevels;
-    viewCreateInfo.image = image;
-    VK_CHECK(
-        vkCreateImageView(*m_deviceHandler, &viewCreateInfo, nullptr, &view));
+    m_createViews(format, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
     // Clean up staging resources
     ktxTexture_Destroy(ktxTexture);
-    vkFreeMemory(*m_deviceHandler, stagingMemory, nullptr);
-    vkDestroyBuffer(*m_deviceHandler, stagingBuffer, nullptr);
+    // vkFreeMemory(*m_deviceHandler, stagingMemory, nullptr);
+    // vkDestroyBuffer(*m_deviceHandler, stagingBuffer, nullptr);
 
     // Update descriptor image info member that can be used for setting up
     // descriptor sets

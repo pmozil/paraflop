@@ -2,6 +2,9 @@
 
 void handleKeyPress(GLFWwindow *window, int key, int sancode, int action,
                     int mods) {
+    UNUSED(sancode);
+    UNUSED(action);
+    UNUSED(mods);
     auto *cam = (CameraRotation *)glfwGetWindowUserPointer(window);
     if (key == GLFW_KEY_W) {
         cam->camera->moveForward(cam->timePassed);

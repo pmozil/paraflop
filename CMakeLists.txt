@@ -14,11 +14,15 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -pthread")
 
 include_directories("${CMAKE_SOURCE_DIR}/include")
 include_directories("${CMAKE_SOURCE_DIR}/external/ktx/include")
-# include_directories("${CMAKE_SOURCE_DIR}/external/ktx/other_include")
+include_directories("${CMAKE_SOURCE_DIR}/external/ktx/utils")
+
 
 find_package(Vulkan REQUIRED)
 find_package(glfw3 3.3 REQUIRED)
 find_package(glm CONFIG REQUIRED)
+
+file(GLOB BASE_SRC "*.cpp" "*.hpp" "*.h" "../external/imgui/*.cpp")
+file(GLOB BASE_HEADERS "*.hpp" "*.h")
 
 IF (NOT Vulkan_FOUND)
     message(FATAL_ERROR "Could not find Vulkan library!")
@@ -49,10 +53,22 @@ file(COPY
     "${CMAKE_BINARY_DIR}")
 
 file(GLOB SOURCE_FILES "${CMAKE_SOURCE_DIR}/src/*.cpp" "${CMAKE_SOURCE_DIR}/include/*")
-set(APP_SOURCE_FILES ${SOURCE_FILES} CACHE INTERNAL STRINGS)
+
+set(KTX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/ktx)
+set(KTX_SOURCES
+    ${KTX_DIR}/utils/unused.h
+    ${KTX_DIR}/lib/texture.c
+    ${KTX_DIR}/lib/hashlist.c
+    ${KTX_DIR}/lib/checkheader.c
+    ${KTX_DIR}/lib/swap.c
+    ${KTX_DIR}/lib/memstream.c
+    ${KTX_DIR}/lib/filestream.c)
+
+set(APP_SOURCE_FILES ${SOURCE_FILES} ${KTX_SOURCES} CACHE INTERNAL STRINGS)
 
 add_executable(paraflop ${APP_SOURCE_FILES})
 
 target_link_libraries(paraflop PUBLIC Vulkan::Vulkan)
 target_link_libraries(paraflop PUBLIC glfw)
 target_link_libraries(paraflop PUBLIC glm::glm)
+target_link_libraries(paraflop PUBLIC ktx)

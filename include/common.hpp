@@ -46,6 +46,8 @@ const std::vector<const char *> DEVICE_EXTENSIONS = {
 #define PARAFLOP_VK_API_VERSION VK_API_VERSION_1_3
 #define GLOBAL_VERSION VK_MAKE_VERSION(1, 0, 0)
 
+#define UNUSED(x) (void)(x)
+
 // Enable or disable validation layers based on build mode
 #define NDEBUG
 

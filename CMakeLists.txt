@@ -46,6 +46,7 @@ else()
     add_compile_options(-Wall -Wextra -Wpedantic -Ofast -ffast-math -march=native -g)
 endif()
 
+# Compile the base library
 set(KTX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/ktx)
 set(KTX_SOURCES
   ${KTX_DIR}/lib/hashlist.c
@@ -61,12 +62,18 @@ file(COPY
     DESTINATION
     "${CMAKE_BINARY_DIR}")
 
-file(GLOB SOURCE_FILES ${KTX_SOURCES} "${CMAKE_SOURCE_DIR}/src/*.cpp" "${CMAKE_SOURCE_DIR}/include/*")
+file(GLOB BASE_SOURCES "${CMAKE_SOURCE_DIR}/src/base/*.cpp" "${CMAKE_SOURCE_DIR}/include/*")
+
+add_library(base ${BASE_SOURCES} ${KTX_SOURCES})
+
+# Complie the application
+file(GLOB SOURCE_FILES "${CMAKE_SOURCE_DIR}/src/*.cpp" "${CMAKE_SOURCE_DIR}/include/*")
 
 set(APP_SOURCE_FILES ${SOURCE_FILES} CACHE INTERNAL STRINGS)
 
 add_executable(paraflop ${APP_SOURCE_FILES})
 
+target_link_libraries(paraflop PUBLIC base)
 target_link_libraries(paraflop PUBLIC Vulkan::Vulkan)
 target_link_libraries(paraflop PUBLIC glfw)
 target_link_libraries(paraflop PUBLIC glm::glm)

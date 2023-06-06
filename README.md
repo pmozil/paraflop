@@ -26,7 +26,7 @@ I am not doing submodules to compile, because I am too lazy. Sorry
 
 ## [Install the Khronos Texture Library library binaries for linking](https://github.com/KhronosGroup/KTX-Software)
 
-## [Here's their releases](https://github.com/KhronosGroup/KTX-Software/releases)
+## [Here's the `libktx` releases](https://github.com/KhronosGroup/KTX-Software/releases)
 
 ### Ubuntu
 

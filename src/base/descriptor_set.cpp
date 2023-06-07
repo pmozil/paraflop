@@ -55,9 +55,15 @@ void DescriptorSetHandler::m_createDescriptorSets() {
     VK_CHECK(
         vkAllocateDescriptorSets(*m_deviceHandler, &allocInfo, &descriptorSet));
 
-    for (int i = 0; i < writes.size(); i++) {
-        writes[i].dstSet = descriptorSet;
-        std::cout << "DEBUG: " << writes[0].dstSet << "\n";
+    // for (int i = 0; i < writes.size(); i++) {
+    //     writes[i].dstSet = descriptorSet;
+    //     std::cout << "DEBUG: " << writes[0].dstSet << "\n";
+    //     std::cout << "DEBUG: " << descriptorSet << "\n";
+    // }
+
+    for (auto &write : writes) {
+        write.dstSet = descriptorSet;
+        std::cout << "DEBUG: " << write.dstSet << "\n";
         std::cout << "DEBUG: " << descriptorSet << "\n";
     }
 

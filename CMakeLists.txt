@@ -11,7 +11,7 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake_modules")
 set(CMAKE_BINARY_DIR "${PROJECT_SOURCE_DIR}/build")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
-# SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
 
 include_directories("${CMAKE_SOURCE_DIR}/include")
 include_directories("${CMAKE_SOURCE_DIR}/external/ktx/include")
@@ -59,6 +59,7 @@ set(KTX_SOURCES
 file(COPY 
     "${CMAKE_SOURCE_DIR}/assets/shaders/frag.spv"
     "${CMAKE_SOURCE_DIR}/assets/shaders/vert.spv"
+    "${CMAKE_SOURCE_DIR}/assets/viking_room.ktx"
     DESTINATION
     "${CMAKE_BINARY_DIR}")
 

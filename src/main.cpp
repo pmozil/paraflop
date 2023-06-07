@@ -35,7 +35,8 @@ const std::vector<geometry::Vertex> vertices = {
 const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4};
 
 std::vector<VkWriteDescriptorSet>
-getDescriptorWrites(VkDescriptorBufferInfo *buf);
+getDescriptorWrites(VkDescriptorBufferInfo *bufferInfo,
+                    VkDescriptorImageInfo *imageInfo);
 std::vector<VkDescriptorPoolSize> getDescriptorSizes();
 
 int main() {
@@ -58,14 +59,18 @@ int main() {
         std::make_shared<swap_chain::SwapChain>(window, surface->surface,
                                                 deviceHandler);
 
-    VkDescriptorSetLayoutBinding uboBinding =
+    std::array<VkDescriptorSetLayoutBinding, 2> uboBindings = {
         create_info::descriptorSetLayoutBinding(
             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0,
-            1);
+            1),
+        create_info::descriptorSetLayoutBinding(
+            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1),
+    };
 
     std::shared_ptr<descriptor_set::DescriptorSetLayout> layout =
-        std::make_shared<descriptor_set::DescriptorSetLayout>(deviceHandler,
-                                                              &uboBinding, 1);
+        std::make_shared<descriptor_set::DescriptorSetLayout>(
+            deviceHandler, uboBindings.data(), uboBindings.size());
 
     std::shared_ptr<graphics_pipeline::CustomRasterPipeline> pipeline =
         std::make_shared<graphics_pipeline::CustomRasterPipeline>(
@@ -77,6 +82,11 @@ int main() {
     std::shared_ptr<buffer::UniformBuffer> uniformBuffer =
         std::make_shared<buffer::UniformBuffer>(
             deviceHandler, commandBuffer, sizeof(geometry::TransformMatrices));
+
+    std::cout << "DEVICE: " << deviceHandler->physicalDevice << "\n";
+    std::shared_ptr<texture::Texture2D> texture{new texture::Texture2D(
+        "viking_room.ktx", VK_FORMAT_R8G8B8_SRGB, deviceHandler, commandBuffer,
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)};
 
     std::shared_ptr<geometry::Camera> camera =
         std::make_shared<geometry::Camera>();
@@ -105,7 +115,12 @@ int main() {
     bufferInfo.offset = 0;
     bufferInfo.range = sizeof(geometry::TransformMatrices);
 
-    auto writes = getDescriptorWrites(&bufferInfo);
+    VkDescriptorImageInfo imageInfo{};
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageView = texture->view;
+    imageInfo.sampler = texture->sampler;
+
+    auto writes = getDescriptorWrites(&bufferInfo, &imageInfo);
 
     std::shared_ptr<descriptor_set::DescriptorSetHandler> descriptorSets =
         std::make_shared<descriptor_set::DescriptorSetHandler>(
@@ -163,24 +178,35 @@ int main() {
 }
 
 std::vector<VkDescriptorPoolSize> getDescriptorSizes() {
-    std::vector<VkDescriptorPoolSize> sizes(1);
+    std::vector<VkDescriptorPoolSize> sizes(2);
 
     sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     sizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    sizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
     return sizes;
 }
 
 std::vector<VkWriteDescriptorSet>
-getDescriptorWrites(VkDescriptorBufferInfo *buf) {
-    std::vector<VkWriteDescriptorSet> descriptorWrites(1);
+getDescriptorWrites(VkDescriptorBufferInfo *bufferInfo,
+                    VkDescriptorImageInfo *imageInfo) {
+    std::vector<VkWriteDescriptorSet> descriptorWrites(2);
 
     descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptorWrites[0].dstBinding = 0;
     descriptorWrites[0].dstArrayElement = 0;
     descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptorWrites[0].descriptorCount = 1;
-    descriptorWrites[0].pBufferInfo = buf;
+    descriptorWrites[0].pBufferInfo = bufferInfo;
+
+    descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[1].dstBinding = 1;
+    descriptorWrites[1].dstArrayElement = 0;
+    descriptorWrites[1].descriptorType =
+        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorWrites[1].descriptorCount = 1;
+    descriptorWrites[1].pImageInfo = imageInfo;
 
     return descriptorWrites;
 }

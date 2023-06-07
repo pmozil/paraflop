@@ -103,6 +103,7 @@ void DeviceHandler::m_pickDevice() {
         int score = m_rateDevice(device);
         candidates.insert(std::make_pair(score, device));
     }
+
     if (candidates.rbegin()->first > 0) {
         physicalDevice = candidates.rbegin()->second;
         vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);

@@ -34,6 +34,10 @@ const std::vector<geometry::Vertex> vertices = {
 
 const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4};
 
+std::vector<VkWriteDescriptorSet>
+getDescriptorWrites(VkDescriptorBufferInfo *buf);
+std::vector<VkDescriptorPoolSize> getDescriptorSizes();
+
 int main() {
     std::vector<const char *> validation = {"VK_LAYER_KHRONOS_validation"};
 
@@ -95,9 +99,17 @@ int main() {
 
     std::vector<buffer::UniformBuffer> buffs = {};
 
+    auto sizes = getDescriptorSizes();
+    VkDescriptorBufferInfo bufferInfo{};
+    bufferInfo.buffer = uniformBuffer->buffer;
+    bufferInfo.offset = 0;
+    bufferInfo.range = sizeof(geometry::TransformMatrices);
+
+    auto writes = getDescriptorWrites(&bufferInfo);
+
     std::shared_ptr<descriptor_set::DescriptorSetHandler> descriptorSets =
         std::make_shared<descriptor_set::DescriptorSetHandler>(
-            deviceHandler, layout, uniformBuffer);
+            deviceHandler, layout, sizes, writes);
 
     std::shared_ptr<buffer::IndexBuffer> indexBuffer =
         std::make_shared<buffer::IndexBuffer>(
@@ -148,4 +160,27 @@ int main() {
     glfwTerminate();
 
     return 0;
+}
+
+std::vector<VkDescriptorPoolSize> getDescriptorSizes() {
+    std::vector<VkDescriptorPoolSize> sizes(1);
+
+    sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    sizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+    return sizes;
+}
+
+std::vector<VkWriteDescriptorSet>
+getDescriptorWrites(VkDescriptorBufferInfo *buf) {
+    std::vector<VkWriteDescriptorSet> descriptorWrites(1);
+
+    descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[0].dstBinding = 0;
+    descriptorWrites[0].dstArrayElement = 0;
+    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorWrites[0].descriptorCount = 1;
+    descriptorWrites[0].pBufferInfo = buf;
+
+    return descriptorWrites;
 }

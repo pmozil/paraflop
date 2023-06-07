@@ -24,23 +24,21 @@ void DescriptorSetLayout::cleanup() {
 DescriptorSetHandler::DescriptorSetHandler(
     std::shared_ptr<device::DeviceHandler> m_deviceHandler,
     std::shared_ptr<DescriptorSetLayout> m_layout,
-    std::shared_ptr<buffer::Buffer> buffer)
-    : m_deviceHandler(std::move(m_deviceHandler)),
-      m_layout(std::move(m_layout)), m_buffer(std::move(buffer)) {
+    std::vector<VkDescriptorPoolSize> sizes,
+    std::vector<VkWriteDescriptorSet> writes)
+    : sizes(std::move(sizes)), writes(std::move(writes)),
+      m_deviceHandler(std::move(m_deviceHandler)),
+      m_layout(std::move(m_layout)) {
     m_createDescriptorPool();
     m_createDescriptorSets();
 }
 
 void DescriptorSetHandler::m_createDescriptorPool() {
-    VkDescriptorPoolSize poolSize{};
-    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = 1;
-    poolInfo.pPoolSizes = &poolSize;
-    poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    poolInfo.poolSizeCount = static_cast<uint32_t>(sizes.size());
+    poolInfo.pPoolSizes = sizes.data();
+    poolInfo.maxSets = 1;
 
     VK_CHECK(vkCreateDescriptorPool(*m_deviceHandler, &poolInfo, nullptr,
                                     &descriptorPool));
@@ -57,21 +55,15 @@ void DescriptorSetHandler::m_createDescriptorSets() {
     VK_CHECK(
         vkAllocateDescriptorSets(*m_deviceHandler, &allocInfo, &descriptorSet));
 
-    VkDescriptorBufferInfo bufferInfo{};
-    bufferInfo.buffer = *m_buffer;
-    bufferInfo.offset = 0;
-    bufferInfo.range = sizeof(geometry::TransformMatrices);
+    for (int i = 0; i < writes.size(); i++) {
+        writes[i].dstSet = descriptorSet;
+        std::cout << "DEBUG: " << writes[0].dstSet << "\n";
+        std::cout << "DEBUG: " << descriptorSet << "\n";
+    }
 
-    VkWriteDescriptorSet descriptorWrite{};
-    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrite.dstSet = descriptorSet;
-    descriptorWrite.dstBinding = 0;
-    descriptorWrite.dstArrayElement = 0;
-    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptorWrite.descriptorCount = 1;
-    descriptorWrite.pBufferInfo = &bufferInfo;
-
-    vkUpdateDescriptorSets(*m_deviceHandler, 1, &descriptorWrite, 0, nullptr);
+    vkUpdateDescriptorSets(*m_deviceHandler,
+                           static_cast<uint32_t>(writes.size()), writes.data(),
+                           0, nullptr);
 }
 
 void DescriptorSetHandler::cleanup() {

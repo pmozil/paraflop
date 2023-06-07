@@ -20,9 +20,10 @@ class DescriptorSetLayout {
      * \brief Constructs a DescriptorSetLayout object.
      *
      * \param m_deviceHandler The device handler used to create the descriptor
-     * set layout. \param bindings An array of VkDescriptorSetLayoutBinding
-     * structures describing the layout of the descriptor set. \param bind_count
-     * The number of elements in the bindings array.
+     * set layout.
+     * \param bindings An array of VkDescriptorSetLayoutBinding
+     * structures describing the layout of the descriptor set.
+     * \param bind_count The number of elements in the bindings array.
      */
     DescriptorSetLayout(std::shared_ptr<device::DeviceHandler> m_deviceHandler,
                         VkDescriptorSetLayoutBinding *bindings,
@@ -89,7 +90,8 @@ class DescriptorSetHandler {
      */
     DescriptorSetHandler(std::shared_ptr<device::DeviceHandler> m_deviceHandler,
                          std::shared_ptr<DescriptorSetLayout> m_layout,
-                         std::shared_ptr<buffer::Buffer> buffer);
+                         std::vector<VkDescriptorPoolSize> sizes,
+                         std::vector<VkWriteDescriptorSet> writes);
 
     /**
      * \brief Destructor for the DescriptorSetHandler object.
@@ -100,6 +102,8 @@ class DescriptorSetHandler {
 
     VkDescriptorPool descriptorPool; /**< The Vulkan descriptor pool.*/
     VkDescriptorSet descriptorSet;   /**< The Vulkan descriptor set.*/
+    std::vector<VkDescriptorPoolSize> sizes;
+    std::vector<VkWriteDescriptorSet> writes;
 
     /**
      * \brief Cleans up the descriptor set handler resources.

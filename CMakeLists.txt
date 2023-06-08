@@ -57,9 +57,8 @@ set(KTX_SOURCES
   ${KTX_DIR}/lib/texture.c)
 
 file(COPY 
-    "${CMAKE_SOURCE_DIR}/assets/shaders/frag.spv"
-    "${CMAKE_SOURCE_DIR}/assets/shaders/vert.spv"
-    "${CMAKE_SOURCE_DIR}/assets/viking_room.ktx"
+    "${CMAKE_SOURCE_DIR}/assets/shaders"
+    "${CMAKE_SOURCE_DIR}/assets/textures"
     DESTINATION
     "${CMAKE_BINARY_DIR}")
 

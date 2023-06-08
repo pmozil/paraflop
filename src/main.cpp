@@ -83,10 +83,9 @@ int main() {
         std::make_shared<buffer::UniformBuffer>(
             deviceHandler, commandBuffer, sizeof(geometry::TransformMatrices));
 
-    std::cout << "DEVICE: " << deviceHandler->physicalDevice << "\n";
     std::shared_ptr<texture::Texture2D> texture{new texture::Texture2D(
-        "viking_room.ktx", VK_FORMAT_R8G8B8_SRGB, deviceHandler, commandBuffer,
-        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)};
+        "textures/metal.ktx", VK_FORMAT_R8G8B8A8_UNORM, deviceHandler,
+        commandBuffer, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)};
 
     std::shared_ptr<geometry::Camera> camera =
         std::make_shared<geometry::Camera>();
@@ -116,7 +115,7 @@ int main() {
     bufferInfo.range = sizeof(geometry::TransformMatrices);
 
     VkDescriptorImageInfo imageInfo{};
-    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageInfo.imageView = texture->view;
     imageInfo.sampler = texture->sampler;
 

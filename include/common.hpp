@@ -36,7 +36,8 @@ const int MAX_FRAMES_IN_FLIGHT = 3;
 
 // Validation layers
 const std::vector<const char *> VALIDATION_LAYERS = {
-    "VK_LAYER_KHRONOS_validation"};
+    "VK_LAYER_KHRONOS_validation",
+};
 
 // Device extensions required for swap chain
 const std::vector<const char *> DEVICE_EXTENSIONS = {

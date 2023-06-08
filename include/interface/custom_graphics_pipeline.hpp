@@ -28,8 +28,8 @@ class CustomRasterPipeline : public AbstractGraphicsPipeline {
      */
     void createGraphicsPipeline() override {
         // Read vertex and fragment shader code from files
-        auto vertShaderCode = readFile("vert.spv");
-        auto fragShaderCode = readFile("frag.spv");
+        auto vertShaderCode = readFile("shaders/vert.spv");
+        auto fragShaderCode = readFile("shaders/frag.spv");
 
         // Create shader modules from shader code
         VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);

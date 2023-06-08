@@ -99,10 +99,8 @@ void Texture2D::createImageWithStaging(ktxTexture *ktxTexture,
     imageCreateInfo.mipLevels = mipLevels;
     imageCreateInfo.extent = {width, height, 1};
     // Ensure that the TRANSFER_DST bit is set for staging
-    if (!static_cast<bool>(imageCreateInfo.usage &
-                           VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
-        imageCreateInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    }
+    imageCreateInfo.usage =
+        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VK_CHECK(
         vkCreateImage(*m_deviceHandler, &imageCreateInfo, nullptr, &image));
 
@@ -259,8 +257,6 @@ Texture2D::Texture2D(const std::string &filename, VkFormat format,
     VkFormatProperties formatProperties;
     vkGetPhysicalDeviceFormatProperties(this->m_deviceHandler->physicalDevice,
                                         format, &formatProperties);
-    std::cout << "GOT PROPS\n";
-
     // Only use linear tiling if requested (and supported by the device)
     // Support for linear tiling is mostly limited, so prefer to use
     // optimal tiling instead
@@ -370,10 +366,8 @@ Texture2D::Texture2D(void *buffer, VkDeviceSize bufferSize, VkFormat format,
     imageCreateInfo.mipLevels = mipLevels;
     imageCreateInfo.extent = {width, height, 1};
     // Ensure that the TRANSFER_DST bit is set for staging
-    if (!static_cast<bool>(imageCreateInfo.usage &
-                           VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
-        imageCreateInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    }
+    imageCreateInfo.usage =
+        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VK_CHECK(vkCreateImage(*this->m_deviceHandler, &imageCreateInfo, nullptr,
                            &image));
 
@@ -500,10 +494,8 @@ Texture2DArray::Texture2DArray(
         create_info::imageCreateInfo(VK_IMAGE_TYPE_2D, format, imageUsageFlags);
     imageCreateInfo.extent = {width, height, 1};
     // Ensure that the TRANSFER_DST bit is set for staging
-    if (!static_cast<bool>(imageCreateInfo.usage &
-                           VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
-        imageCreateInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    }
+    imageCreateInfo.usage =
+        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     imageCreateInfo.arrayLayers = layerCount;
     imageCreateInfo.mipLevels = mipLevels;
 

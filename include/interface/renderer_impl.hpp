@@ -13,7 +13,7 @@ void Renderer<GraphicsPipeline>::handleWindowUpdate() {
         glfwWaitEvents();
     }
 
-    vkDeviceWaitIdle(m_deviceHandler->logicalDevice);
+    vkDeviceWaitIdle(*m_deviceHandler);
 
     m_swapChain->cleanup();
 
@@ -110,9 +110,12 @@ void Renderer<GraphicsPipeline>::m_recordCommandBuffers(uint32_t imageIndex) {
     renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.renderArea.extent = m_swapChain->swapChainExtent;
 
-    VkClearValue clearColor = {{{0.0F, 0.0F, 0.0F, 1.0F}}};
-    renderPassInfo.clearValueCount = 1;
-    renderPassInfo.pClearValues = &clearColor;
+    std::array<VkClearValue, 2> clearValues{};
+    clearValues[0].color = {{0.0F, 0.0F, 0.0F, 1.0F}};
+    clearValues[1].depthStencil = {1.0F, 0};
+
+    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    renderPassInfo.pClearValues = clearValues.data();
 
     vkCmdBeginRenderPass(m_commandBuffer->commandBuffers[m_currentFrame],
                          &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -144,9 +147,6 @@ void Renderer<GraphicsPipeline>::m_recordCommandBuffers(uint32_t imageIndex) {
 
     vkCmdBindIndexBuffer(m_commandBuffer->commandBuffers[m_currentFrame],
                          m_indexBuffer->buffer, 0, VK_INDEX_TYPE_UINT16);
-
-    // std::cout << "DEBUG: " << sizeof(m_descriptorSetHandler->descriptorSet)
-    //           << "\n";
 
     vkCmdBindDescriptorSets(m_commandBuffer->commandBuffers[m_currentFrame],
                             VK_PIPELINE_BIND_POINT_GRAPHICS,

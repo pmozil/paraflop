@@ -99,8 +99,8 @@ void Texture2D::createImageWithStaging(ktxTexture *ktxTexture,
     imageCreateInfo.mipLevels = mipLevels;
     imageCreateInfo.extent = {width, height, 1};
     // Ensure that the TRANSFER_DST bit is set for staging
-    imageCreateInfo.usage =
-        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    imageCreateInfo.usage = imageUsageFlags | VK_IMAGE_USAGE_SAMPLED_BIT |
+                            VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VK_CHECK(
         vkCreateImage(*m_deviceHandler, &imageCreateInfo, nullptr, &image));
 
@@ -366,8 +366,8 @@ Texture2D::Texture2D(void *buffer, VkDeviceSize bufferSize, VkFormat format,
     imageCreateInfo.mipLevels = mipLevels;
     imageCreateInfo.extent = {width, height, 1};
     // Ensure that the TRANSFER_DST bit is set for staging
-    imageCreateInfo.usage =
-        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    imageCreateInfo.usage = imageUsageFlags | VK_IMAGE_USAGE_SAMPLED_BIT |
+                            VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VK_CHECK(vkCreateImage(*this->m_deviceHandler, &imageCreateInfo, nullptr,
                            &image));
 
@@ -494,8 +494,8 @@ Texture2DArray::Texture2DArray(
         create_info::imageCreateInfo(VK_IMAGE_TYPE_2D, format, imageUsageFlags);
     imageCreateInfo.extent = {width, height, 1};
     // Ensure that the TRANSFER_DST bit is set for staging
-    imageCreateInfo.usage =
-        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    imageCreateInfo.usage = imageUsageFlags | VK_IMAGE_USAGE_SAMPLED_BIT |
+                            VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     imageCreateInfo.arrayLayers = layerCount;
     imageCreateInfo.mipLevels = mipLevels;
 

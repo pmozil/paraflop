@@ -1,5 +1,6 @@
 #pragma once
 #include "common.hpp"
+#include "vulkan_utils/depth_buffer.hpp"
 #include "vulkan_utils/device.hpp"
 
 namespace swap_chain {
@@ -54,6 +55,7 @@ class SwapChain {
     std::vector<VkImage> swapChainImages;         /**< The swap chain images */
     std::vector<VkImageView> swapChainImageViews; /**< The image views */
     std::vector<VkFramebuffer> swapChainFramebuffers; /**< The image buffers */
+    DepthBuffer depthBuffer;
 
     std::vector<VkSemaphore>
         imageAvailableSemaphores; /**< The semaphores for available image

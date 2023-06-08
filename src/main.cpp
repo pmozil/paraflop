@@ -10,6 +10,7 @@
 #include "vulkan_utils/command_buffer.hpp"
 #include "vulkan_utils/create_info.hpp"
 #include "vulkan_utils/debug.hpp"
+#include "vulkan_utils/depth_buffer.hpp"
 #include "vulkan_utils/descriptor_set.hpp"
 #include "vulkan_utils/device.hpp"
 #include "vulkan_utils/graphics_pipeline.hpp"

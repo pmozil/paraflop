@@ -122,7 +122,7 @@ void Texture2D::createImageWithStaging(ktxTexture *ktxTexture,
 
     // Image barrier for optimal image (target)
     // Optimal image will be used as destination for the copy
-    utils::setImageLayout(copyCmd, image, VK_IMAGE_LAYOUT_GENERAL,
+    utils::setImageLayout(copyCmd, image, VK_IMAGE_LAYOUT_UNDEFINED,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           subresourceRange);
 
@@ -228,7 +228,7 @@ void Texture2D::createImageWithoutStaging(ktx_uint8_t *ktxTextureData,
 
     // Setup image memory barrier
     utils::setImageLayout(copyCmd, image, VK_IMAGE_ASPECT_COLOR_BIT,
-                          VK_IMAGE_LAYOUT_GENERAL, imageLayout);
+                          VK_IMAGE_LAYOUT_UNDEFINED, imageLayout);
 
     m_commandBufferHandler->flushCommandBuffer(
         copyCmd, m_deviceHandler->getTransferQueue());
@@ -389,7 +389,7 @@ Texture2D::Texture2D(void *buffer, VkDeviceSize bufferSize, VkFormat format,
 
     // Image barrier for optimal image (target)
     // Optimal image will be used as destination for the copy
-    utils::setImageLayout(copyCmd, image, VK_IMAGE_LAYOUT_GENERAL,
+    utils::setImageLayout(copyCmd, image, VK_IMAGE_LAYOUT_UNDEFINED,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           subresourceRange);
 
@@ -525,7 +525,7 @@ Texture2DArray::Texture2DArray(
     subresourceRange.levelCount = mipLevels;
     subresourceRange.layerCount = layerCount;
 
-    utils::setImageLayout(copyCmd, image, VK_IMAGE_LAYOUT_GENERAL,
+    utils::setImageLayout(copyCmd, image, VK_IMAGE_LAYOUT_UNDEFINED,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           subresourceRange);
 

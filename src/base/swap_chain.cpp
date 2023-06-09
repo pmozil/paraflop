@@ -3,22 +3,25 @@
 #include <utility>
 namespace swap_chain {
 SwapChain::SwapChain(GLFWwindow *m_window, VkSurfaceKHR m_surface,
-                     std::shared_ptr<device::DeviceHandler> m_deviceHandler)
+                     std::shared_ptr<device::DeviceHandler> m_deviceHandler,
+                     bool doInit)
     : m_window(m_window), m_surface(m_surface),
       m_deviceHandler(std::move(m_deviceHandler)) {
-    init();
-    m_createSyncObjects();
+    if (doInit) {
+        init();
+        m_createSyncObjects();
+    }
 };
 
 DepthBufferSwapChain::DepthBufferSwapChain(
     GLFWwindow *m_window, VkSurfaceKHR m_surface,
     std::shared_ptr<device::DeviceHandler> deviceHandler)
-    : SwapChain(m_window, m_surface, deviceHandler),
+    : SwapChain(m_window, m_surface, deviceHandler, false),
       depthBuffer(m_deviceHandler) {
-    cleanup();
     init();
     m_createSyncObjects();
 }
+
 void SwapChain::createImageViews() {
     swapChainImageViews.resize(swapChainImages.size());
 
@@ -86,8 +89,7 @@ void SwapChain::createRenderPass() {
 
     VkAttachmentReference depthAttachmentRef{};
     depthAttachmentRef.attachment = 1;
-    depthAttachmentRef.layout =
-        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -142,10 +144,8 @@ void DepthBufferSwapChain::createRenderPass() {
     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depthAttachment.initialLayout =
-        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    depthAttachment.finalLayout =
-        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depthAttachment.finalLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkAttachmentReference colorAttachmentRef = {};
     colorAttachmentRef.attachment = 0;
@@ -153,8 +153,7 @@ void DepthBufferSwapChain::createRenderPass() {
 
     VkAttachmentReference depthAttachmentRef{};
     depthAttachmentRef.attachment = 1;
-    depthAttachmentRef.layout =
-        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;

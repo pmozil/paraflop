@@ -33,7 +33,7 @@ template <typename GraphicsPipeline> class Renderer {
     /**
      * \fn Renderer(GLFWwindow *window, VkInstance m_instance, VkSurfaceKHR
      * m_surface, std::shared_ptr<device::DeviceHandler> m_deviceHandler,
-     * std::shared_ptr<swap_chain::SwapChain> m_swapChain,
+     * std::shared_ptr<swap_chain::DepthBufferSwapChain> m_swapChain,
      * std::shared_ptr<command_buffer::CommandBufferHandler> m_commandBuffer,
      * std::shared_ptr<GraphicsPipeline> m_graphicsPipeline,
      * std::shared_ptr<descriptor_set::DescriptorSetHandler>
@@ -55,7 +55,7 @@ template <typename GraphicsPipeline> class Renderer {
      */
     Renderer(GLFWwindow *window, VkInstance m_instance, VkSurfaceKHR m_surface,
              std::shared_ptr<device::DeviceHandler> m_deviceHandler,
-             std::shared_ptr<swap_chain::SwapChain> m_swapChain,
+             std::shared_ptr<swap_chain::DepthBufferSwapChain> m_swapChain,
              std::shared_ptr<command_buffer::ImageCommandBufferHandler>
                  m_commandBuffer,
              std::shared_ptr<GraphicsPipeline> m_graphicsPipeline,
@@ -100,7 +100,7 @@ template <typename GraphicsPipeline> class Renderer {
     VkSurfaceKHR m_surface;
     std::shared_ptr<device::DeviceHandler> m_deviceHandler;
     std::shared_ptr<command_buffer::ImageCommandBufferHandler> m_commandBuffer;
-    std::shared_ptr<swap_chain::SwapChain> m_swapChain;
+    std::shared_ptr<swap_chain::DepthBufferSwapChain> m_swapChain;
     std::shared_ptr<GraphicsPipeline> m_graphicsPipeline;
     std::shared_ptr<descriptor_set::DescriptorSetHandler>
         m_descriptorSetHandler;

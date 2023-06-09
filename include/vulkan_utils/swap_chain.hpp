@@ -27,7 +27,8 @@ class SwapChain {
      * \param m_deviceHandler The device handler associated with the swap chain.
      */
     SwapChain(GLFWwindow *m_window, VkSurfaceKHR m_surface,
-              std::shared_ptr<device::DeviceHandler> m_deviceHandler);
+              std::shared_ptr<device::DeviceHandler> m_deviceHandler,
+              bool doInit = true);
 
     /**
      * \fn ~SwapChain()
@@ -162,7 +163,7 @@ class SwapChain {
      *
      * \brief Init all objects
      */
-    inline void init() {
+    void init() {
         createSwapChain();
         createImageViews();
         createRenderPass();
@@ -266,7 +267,7 @@ class DepthBufferSwapChain : public SwapChain {
      *
      * \brief Init all objects
      */
-    inline void init() {
+    void init() {
         createSwapChain();
         createImageViews();
         depthBuffer.createDepthResources(swapChainExtent.width,

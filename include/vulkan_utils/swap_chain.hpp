@@ -55,7 +55,6 @@ class SwapChain {
     std::vector<VkImage> swapChainImages;         /**< The swap chain images */
     std::vector<VkImageView> swapChainImageViews; /**< The image views */
     std::vector<VkFramebuffer> swapChainFramebuffers; /**< The image buffers */
-    DepthBuffer depthBuffer;
 
     std::vector<VkSemaphore>
         imageAvailableSemaphores; /**< The semaphores for available image
@@ -146,7 +145,8 @@ class SwapChain {
     /**
      * \fn void createRenderPass()
      *
-     * \brief Creates the render passes for the swap chain.
+     * \brief Creates the render passes for the swap chain. REMOVES ALL RENDER
+     * PASSES
      */
     void createRenderPass();
 
@@ -157,7 +157,19 @@ class SwapChain {
      */
     void createFrameBuffers();
 
-  private:
+    /**
+     * \fn void init()
+     *
+     * \brief Init all objects
+     */
+    inline void init() {
+        createSwapChain();
+        createImageViews();
+        createRenderPass();
+        createFrameBuffers();
+    }
+
+  protected:
     GLFWwindow *m_window;
     VkSurfaceKHR m_surface;
     std::shared_ptr<device::DeviceHandler> m_deviceHandler;
@@ -216,5 +228,53 @@ class SwapChain {
      * \brief Clean up sync objects
      */
     void m_destroySyncObjects();
+};
+
+class DepthBufferSwapChain : public SwapChain {
+  public:
+    /**
+     * \fn DepthBufferSwapChain(GLFWwindow *m_window, VkSurfaceKHR m_surface,
+     *               std::shared_ptr<device::DeviceHandler> m_deviceHandler)
+     *
+     * \brief Constructs a SwapChain object.
+     *
+     * \param m_window The GLFW window associated with the swap chain.
+     * \param m_surface The Vulkan surface associated with the swap chain.
+     * \param m_deviceHandler The device handler associated with the swap chain.
+     */
+    DepthBufferSwapChain(GLFWwindow *m_window, VkSurfaceKHR m_surface,
+                         std::shared_ptr<device::DeviceHandler> deviceHandler);
+
+    DepthBuffer depthBuffer;
+    /**
+     * \fn void createRenderPass()
+     *
+     * \brief Creates the render passes for the swap chain. REMOVES ALL RENDER
+     * PASSES
+     */
+    void createRenderPass();
+
+    /**
+     * \fn void createFrameBuffers()
+     *
+     * \brief Creates the framebuffers for the swap chain.
+     */
+    void createFrameBuffers();
+
+    /**
+     * \fn void init()
+     *
+     * \brief Init all objects
+     */
+    inline void init() {
+        createSwapChain();
+        createImageViews();
+        depthBuffer.createDepthResources(swapChainExtent.width,
+                                         swapChainExtent.height);
+        createRenderPass();
+        createFrameBuffers();
+    }
+
+    void cleanup();
 };
 } // namespace swap_chain

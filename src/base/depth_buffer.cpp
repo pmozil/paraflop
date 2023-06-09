@@ -56,7 +56,7 @@ void DepthBuffer::createDepthResources(uint32_t width, uint32_t height) {
 
     VkImageViewCreateInfo viewInfo =
         create_info::imageViewCreateInfo(depthImage, format);
-    viewInfo.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT;
+    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
     VK_CHECK(vkCreateImageView(*m_deviceHandler, &viewInfo, nullptr,
                                &depthImageView));

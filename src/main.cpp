@@ -56,9 +56,9 @@ int main() {
     std::shared_ptr<device::DeviceHandler> deviceHandler =
         std::make_shared<device::DeviceHandler>(
             devExt, validation, instance->instance, surface->surface);
-    std::shared_ptr<swap_chain::SwapChain> swapChain =
-        std::make_shared<swap_chain::SwapChain>(window, surface->surface,
-                                                deviceHandler);
+    std::shared_ptr<swap_chain::DepthBufferSwapChain> swapChain =
+        std::make_shared<swap_chain::DepthBufferSwapChain>(
+            window, surface->surface, deviceHandler);
 
     std::array<VkDescriptorSetLayoutBinding, 2> uboBindings = {
         create_info::descriptorSetLayoutBinding(

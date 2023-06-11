@@ -9,7 +9,7 @@
  * (http://opensource.org/licenses/MIT)
  */
 
-#include "vulkan_utils/gltf_model.hpp"
+#include "gltf_model/gltf_model.hpp"
 #include "vulkan_utils/create_info.hpp"
 #include "vulkan_utils/staging_buffer.hpp"
 #include "vulkan_utils/utils.hpp"

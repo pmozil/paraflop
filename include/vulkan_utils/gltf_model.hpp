@@ -1,8 +1,8 @@
-/**
+/*
  * Vulkan glTF model and texture loading class based on tinyglTF
  * (https://github.com/syoyo/tinygltf)
  *
- * Copyright (C) 2018-2022 by Sascha Willems - www.saschawillems.de
+ * Copyright (C) 2018 by Sascha Willems - www.saschawillems.de
  *
  * This code is licensed under the MIT license (MIT)
  * (http://opensource.org/licenses/MIT)
@@ -14,29 +14,34 @@
 #include "vulkan_utils/command_buffer.hpp"
 #include "vulkan_utils/device.hpp"
 
+#define TINYGLTF_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#define TINYGLTF_NO_STB_IMAGE_WRITE
+
+#include "tiny_gltf.h"
+
+// Changing this value here also requires changing it in the vertex shader
+#define MAX_JOINTS 128u
+
 namespace gltf_model {
+enum DescriptorBindingFlags {
+    ImageBaseColor = 0x00000001,
+    ImageNormalMap = 0x00000002
+};
+
+extern VkDescriptorSetLayout descriptorSetLayoutImage;
+extern VkDescriptorSetLayout descriptorSetLayoutUbo;
+extern VkMemoryPropertyFlags memoryPropertyFlags;
+extern uint32_t descriptorBindingFlags;
+
 struct Node;
 
-struct BoundingBox {
-    glm::vec3 min;
-    glm::vec3 max;
-    bool valid = false;
-    BoundingBox();
-    BoundingBox(glm::vec3 min, glm::vec3 max);
-    BoundingBox getAABB(glm::mat4 mat);
-};
-
-struct TextureSampler {
-    VkFilter magFilter;
-    VkFilter minFilter;
-    VkSamplerAddressMode addressModeU;
-    VkSamplerAddressMode addressModeV;
-    VkSamplerAddressMode addressModeW;
-};
-
+/*
+    glTF texture loading class
+*/
 struct Texture {
     std::shared_ptr<device::DeviceHandler> deviceHandler;
-    std::shared_ptr<command_buffer::CommandBufferHandler> commandBufferHandler;
+    std::shared_ptr<command_buffer::CommandBufferHandler> commandBuffer;
     VkImage image;
     VkImageLayout imageLayout;
     VkDeviceMemory deviceMemory;
@@ -48,73 +53,92 @@ struct Texture {
     VkSampler sampler;
     void updateDescriptor();
     void destroy();
-    // Load a texture from a glTF image (stored as vector of chars loaded via
-    // stb_image) and generate a full mip chaing for it
     void
-    fromglTfImage(tinygltf::Image &gltfimage, TextureSampler textureSampler,
+    fromglTfImage(tinygltf::Image &gltfimage, std::string &path,
                   std::shared_ptr<device::DeviceHandler> device,
                   std::shared_ptr<command_buffer::CommandBufferHandler> cmdBuf,
                   VkQueue copyQueue);
+
+    void makeglTFImage(tinygltf::Image &gltfimage, VkFormat &format,
+                       VkQueue copyQueue);
+
+    void makeBlits(VkImageSubresourceRange &subresourceRange,
+                   VkQueue copyQueue);
+
+    void makeKTXImage(const std::string &filename, VkFormat &format,
+                      VkQueue copyQueue);
 };
 
+/*
+    glTF material class
+*/
 struct Material {
+    std::shared_ptr<device::DeviceHandler> deviceHandler;
+    std::shared_ptr<command_buffer::CommandBufferHandler> commandBuffer;
     enum AlphaMode { ALPHAMODE_OPAQUE, ALPHAMODE_MASK, ALPHAMODE_BLEND };
     AlphaMode alphaMode = ALPHAMODE_OPAQUE;
     float alphaCutoff = 1.0F;
     float metallicFactor = 1.0F;
     float roughnessFactor = 1.0F;
     glm::vec4 baseColorFactor = glm::vec4(1.0F);
-    glm::vec4 emissiveFactor = glm::vec4(1.0F);
-    gltf_model::Texture *baseColorTexture;
-    gltf_model::Texture *metallicRoughnessTexture;
-    gltf_model::Texture *normalTexture;
-    gltf_model::Texture *occlusionTexture;
-    gltf_model::Texture *emissiveTexture;
-    bool doubleSided = false;
-    struct TexCoordSets {
-        uint8_t baseColor = 0;
-        uint8_t metallicRoughness = 0;
-        uint8_t specularGlossiness = 0;
-        uint8_t normal = 0;
-        uint8_t occlusion = 0;
-        uint8_t emissive = 0;
-    } texCoordSets;
-    struct Extension {
-        gltf_model::Texture *specularGlossinessTexture;
-        gltf_model::Texture *diffuseTexture;
-        glm::vec4 diffuseFactor = glm::vec4(1.0F);
-        glm::vec3 specularFactor = glm::vec3(0.0F);
-    } extension;
-    struct PbrWorkflows {
-        bool metallicRoughness = true;
-        bool specularGlossiness = false;
-    } pbrWorkflows;
+    gltf_model::Texture *baseColorTexture = nullptr;
+    gltf_model::Texture *metallicRoughnessTexture = nullptr;
+    gltf_model::Texture *normalTexture = nullptr;
+    gltf_model::Texture *occlusionTexture = nullptr;
+    gltf_model::Texture *emissiveTexture = nullptr;
+
+    gltf_model::Texture *specularGlossinessTexture;
+    gltf_model::Texture *diffuseTexture;
+
     VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+
+    Material(std::shared_ptr<device::DeviceHandler> deviceHandler,
+             std::shared_ptr<command_buffer::CommandBufferHandler> cmdBuf)
+        : deviceHandler(std::move(deviceHandler)),
+          commandBuffer(std::move(cmdBuf)){};
+    void createDescriptorSet(VkDescriptorPool descriptorPool,
+                             VkDescriptorSetLayout descriptorSetLayout,
+                             uint32_t descriptorBindingFlags);
 };
 
+/*
+    glTF primitive
+*/
 struct Primitive {
     uint32_t firstIndex;
     uint32_t indexCount;
+    uint32_t firstVertex;
     uint32_t vertexCount;
     Material &material;
-    bool hasIndices;
-    BoundingBox bb;
-    Primitive(uint32_t firstIndex, uint32_t indexCount, uint32_t vertexCount,
-              Material &material);
-    void setBoundingBox(glm::vec3 min, glm::vec3 max);
+
+    struct Dimensions {
+        glm::vec3 min = glm::vec3(FLT_MAX);
+        glm::vec3 max = glm::vec3(-FLT_MAX);
+        glm::vec3 size;
+        glm::vec3 center;
+        float radius;
+    } dimensions;
+
+    void setDimensions(glm::vec3 min, glm::vec3 max);
+    Primitive(uint32_t firstIndex, uint32_t indexCount, Material &material)
+        : firstIndex(firstIndex), indexCount(indexCount), material(material){};
 };
 
+/*
+    glTF mesh
+*/
 struct Mesh {
     std::shared_ptr<device::DeviceHandler> deviceHandler;
-    std::shared_ptr<command_buffer::CommandBufferHandler> commandBufferHandler;
+    std::shared_ptr<command_buffer::CommandBufferHandler> commandBuffer;
+
     std::vector<Primitive *> primitives;
-    BoundingBox bb;
-    BoundingBox aabb;
+    std::string name;
+
     struct UniformBuffer {
         VkBuffer buffer;
         VkDeviceMemory memory;
         VkDescriptorBufferInfo descriptor;
-        VkDescriptorSet descriptorSet;
+        VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
         void *mapped;
     } uniformBuffer;
 
@@ -123,14 +147,16 @@ struct Mesh {
         glm::mat4 jointMatrix[MAX_JOINTS]{};
         float jointcount{0};
     } uniformBlock;
-    Mesh(std::shared_ptr<device::DeviceHandler> m_deviceHandler,
-         std::shared_ptr<command_buffer::CommandBufferHandler>
-             m_commandBufferHandler,
+
+    Mesh(std::shared_ptr<device::DeviceHandler> device,
+         std::shared_ptr<command_buffer::CommandBufferHandler> cmdBuf,
          glm::mat4 matrix);
     ~Mesh();
-    void setBoundingBox(glm::vec3 min, glm::vec3 max);
 };
 
+/*
+    glTF skin
+*/
 struct Skin {
     std::string name;
     Node *skeletonRoot = nullptr;
@@ -138,6 +164,9 @@ struct Skin {
     std::vector<Node *> joints;
 };
 
+/*
+    glTF node
+*/
 struct Node {
     Node *parent;
     uint32_t index;
@@ -150,14 +179,15 @@ struct Node {
     glm::vec3 translation{};
     glm::vec3 scale{1.0F};
     glm::quat rotation{};
-    BoundingBox bvh;
-    BoundingBox aabb;
-    glm::mat4 localMatrix();
-    glm::mat4 getMatrix();
+    [[nodiscard]] glm::mat4 localMatrix() const;
+    [[nodiscard]] glm::mat4 getMatrix() const;
     void update();
     ~Node();
 };
 
+/*
+    glTF animation channel
+*/
 struct AnimationChannel {
     enum PathType { TRANSLATION, ROTATION, SCALE };
     PathType path;
@@ -165,6 +195,9 @@ struct AnimationChannel {
     uint32_t samplerIndex;
 };
 
+/*
+    glTF animation sampler
+*/
 struct AnimationSampler {
     enum InterpolationType { LINEAR, STEP, CUBICSPLINE };
     InterpolationType interpolation;
@@ -172,6 +205,9 @@ struct AnimationSampler {
     std::vector<glm::vec4> outputsVec4;
 };
 
+/*
+    glTF animation
+*/
 struct Animation {
     std::string name;
     std::vector<AnimationSampler> samplers;
@@ -180,31 +216,87 @@ struct Animation {
     float end = std::numeric_limits<float>::min();
 };
 
-struct Model {
+/*
+    glTF default vertex layout with easy Vulkan mapping functions
+*/
+enum class VertexComponent {
+    Position,
+    Normal,
+    UV,
+    Color,
+    Tangent,
+    Joint0,
+    Weight0
+};
 
-    std::shared_ptr<device::DeviceHandler> deviceHandler;
-    std::shared_ptr<command_buffer::CommandBufferHandler> commandBufferHandler;
+struct Vertex {
+    glm::vec3 pos;
+    glm::vec3 normal;
+    glm::vec2 uv;
+    glm::vec4 color;
+    glm::vec4 joint0;
+    glm::vec4 weight0;
+    glm::vec4 tangent;
+    static VkVertexInputBindingDescription vertexInputBindingDescription;
+    static std::vector<VkVertexInputAttributeDescription>
+        vertexInputAttributeDescriptions;
+    static VkPipelineVertexInputStateCreateInfo
+        pipelineVertexInputStateCreateInfo;
+    static VkVertexInputBindingDescription
+    inputBindingDescription(uint32_t binding);
+    static VkVertexInputAttributeDescription
+    inputAttributeDescription(uint32_t binding, uint32_t location,
+                              VertexComponent component);
+    static std::vector<VkVertexInputAttributeDescription>
+    inputAttributeDescriptions(uint32_t binding,
+                               std::vector<VertexComponent> components);
+    /** @brief Returns the default pipeline vertex input state create info
+     * structure for the requested vertex components */
+    static VkPipelineVertexInputStateCreateInfo *
+    getPipelineVertexInputState(std::vector<VertexComponent> components);
+};
 
-    struct Vertex {
-        glm::vec3 pos;
-        glm::vec3 normal;
-        glm::vec2 uv0;
-        glm::vec2 uv1;
-        glm::vec4 joint0;
-        glm::vec4 weight0;
-        glm::vec4 color;
-    };
+enum FileLoadingFlags {
+    None = 0x00000000,
+    PreTransformVertices = 0x00000001,
+    PreMultiplyVertexColors = 0x00000002,
+    FlipY = 0x00000004,
+    DontLoadImages = 0x00000008
+};
+
+enum RenderFlags {
+    BindImages = 0x00000001,
+    RenderOpaqueNodes = 0x00000002,
+    RenderAlphaMaskedNodes = 0x00000004,
+    RenderAlphaBlendedNodes = 0x00000008
+};
+
+/*
+    glTF model loading and rendering class
+*/
+class Model {
+  private:
+    gltf_model::Texture *getTexture(uint32_t index);
+    gltf_model::Texture emptyTexture;
+    void createEmptyTexture(VkQueue transferQueue);
+
+    std::shared_ptr<device::DeviceHandler> m_deviceHandler;
+    std::shared_ptr<command_buffer::CommandBufferHandler> m_commandBuffer;
+
+  public:
+    VkDescriptorPool descriptorPool;
 
     struct Vertices {
-        VkBuffer buffer = VK_NULL_HANDLE;
+        int count;
+        VkBuffer buffer;
         VkDeviceMemory memory;
     } vertices;
+
     struct Indices {
-        VkBuffer buffer = VK_NULL_HANDLE;
+        int count;
+        VkBuffer buffer;
         VkDeviceMemory memory;
     } indices;
-
-    glm::mat4 aabb;
 
     std::vector<Node *> nodes;
     std::vector<Node *> linearNodes;
@@ -212,51 +304,56 @@ struct Model {
     std::vector<Skin *> skins;
 
     std::vector<Texture> textures;
-    std::vector<TextureSampler> textureSamplers;
     std::vector<Material> materials;
     std::vector<Animation> animations;
-    std::vector<std::string> extensions;
 
     struct Dimensions {
         glm::vec3 min = glm::vec3(FLT_MAX);
         glm::vec3 max = glm::vec3(-FLT_MAX);
+        glm::vec3 size;
+        glm::vec3 center;
+        float radius;
     } dimensions;
 
-    struct LoaderInfo {
-        uint32_t *indexBuffer;
-        Vertex *vertexBuffer;
-        size_t indexPos = 0;
-        size_t vertexPos = 0;
-    };
+    bool metallicRoughnessWorkflow = true;
+    bool buffersBound = false;
+    std::string path;
 
-    void destroy(VkDevice device);
+    Model() = default;
+    ~Model();
     void loadNode(gltf_model::Node *parent, const tinygltf::Node &node,
                   uint32_t nodeIndex, const tinygltf::Model &model,
-                  LoaderInfo &loaderInfo, float globalscale);
-    void getNodeProps(const tinygltf::Node &node, const tinygltf::Model &model,
-                      size_t &vertexCount, size_t &indexCount);
+                  std::vector<uint32_t> &indexBuffer,
+                  std::vector<Vertex> &vertexBuffer, float globalscale);
     void loadSkins(tinygltf::Model &gltfModel);
-    void loadTextures(tinygltf::Model &gltfModel,
-                      std::shared_ptr<device::DeviceHandler> m_deviceHandler,
-                      std::shared_ptr<command_buffer::CommandBufferHandler>
-                          m_commandBufferHandler,
-                      VkQueue transferQueue);
-    VkSamplerAddressMode getVkWrapMode(int32_t wrapMode);
-    VkFilter getVkFilterMode(int32_t filterMode);
-    void loadTextureSamplers(tinygltf::Model &gltfModel);
+    void
+    loadImages(tinygltf::Model &gltfModel,
+               std::shared_ptr<device::DeviceHandler> device,
+               std::shared_ptr<command_buffer::CommandBufferHandler> cmdBuf,
+               VkQueue transferQueue);
     void loadMaterials(tinygltf::Model &gltfModel);
     void loadAnimations(tinygltf::Model &gltfModel);
-    void loadFromFile(std::string filename,
-                      std::shared_ptr<device::DeviceHandler> m_deviceHandler,
-                      std::shared_ptr<command_buffer::CommandBufferHandler>
-                          m_commandBufferHandler,
-                      VkQueue transferQueue, float scale = 1.0F);
-    void drawNode(Node *node, VkCommandBuffer commandBuffer);
-    void draw(VkCommandBuffer commandBuffer);
-    void calculateBoundingBox(Node *node, Node *parent);
+    void
+    loadFromFile(std::string filename,
+                 std::shared_ptr<device::DeviceHandler> device,
+                 std::shared_ptr<command_buffer::CommandBufferHandler> cmdBuf,
+                 VkQueue transferQueue,
+                 uint32_t fileLoadingFlags = gltf_model::FileLoadingFlags::None,
+                 float scale = 1.0F);
+    void bindBuffers(VkCommandBuffer commandBuffer);
+    void drawNode(Node *node, VkCommandBuffer commandBuffer,
+                  uint32_t renderFlags = 0,
+                  VkPipelineLayout pipelineLayout = VK_NULL_HANDLE,
+                  uint32_t bindImageSet = 1);
+    void draw(VkCommandBuffer commandBuffer, uint32_t renderFlags = 0,
+              VkPipelineLayout pipelineLayout = VK_NULL_HANDLE,
+              uint32_t bindImageSet = 1);
+    void getNodeDimensions(Node *node, glm::vec3 &min, glm::vec3 &max);
     void getSceneDimensions();
     void updateAnimation(uint32_t index, float time);
     Node *findNode(Node *parent, uint32_t index);
     Node *nodeFromIndex(uint32_t index);
+    void prepareNodeDescriptor(gltf_model::Node *node,
+                               VkDescriptorSetLayout descriptorSetLayout);
 };
 } // namespace gltf_model

@@ -226,4 +226,56 @@ uint32_t DeviceHandler::getMemoryType(uint32_t typeBits,
     }
     throw std::runtime_error("Could not find a matching memory type");
 }
+
+VkResult DeviceHandler::createBuffer(VkBufferUsageFlags usageFlags,
+                                     VkMemoryPropertyFlags memoryPropertyFlags,
+                                     VkDeviceSize size, VkBuffer *buffer,
+                                     VkDeviceMemory *memory, void *data) const {
+    // Create the buffer handle
+    VkBufferCreateInfo bufferCreateInfo =
+        create_info::bufferCreateInfo(size, usageFlags);
+    VK_CHECK(vkCreateBuffer(logicalDevice, &bufferCreateInfo, nullptr, buffer));
+
+    // Create the memory backing up the buffer handle
+    VkMemoryRequirements memReqs;
+    vkGetBufferMemoryRequirements(logicalDevice, *buffer, &memReqs);
+
+    VkMemoryAllocateInfo memAlloc = create_info::memoryAllocInfo(
+        memReqs.size,
+        getMemoryType(memReqs.memoryTypeBits, memoryPropertyFlags));
+    // If the buffer has VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT set we also
+    // need to enable the appropriate flag during allocation
+    VkMemoryAllocateFlagsInfoKHR allocFlagsInfo{};
+    if (static_cast<bool>(usageFlags &
+                          VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)) {
+        allocFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO_KHR;
+        allocFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+        memAlloc.pNext = &allocFlagsInfo;
+    }
+    VK_CHECK(vkAllocateMemory(logicalDevice, &memAlloc, nullptr, memory));
+
+    // If a pointer to the buffer data has been passed, map the buffer and copy
+    // over the data
+    if (data != nullptr) {
+        void *mapped;
+        VK_CHECK(vkMapMemory(logicalDevice, *memory, 0, size, 0, &mapped));
+        memcpy(mapped, data, size);
+        // If host coherency hasn't been requested, do a manual flush to make
+        // writes visible
+        if ((memoryPropertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
+            VkMappedMemoryRange mappedRange{};
+            mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+            mappedRange.memory = *memory;
+            mappedRange.offset = 0;
+            mappedRange.size = size;
+            vkFlushMappedMemoryRanges(logicalDevice, 1, &mappedRange);
+        }
+        vkUnmapMemory(logicalDevice, *memory);
+    }
+
+    // Attach the memory to the buffer object
+    VK_CHECK(vkBindBufferMemory(logicalDevice, *buffer, *memory, 0));
+
+    return VK_SUCCESS;
+}
 } // namespace device

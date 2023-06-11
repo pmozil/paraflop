@@ -7,6 +7,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/hash.hpp>
 
 #include <algorithm>
@@ -26,14 +27,6 @@
 #include <stdexcept>
 #include <thread>
 #include <type_traits>
-
-#define TINYGLTF_NO_STB_IMAGE_WRITE
-
-#include "tiny_gltf.h"
-
-// Changing this value here also requires changing it in the vertex shader
-#define MAX_JOINTS 128u
-
 // Window dimensions
 const int WIDTH = 800;
 const int HEIGHT = 600;

@@ -31,9 +31,9 @@ class DeviceHandler {
      * \param vkSurface The Vulkan surface associated with the
      * device.
      */
-    DeviceHandler(std::vector<const char *> &deviceExtensions,
-                  std::vector<const char *> &validationLayers,
-                  VkInstance vkInstance, VkSurfaceKHR vkSurface);
+    DeviceHandler(std::vector<const char *> &devExt,
+                  std::vector<const char *> &validations, VkInstance vkInstance,
+                  VkSurfaceKHR vkSurface);
 
     /**
      * \fn ~DeviceHandler()
@@ -136,21 +136,45 @@ class DeviceHandler {
     uint32_t getMemoryType(uint32_t typeBits, VkMemoryPropertyFlags properties,
                            VkBool32 *memTypeFound = nullptr) const;
 
+    /**
+     * Create a buffer on the device
+     *
+     * \param usageFlags Usage flag bit mask for the buffer (i.e. index, vertex,
+     * uniform buffer)
+     * \param memoryPropertyFlags Memory properties for this
+     * buffer (i.e. device local, host visible, coherent)
+     * \param size Size of
+     * the buffer in byes
+     * \param buffer Pointer to the buffer handle acquired by
+     * the function
+     * \param memory Pointer to the memory handle acquired by the
+     * function
+     * \param data Pointer to the data that should be copied to the
+     * buffer after creation (optional, if not set, no data is copied over)
+     *
+     * \return VK_SUCCESS if buffer handle and memory have been created and
+     * (optionally passed) data has been copied
+     */
+    VkResult createBuffer(VkBufferUsageFlags usageFlags,
+                          VkMemoryPropertyFlags memoryPropertyFlags,
+                          VkDeviceSize size, VkBuffer *buffer,
+                          VkDeviceMemory *memory, void *data) const;
+
   private:
     std::vector<const char *>
         &m_deviceExtensions; /**< The required device extensions. */
     std::vector<const char *>
         &m_validationLayers; /**< The enabled validation layers. */
-    VkInstance
-        m_vkInstance; /**< The Vulkan instance associated with the device. */
+    VkInstance m_vkInstance; /**< The Vulkan instance associated with the
+                                device. */
     VkSurfaceKHR
         m_vkSurface; /**< The Vulkan surface associated with the device. */
 
     /**
      * \fn bool m_checkDeviceExtensions(VkPhysicalDevice device)
      *
-     * \brief Checks if the specified physical device supports all the required
-     * device extensions.
+     * \brief Checks if the specified physical device supports all the
+     * required device extensions.
      *
      * \param device The physical device to check.
      *

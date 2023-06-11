@@ -50,15 +50,6 @@ else()
 endif()
 
 # Compile the dependencies
-set(KTX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/ktx)
-set(KTX_SOURCES
-  ${KTX_DIR}/lib/hashlist.c
-  ${KTX_DIR}/lib/checkheader.c
-  ${KTX_DIR}/lib/swap.c
-  ${KTX_DIR}/lib/memstream.c
-  ${KTX_DIR}/lib/filestream.c
-  ${KTX_DIR}/lib/texture.c)
-
 file(COPY 
     ${CMAKE_SOURCE_DIR}/assets/shaders
     ${CMAKE_SOURCE_DIR}/assets/textures
@@ -67,7 +58,7 @@ file(COPY
 
 file(GLOB BASE_SOURCES ${CMAKE_SOURCE_DIR}/src/base/*.cpp ${CMAKE_SOURCE_DIR}/include/*)
 
-add_library(base ${BASE_SOURCES} ${KTX_SOURCES})
+add_library(base ${BASE_SOURCES})
 
 file(GLOB GLTF_MODEL_SOURCES ${CMAKE_SOURCE_DIR}/src/gltf_model/*.cpp ${CMAKE_SOURCE_DIR}/include/gltf_model/*)
 

@@ -10,6 +10,7 @@
  */
 
 #pragma once
+#pragma GCC system_header
 
 #include "common.hpp"
 #include "vulkan_utils/command_buffer.hpp"
@@ -18,7 +19,14 @@
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #define TINYGLTF_NO_STB_IMAGE_WRITE
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wall"
+#pragma clang diagnostic ignored "-Wextra"
+#pragma warning(disable)
 #include "tiny_gltf.h"
+#pragma warning(restore)
+#pragma clang diagnostic pop
 
 // Changing this value here also requires changing it in the vertex shader
 #define MAX_JOINTS 128u

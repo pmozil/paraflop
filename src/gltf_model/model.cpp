@@ -395,6 +395,7 @@ void gltf_model::Model::loadNode(gltf_model::Node *parent,
                         case 3:
                             vert.color = glm::vec4(
                                 glm::make_vec3(&bufferColors[idx * 3]), 1.0F);
+                            [[fallthrough]];
                         case 4:
                             vert.color = glm::make_vec4(&bufferColors[idx * 4]);
                         }

@@ -347,4 +347,27 @@ VkSamplerCreateInfo samplerCreateInfo(VkFilter filter);
  */
 VkBufferImageCopy bufferImageCopy(uint32_t width, uint32_t height);
 
+/**
+ *  \fn VkVertexInputAttributeDescription
+ * vertexInputAttributeDescription(uint32_t binding, uint32_t location,
+                                VkFormat format, uint32_t offset);
+ * \biref Create a vertex attribute descriptor (essentially a description of the
+ vertex struct field)
+ */
+
+VkVertexInputAttributeDescription
+vertexInputAttributeDescription(uint32_t binding, uint32_t location,
+                                VkFormat format, uint32_t offset);
+
+/**
+ * \fn VkVertexInputBindingDescription
+vertexInputBindingDescription(uint32_t binding, uint32_t stride,
+                              VkVertexInputRate inputRate);
+ * \biref Create a vertex Input binding (essentially a description of the
+ whole vertex struct)
+ */
+VkVertexInputBindingDescription
+vertexInputBindingDescription(uint32_t binding, uint32_t stride,
+                              VkVertexInputRate inputRate);
+
 } // namespace create_info

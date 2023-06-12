@@ -25,6 +25,7 @@ struct Material {
     float alphaCutoff = 1.0F;
     float metallicFactor = 1.0F;
     float roughnessFactor = 1.0F;
+    bool doubleSided = false;
     glm::vec4 baseColorFactor = glm::vec4(1.0F);
     gltf_model::Texture *baseColorTexture = nullptr;
     gltf_model::Texture *metallicRoughnessTexture = nullptr;

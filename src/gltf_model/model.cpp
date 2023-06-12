@@ -544,6 +544,7 @@ void gltf_model::Model::loadImages(
 void gltf_model::Model::loadMaterials(tinygltf::Model &gltfModel) {
     for (tinygltf::Material &mat : gltfModel.materials) {
         gltf_model::Material material(m_deviceHandler, m_commandBuffer);
+        material.doubleSided = mat.doubleSided;
         if (mat.values.find("baseColorTexture") != mat.values.end()) {
             material.baseColorTexture = getTexture(
                 gltfModel

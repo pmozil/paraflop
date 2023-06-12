@@ -277,4 +277,25 @@ VkBufferImageCopy bufferImageCopy(uint32_t width, uint32_t height) {
 
     return bufferCopyRegion;
 }
+
+VkVertexInputAttributeDescription
+vertexInputAttributeDescription(uint32_t binding, uint32_t location,
+                                VkFormat format, uint32_t offset) {
+    VkVertexInputAttributeDescription vInputAttribDescription{};
+    vInputAttribDescription.location = location;
+    vInputAttribDescription.binding = binding;
+    vInputAttribDescription.format = format;
+    vInputAttribDescription.offset = offset;
+    return vInputAttribDescription;
+}
+
+VkVertexInputBindingDescription
+vertexInputBindingDescription(uint32_t binding, uint32_t stride,
+                              VkVertexInputRate inputRate) {
+    VkVertexInputBindingDescription vInputBindDescription{};
+    vInputBindDescription.binding = binding;
+    vInputBindDescription.stride = stride;
+    vInputBindDescription.inputRate = inputRate;
+    return vInputBindDescription;
+}
 } // namespace create_info

@@ -16,10 +16,6 @@
 #include "vulkan_utils/command_buffer.hpp"
 #include "vulkan_utils/device.hpp"
 
-#define TINYGLTF_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
-#define TINYGLTF_NO_STB_IMAGE_WRITE
-
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wextra"
@@ -41,12 +37,6 @@ extern VkDescriptorSetLayout descriptorSetLayoutImage;
 extern VkDescriptorSetLayout descriptorSetLayoutUbo;
 extern VkMemoryPropertyFlags memoryPropertyFlags;
 extern uint32_t descriptorBindingFlags;
-
-VkDescriptorSetLayout descriptorSetLayoutImage = VK_NULL_HANDLE;
-VkDescriptorSetLayout descriptorSetLayoutUbo = VK_NULL_HANDLE;
-VkMemoryPropertyFlags memoryPropertyFlags = 0;
-uint32_t descriptorBindingFlags =
-    gltf_model::DescriptorBindingFlags::ImageBaseColor;
 
 struct Node;
 

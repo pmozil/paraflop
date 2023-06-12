@@ -8,6 +8,10 @@
  * (http://opensource.org/licenses/MIT)
  */
 
+#define TINYGLTF_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#define TINYGLTF_NO_STB_IMAGE_WRITE
+
 #include "gltf_model/model.hpp"
 #include "common.hpp"
 #include "gltf_model/gltf_common.hpp"
@@ -16,6 +20,12 @@
 #include "vulkan_utils/device.hpp"
 #include "vulkan_utils/staging_buffer.hpp"
 #include "vulkan_utils/utils.hpp"
+
+VkDescriptorSetLayout gltf_model::descriptorSetLayoutImage = VK_NULL_HANDLE;
+VkDescriptorSetLayout gltf_model::descriptorSetLayoutUbo = VK_NULL_HANDLE;
+VkMemoryPropertyFlags gltf_model::memoryPropertyFlags = 0;
+uint32_t gltf_model::descriptorBindingFlags =
+    gltf_model::DescriptorBindingFlags::ImageBaseColor;
 
 /*
     We use a custom image loading function with tinyglTF, so we can do custom

@@ -62,32 +62,28 @@ add_library(base ${BASE_SOURCES})
 
 file(GLOB GLTF_MODEL_SOURCES ${CMAKE_SOURCE_DIR}/src/gltf_model/*.cpp ${CMAKE_SOURCE_DIR}/include/gltf_model/*)
 
-add_library(gltf_model ${GLTF_MODEL_SOURCES})
-
 # Complie the application
 file(GLOB SOURCE_FILES ${CMAKE_SOURCE_DIR}/src/paraflop/*.cpp ${CMAKE_SOURCE_DIR}/include/*)
 
 set(APP_SOURCE_FILES ${SOURCE_FILES} CACHE INTERNAL STRINGS)
 
-add_executable(paraflop ${APP_SOURCE_FILES})
+add_executable(paraflop ${APP_SOURCE_FILES} ${GLTF_MODEL_SOURCES})
 
 target_link_libraries(paraflop PUBLIC base)
 target_link_libraries(paraflop PUBLIC Vulkan::Vulkan)
 target_link_libraries(paraflop PUBLIC glfw)
 target_link_libraries(paraflop PUBLIC glm::glm)
 target_link_libraries(paraflop PUBLIC ktx)
-target_link_libraries(paraflop PUBLIC gltf_model)
 
 # Compile olf app
-file(GLOB SOURCE_FILES ${CMAKE_SOURCE_DIR}/src/paraflop.bak/*.cpp ${CMAKE_SOURCE_DIR}/include/*)
+file(GLOB OLD_SOURCE_FILES ${CMAKE_SOURCE_DIR}/src/paraflop.bak/*.cpp ${CMAKE_SOURCE_DIR}/include/*)
 
-set(APP_SOURCE_FILES ${SOURCE_FILES} CACHE INTERNAL STRINGS)
+set(OLD_APP_SOURCE_FILES ${OLD_SOURCE_FILES} CACHE INTERNAL STRINGS)
 
-add_executable(paraflop.bak ${APP_SOURCE_FILES})
+add_executable(paraflop.bak ${OLD_APP_SOURCE_FILES})
 
 target_link_libraries(paraflop.bak PUBLIC base)
 target_link_libraries(paraflop.bak PUBLIC Vulkan::Vulkan)
 target_link_libraries(paraflop.bak PUBLIC glfw)
 target_link_libraries(paraflop.bak PUBLIC glm::glm)
 target_link_libraries(paraflop.bak PUBLIC ktx)
-target_link_libraries(paraflop.bak PUBLIC gltf_model)

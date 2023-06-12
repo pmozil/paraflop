@@ -21,12 +21,11 @@ class CustomRasterPipeline : public AbstractGraphicsPipeline {
      * \param m_deviceHandler The shared pointer to the DeviceHandler object.
      * \param layout The pointer to the Vulkan descriptor set layout.
      */
-    CustomRasterPipeline(std::shared_ptr<swap_chain::SwapChain> m_swapChain,
-                         std::shared_ptr<device::DeviceHandler> m_deviceHandler,
-                         std::shared_ptr<gltf_model::Model> m_model,
-                         VkDescriptorSetLayout *layout)
+    CustomRasterPipeline(std::shared_ptr<device::DeviceHandler> m_deviceHandler,
+                         std::shared_ptr<swap_chain::SwapChain> m_swapChain,
+                         std::shared_ptr<gltf_model::Model> m_model)
         : AbstractGraphicsPipeline(std::move(m_swapChain),
-                                   std::move(m_deviceHandler), layout),
+                                   std::move(m_deviceHandler), nullptr),
           m_model(std::move(m_model)) {
         createGraphicsPipeline();
     }
@@ -158,8 +157,8 @@ class CustomRasterPipeline : public AbstractGraphicsPipeline {
         pipelineDynamicStateCreateInfo.dynamicStateCount = dynamicStates.size();
         pipelineDynamicStateCreateInfo.flags = 0;
 
-        auto vertShaderCode = readFile("shaders/vert.spv");
-        auto fragShaderCode = readFile("shaders/frag.spv");
+        auto vertShaderCode = readFile("shaders/vert_new.spv");
+        auto fragShaderCode = readFile("shaders/frag_new.spv");
 
         VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
         VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
@@ -209,6 +208,16 @@ class CustomRasterPipeline : public AbstractGraphicsPipeline {
         pipelineCreateInfo.stageCount =
             static_cast<uint32_t>(shaderStages.size());
         pipelineCreateInfo.pStages = shaderStages.data();
+
+        VK_CHECK(vkCreateGraphicsPipelines(
+            m_deviceHandler->logicalDevice, VK_NULL_HANDLE, 1,
+            &pipelineCreateInfo, nullptr, &graphicsPipeline));
+
+        // Clean up shader modules
+        vkDestroyShaderModule(m_deviceHandler->logicalDevice, fragShaderModule,
+                              nullptr);
+        vkDestroyShaderModule(m_deviceHandler->logicalDevice, vertShaderModule,
+                              nullptr);
     }
 };
 

@@ -75,10 +75,6 @@ void gltf_model::Texture::makeglTFImage(tinygltf::Image &gltfimage,
     assert(formatProperties.optimalTilingFeatures &
            VK_FORMAT_FEATURE_BLIT_DST_BIT);
 
-    VkMemoryAllocateInfo memAllocInfo{};
-    memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    VkMemoryRequirements memReqs{};
-
     buffer::StagingBuffer buf =
         buffer::StagingBuffer(deviceHandler, commandBuffer, bufferSize);
     buf.copy(buffer, bufferSize);
@@ -99,12 +95,19 @@ void gltf_model::Texture::makeglTFImage(tinygltf::Image &gltfimage,
                             VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
                             VK_IMAGE_USAGE_SAMPLED_BIT;
     VK_CHECK(vkCreateImage(*deviceHandler, &imageCreateInfo, nullptr, &image));
+
+    VkMemoryAllocateInfo memAllocInfo{};
+    memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    VkMemoryRequirements memReqs{};
+
     vkGetImageMemoryRequirements(*deviceHandler, image, &memReqs);
     memAllocInfo.allocationSize = memReqs.size;
     memAllocInfo.memoryTypeIndex = deviceHandler->getMemoryType(
         memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
     VK_CHECK(vkAllocateMemory(*deviceHandler, &memAllocInfo, nullptr,
                               &deviceMemory));
+
     VK_CHECK(vkBindImageMemory(*deviceHandler, image, deviceMemory, 0));
 
     VkCommandBuffer copyCmd = commandBuffer->createCommandBuffer(
@@ -273,9 +276,10 @@ void gltf_model::Texture::makeKTXImage(const std::string &filename,
     ktx_uint8_t *ktxTextureData = ktxTexture_GetData(ktxTexture);
     ktx_size_t ktxTextureSize = ktxTexture_GetDataSize(ktxTexture);
     // @todo: Use ktxTexture_GetVkFormat(ktxTexture)
-    format = VK_FORMAT_R8G8B8A8_UNORM;
+    format = ktxTexture_GetVkFormat(ktxTexture);
 
     // Get device properties for the requested texture format
+
     VkFormatProperties formatProperties;
     vkGetPhysicalDeviceFormatProperties(deviceHandler->physicalDevice, format,
                                         &formatProperties);
@@ -286,15 +290,12 @@ void gltf_model::Texture::makeKTXImage(const std::string &filename,
     buffer::StagingBuffer buf =
         buffer::StagingBuffer(deviceHandler, commandBuffer, ktxTextureSize);
 
-    VkMemoryRequirements memReqs;
-    vkGetBufferMemoryRequirements(*deviceHandler, buf.buffer, &memReqs);
-
-    VkMemoryAllocateInfo memAllocInfo = create_info::memoryAllocInfo(
-        memReqs.size,
-        deviceHandler->getMemoryType(memReqs.memoryTypeBits,
-                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                         VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
     buf.copy(ktxTextureData, ktxTextureSize);
+    buf.unmap();
+
+    VkMemoryAllocateInfo memAllocInfo{};
+    memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    VkMemoryRequirements memReqs;
 
     std::vector<VkBufferImageCopy> bufferCopyRegions;
     for (uint32_t i = 0; i < mipLevels; i++) {
@@ -319,14 +320,19 @@ void gltf_model::Texture::makeKTXImage(const std::string &filename,
     }
 
     // Create optimal tiled target image
-    VkImageCreateInfo imageCreateInfo = create_info::imageCreateInfo(
-        VK_IMAGE_TYPE_2D, format,
-        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-
+    VkImageCreateInfo imageCreateInfo{};
+    imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageCreateInfo.format = format;
     imageCreateInfo.mipLevels = mipLevels;
     imageCreateInfo.arrayLayers = 1;
+    imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageCreateInfo.extent = {width, height, 1};
-
+    imageCreateInfo.usage =
+        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VK_CHECK(vkCreateImage(*deviceHandler, &imageCreateInfo, nullptr, &image));
 
     vkGetImageMemoryRequirements(*deviceHandler, image, &memReqs);
@@ -353,7 +359,6 @@ void gltf_model::Texture::makeKTXImage(const std::string &filename,
     utils::setImageLayout(copyCmd, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                           subresourceRange);
-
     commandBuffer->flushCommandBuffer(copyCmd, copyQueue);
     this->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 

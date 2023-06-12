@@ -3,8 +3,6 @@ project(paraflop VERSION 0.1.0)
 
 set(CMAKE_BUILD_TYPE Debug)
 
-# add_subdirectory(${CMAKE_SOURCE_DIR}/external/tinygltf)
-
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -53,6 +51,7 @@ endif()
 file(COPY 
     ${CMAKE_SOURCE_DIR}/assets/shaders
     ${CMAKE_SOURCE_DIR}/assets/textures
+    ${CMAKE_SOURCE_DIR}/external/assets
     DESTINATION
     ${CMAKE_BINARY_DIR})
 

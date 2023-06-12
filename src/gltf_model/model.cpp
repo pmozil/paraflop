@@ -541,10 +541,12 @@ void gltf_model::Model::loadImages(
     std::shared_ptr<command_buffer::CommandBufferHandler> cmdBuf,
     VkQueue transferQueue) {
 
+    int idx = 0;
     for (tinygltf::Image &image : gltfModel.images) {
         gltf_model::Texture texture;
-        texture.fromglTfImage(image, path, std::move(device), std::move(cmdBuf),
-                              transferQueue);
+        idx++;
+
+        texture.fromglTfImage(image, path, device, cmdBuf, transferQueue);
         textures.push_back(texture);
     }
     // Create an empty texture to be used for empty material images

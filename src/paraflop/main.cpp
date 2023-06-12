@@ -59,7 +59,7 @@ int main() {
 
     std::shared_ptr<gltf_model::Model> model =
         std::make_shared<gltf_model::Model>();
-    model->loadFromFile("assets/odels/sponza/sponza.gltf", deviceHandler,
+    model->loadFromFile("assets/models/sponza/sponza.gltf", deviceHandler,
                         commandBuffer, deviceHandler->getTransferQueue());
 
     std::shared_ptr<graphics_pipeline::CustomRasterPipeline> pipeline =

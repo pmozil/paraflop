@@ -1,4 +1,3 @@
-
 /*
  * Vulkan glTF model and texture loading class based on tinyglTF
  * (https://github.com/syoyo/tinygltf)
@@ -9,16 +8,14 @@
  * (http://opensource.org/licenses/MIT)
  */
 
-#include "gltf_model/gltf_model.hpp"
+#include "gltf_model/model.hpp"
+#include "common.hpp"
+#include "gltf_model/gltf_common.hpp"
+#include "vulkan_utils/command_buffer.hpp"
 #include "vulkan_utils/create_info.hpp"
+#include "vulkan_utils/device.hpp"
 #include "vulkan_utils/staging_buffer.hpp"
 #include "vulkan_utils/utils.hpp"
-
-VkDescriptorSetLayout gltf_model::descriptorSetLayoutImage = VK_NULL_HANDLE;
-VkDescriptorSetLayout gltf_model::descriptorSetLayoutUbo = VK_NULL_HANDLE;
-VkMemoryPropertyFlags gltf_model::memoryPropertyFlags = 0;
-uint32_t gltf_model::descriptorBindingFlags =
-    gltf_model::DescriptorBindingFlags::ImageBaseColor;
 
 /*
     We use a custom image loading function with tinyglTF, so we can do custom
@@ -59,648 +56,6 @@ bool loadImageDataFuncEmpty(tinygltf::Image *image, const int imageIndex,
     return true;
 }
 
-/*
-    glTF texture loading class
-*/
-
-void gltf_model::Texture::updateDescriptor() {
-    descriptor.sampler = sampler;
-    descriptor.imageView = view;
-    descriptor.imageLayout = imageLayout;
-}
-
-void gltf_model::Texture::destroy() {
-    if (deviceHandler) {
-        vkDestroyImageView(*deviceHandler, view, nullptr);
-        vkDestroyImage(*deviceHandler, image, nullptr);
-        vkFreeMemory(*deviceHandler, deviceMemory, nullptr);
-        vkDestroySampler(*deviceHandler, sampler, nullptr);
-    }
-}
-
-void gltf_model::Texture::makeglTFImage(tinygltf::Image &gltfimage,
-                                        VkFormat &format, VkQueue copyQueue) {
-
-    unsigned char *buffer = nullptr;
-    VkDeviceSize bufferSize = 0;
-    bool deleteBuffer = false;
-    if (gltfimage.component == 3) {
-        // Most devices don't support RGB only on Vulkan so convert if
-        // necessary
-        // TODO: Check actual format support and transform only if required
-        bufferSize = gltfimage.width * gltfimage.height * 4;
-        buffer = new unsigned char[bufferSize];
-        unsigned char *rgba = buffer;
-        unsigned char *rgb = gltfimage.image.data();
-        for (int i = 0; i < gltfimage.width * gltfimage.height; ++i) {
-            for (int32_t j = 0; j < 3; ++j) {
-                rgba[j] = rgb[j];
-            }
-            rgba += 4;
-            rgb += 3;
-        }
-        deleteBuffer = true;
-    } else {
-        buffer = gltfimage.image.data();
-        bufferSize = gltfimage.image.size();
-    }
-
-    format = VK_FORMAT_R8G8B8A8_UNORM;
-
-    VkFormatProperties formatProperties;
-
-    width = gltfimage.width;
-    height = gltfimage.height;
-    mipLevels =
-        static_cast<uint32_t>(floor(log2(std::max(width, height))) + 1.0);
-
-    vkGetPhysicalDeviceFormatProperties(deviceHandler->physicalDevice, format,
-                                        &formatProperties);
-    assert(formatProperties.optimalTilingFeatures &
-           VK_FORMAT_FEATURE_BLIT_SRC_BIT);
-    assert(formatProperties.optimalTilingFeatures &
-           VK_FORMAT_FEATURE_BLIT_DST_BIT);
-
-    VkMemoryAllocateInfo memAllocInfo{};
-    memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    VkMemoryRequirements memReqs{};
-
-    buffer::StagingBuffer buf =
-        buffer::StagingBuffer(deviceHandler, commandBuffer, bufferSize);
-    buf.copy(buffer, bufferSize);
-
-    VkImageCreateInfo imageCreateInfo{};
-    imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageCreateInfo.format = format;
-    imageCreateInfo.mipLevels = mipLevels;
-    imageCreateInfo.arrayLayers = 1;
-    imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-    imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    imageCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageCreateInfo.extent = {width, height, 1};
-    imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-                            VK_IMAGE_USAGE_SAMPLED_BIT;
-    VK_CHECK(vkCreateImage(*deviceHandler, &imageCreateInfo, nullptr, &image));
-    vkGetImageMemoryRequirements(*deviceHandler, image, &memReqs);
-    memAllocInfo.allocationSize = memReqs.size;
-    memAllocInfo.memoryTypeIndex = deviceHandler->getMemoryType(
-        memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    VK_CHECK(vkAllocateMemory(*deviceHandler, &memAllocInfo, nullptr,
-                              &deviceMemory));
-    VK_CHECK(vkBindImageMemory(*deviceHandler, image, deviceMemory, 0));
-
-    VkCommandBuffer copyCmd = commandBuffer->createCommandBuffer(
-        VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
-
-    VkImageSubresourceRange subresourceRange = {};
-    subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    subresourceRange.levelCount = 1;
-    subresourceRange.layerCount = 1;
-
-    {
-        VkImageMemoryBarrier imageMemoryBarrier{};
-        imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        imageMemoryBarrier.srcAccessMask = 0;
-        imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        imageMemoryBarrier.image = image;
-        imageMemoryBarrier.subresourceRange = subresourceRange;
-        vkCmdPipelineBarrier(copyCmd, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
-                             0, nullptr, 1, &imageMemoryBarrier);
-    }
-
-    VkBufferImageCopy bufferCopyRegion = {};
-    bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    bufferCopyRegion.imageSubresource.mipLevel = 0;
-    bufferCopyRegion.imageSubresource.baseArrayLayer = 0;
-    bufferCopyRegion.imageSubresource.layerCount = 1;
-    bufferCopyRegion.imageExtent.width = width;
-    bufferCopyRegion.imageExtent.height = height;
-    bufferCopyRegion.imageExtent.depth = 1;
-
-    vkCmdCopyBufferToImage(copyCmd, buf.buffer, image,
-                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
-                           &bufferCopyRegion);
-
-    {
-        VkImageMemoryBarrier imageMemoryBarrier{};
-        imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-        imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-        imageMemoryBarrier.image = image;
-        imageMemoryBarrier.subresourceRange = subresourceRange;
-        vkCmdPipelineBarrier(copyCmd, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
-                             0, nullptr, 1, &imageMemoryBarrier);
-    }
-
-    commandBuffer->flushCommandBuffer(copyCmd, copyQueue, true);
-
-    makeBlits(subresourceRange, copyQueue);
-
-    if (deleteBuffer) {
-        delete[] buffer;
-    }
-}
-
-void gltf_model::Texture::makeBlits(VkImageSubresourceRange &subresourceRange,
-                                    VkQueue copyQueue) {
-
-    // Generate the mip chain (glTF uses jpg and png, so we need to create
-    // this manually)
-    VkCommandBuffer blitCmd = commandBuffer->createCommandBuffer(
-        VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
-
-    for (uint32_t i = 1; i < mipLevels; i++) {
-        VkImageBlit imageBlit{};
-
-        imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        imageBlit.srcSubresource.layerCount = 1;
-        imageBlit.srcSubresource.mipLevel = i - 1;
-        imageBlit.srcOffsets[1].x = int32_t(width >> (i - 1));
-        imageBlit.srcOffsets[1].y = int32_t(height >> (i - 1));
-        imageBlit.srcOffsets[1].z = 1;
-
-        imageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        imageBlit.dstSubresource.layerCount = 1;
-        imageBlit.dstSubresource.mipLevel = i;
-        imageBlit.dstOffsets[1].x = int32_t(width >> i);
-        imageBlit.dstOffsets[1].y = int32_t(height >> i);
-        imageBlit.dstOffsets[1].z = 1;
-
-        VkImageSubresourceRange mipSubRange = {};
-        mipSubRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        mipSubRange.baseMipLevel = i;
-        mipSubRange.levelCount = 1;
-        mipSubRange.layerCount = 1;
-
-        {
-            VkImageMemoryBarrier imageMemoryBarrier{};
-            imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-            imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-            imageMemoryBarrier.srcAccessMask = 0;
-            imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            imageMemoryBarrier.image = image;
-            imageMemoryBarrier.subresourceRange = mipSubRange;
-            vkCmdPipelineBarrier(blitCmd, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                 VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr,
-                                 0, nullptr, 1, &imageMemoryBarrier);
-        }
-
-        vkCmdBlitImage(blitCmd, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                       image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
-                       &imageBlit, VK_FILTER_LINEAR);
-
-        {
-            VkImageMemoryBarrier imageMemoryBarrier{};
-            imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-            imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-            imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-            imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-            imageMemoryBarrier.image = image;
-            imageMemoryBarrier.subresourceRange = mipSubRange;
-            vkCmdPipelineBarrier(blitCmd, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                 VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr,
-                                 0, nullptr, 1, &imageMemoryBarrier);
-        }
-    }
-
-    subresourceRange.levelCount = mipLevels;
-    imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-    {
-        VkImageMemoryBarrier imageMemoryBarrier{};
-        imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-        imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        imageMemoryBarrier.image = image;
-        imageMemoryBarrier.subresourceRange = subresourceRange;
-        vkCmdPipelineBarrier(blitCmd, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
-                             0, nullptr, 1, &imageMemoryBarrier);
-    }
-    commandBuffer->flushCommandBuffer(blitCmd, copyQueue, true);
-}
-
-void gltf_model::Texture::makeKTXImage(const std::string &filename,
-                                       VkFormat &format, VkQueue copyQueue) {
-
-    ktxTexture *ktxTexture;
-
-    ktxResult result = KTX_SUCCESS;
-    if (!utils::fileExists(filename)) {
-        utils::exitFatal("Could not load texture from " + filename +
-                             "\n\nMake sure the assets submodule has "
-                             "been checked out and is up-to-date.",
-                         -1);
-    }
-
-    result = ktxTexture_CreateFromNamedFile(
-        filename.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktxTexture);
-    assert(result == KTX_SUCCESS);
-
-    width = ktxTexture->baseWidth;
-    height = ktxTexture->baseHeight;
-    mipLevels = ktxTexture->numLevels;
-
-    ktx_uint8_t *ktxTextureData = ktxTexture_GetData(ktxTexture);
-    ktx_size_t ktxTextureSize = ktxTexture_GetDataSize(ktxTexture);
-    // @todo: Use ktxTexture_GetVkFormat(ktxTexture)
-    format = VK_FORMAT_R8G8B8A8_UNORM;
-
-    // Get device properties for the requested texture format
-    VkFormatProperties formatProperties;
-    vkGetPhysicalDeviceFormatProperties(deviceHandler->physicalDevice, format,
-                                        &formatProperties);
-
-    VkCommandBuffer copyCmd = commandBuffer->createCommandBuffer(
-        VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
-
-    buffer::StagingBuffer buf =
-        buffer::StagingBuffer(deviceHandler, commandBuffer, ktxTextureSize);
-
-    VkMemoryRequirements memReqs;
-    vkGetBufferMemoryRequirements(*deviceHandler, buf.buffer, &memReqs);
-
-    VkMemoryAllocateInfo memAllocInfo = create_info::memoryAllocInfo(
-        memReqs.size,
-        deviceHandler->getMemoryType(memReqs.memoryTypeBits,
-                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                         VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
-    buf.copy(ktxTextureData, ktxTextureSize);
-
-    std::vector<VkBufferImageCopy> bufferCopyRegions;
-    for (uint32_t i = 0; i < mipLevels; i++) {
-        ktx_size_t offset;
-        KTX_error_code result =
-            ktxTexture_GetImageOffset(ktxTexture, i, 0, 0, &offset);
-        assert(result == KTX_SUCCESS);
-        VkBufferImageCopy bufferCopyRegion = {};
-        bufferCopyRegion.imageSubresource.aspectMask =
-            VK_IMAGE_ASPECT_COLOR_BIT;
-        bufferCopyRegion.imageSubresource.mipLevel = i;
-        bufferCopyRegion.imageSubresource.baseArrayLayer = 0;
-        bufferCopyRegion.imageSubresource.layerCount = 1;
-        bufferCopyRegion.imageExtent.width =
-            std::max(1U, ktxTexture->baseWidth >> i);
-        bufferCopyRegion.imageExtent.height =
-            std::max(1U, ktxTexture->baseHeight >> i);
-        bufferCopyRegion.imageExtent.depth = 1;
-        bufferCopyRegion.bufferOffset = offset;
-        bufferCopyRegions.push_back(bufferCopyRegion);
-    }
-
-    // Create optimal tiled target image
-    VkImageCreateInfo imageCreateInfo = create_info::imageCreateInfo(
-        VK_IMAGE_TYPE_2D, format,
-        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-
-    imageCreateInfo.mipLevels = mipLevels;
-    imageCreateInfo.arrayLayers = 1;
-    imageCreateInfo.extent = {width, height, 1};
-
-    VK_CHECK(vkCreateImage(*deviceHandler, &imageCreateInfo, nullptr, &image));
-
-    vkGetImageMemoryRequirements(*deviceHandler, image, &memReqs);
-    memAllocInfo.allocationSize = memReqs.size;
-    memAllocInfo.memoryTypeIndex = deviceHandler->getMemoryType(
-        memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    VK_CHECK(vkAllocateMemory(*deviceHandler, &memAllocInfo, nullptr,
-                              &deviceMemory));
-    VK_CHECK(vkBindImageMemory(*deviceHandler, image, deviceMemory, 0));
-
-    VkImageSubresourceRange subresourceRange = {};
-    subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    subresourceRange.baseMipLevel = 0;
-    subresourceRange.levelCount = mipLevels;
-    subresourceRange.layerCount = 1;
-
-    utils::setImageLayout(copyCmd, image, VK_IMAGE_LAYOUT_UNDEFINED,
-                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                          subresourceRange);
-    vkCmdCopyBufferToImage(copyCmd, buf.buffer, image,
-                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                           static_cast<uint32_t>(bufferCopyRegions.size()),
-                           bufferCopyRegions.data());
-    utils::setImageLayout(copyCmd, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                          subresourceRange);
-
-    commandBuffer->flushCommandBuffer(copyCmd, copyQueue);
-    this->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-    ktxTexture_Destroy(ktxTexture);
-}
-
-void gltf_model::Texture::fromglTfImage(
-    tinygltf::Image &gltfimage, std::string &path,
-    std::shared_ptr<device::DeviceHandler> device,
-    std::shared_ptr<command_buffer::CommandBufferHandler> cmdBuf,
-    VkQueue copyQueue) {
-
-    this->deviceHandler = std::move(device);
-    this->commandBuffer = std::move(cmdBuf);
-
-    bool isKtx = false;
-    // Image points to an external ktx file
-    if (gltfimage.uri.find_last_of(".") != std::string::npos) {
-        if (gltfimage.uri.substr(gltfimage.uri.find_last_of(".") + 1) ==
-            "ktx") {
-            isKtx = true;
-        }
-    }
-
-    VkFormat format;
-
-    if (!isKtx) {
-        // Texture was loaded using STB_Image
-        makeglTFImage(gltfimage, format, copyQueue);
-    } else {
-        makeKTXImage(path + "/" + gltfimage.uri, format, copyQueue);
-    }
-
-    VkSamplerCreateInfo samplerInfo{};
-    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerInfo.magFilter = VK_FILTER_LINEAR;
-    samplerInfo.minFilter = VK_FILTER_LINEAR;
-    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-    samplerInfo.compareOp = VK_COMPARE_OP_NEVER;
-    samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-    samplerInfo.maxAnisotropy = 1.0;
-    samplerInfo.anisotropyEnable = VK_FALSE;
-    samplerInfo.maxLod = (float)mipLevels;
-    samplerInfo.maxAnisotropy = 8.0F;
-    samplerInfo.anisotropyEnable = VK_TRUE;
-    VK_CHECK(vkCreateSampler(*deviceHandler, &samplerInfo, nullptr, &sampler));
-
-    VkImageViewCreateInfo viewInfo{};
-    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewInfo.image = image;
-    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    viewInfo.format = format;
-    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    viewInfo.subresourceRange.layerCount = 1;
-    viewInfo.subresourceRange.levelCount = mipLevels;
-    VK_CHECK(vkCreateImageView(*deviceHandler, &viewInfo, nullptr, &view));
-
-    descriptor.sampler = sampler;
-    descriptor.imageView = view;
-    descriptor.imageLayout = imageLayout;
-}
-
-/*
-    glTF material
-*/
-void gltf_model::Material::createDescriptorSet(
-    VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorSetLayout,
-    uint32_t descriptorBindingFlags) {
-
-    VkDescriptorSetAllocateInfo descriptorSetAllocInfo{};
-
-    descriptorSetAllocInfo.sType =
-        VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    descriptorSetAllocInfo.descriptorPool = descriptorPool;
-    descriptorSetAllocInfo.pSetLayouts = &descriptorSetLayout;
-    descriptorSetAllocInfo.descriptorSetCount = 1;
-
-    VK_CHECK(vkAllocateDescriptorSets(*deviceHandler, &descriptorSetAllocInfo,
-                                      &descriptorSet));
-
-    std::vector<VkDescriptorImageInfo> imageDescriptors{};
-    std::vector<VkWriteDescriptorSet> writeDescriptorSets{};
-
-    if (static_cast<bool>(descriptorBindingFlags &
-                          DescriptorBindingFlags::ImageBaseColor)) {
-        imageDescriptors.push_back(baseColorTexture->descriptor);
-        VkWriteDescriptorSet writeDescriptorSet{};
-        writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        writeDescriptorSet.descriptorType =
-            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        writeDescriptorSet.descriptorCount = 1;
-        writeDescriptorSet.dstSet = descriptorSet;
-        writeDescriptorSet.dstBinding =
-            static_cast<uint32_t>(writeDescriptorSets.size());
-        writeDescriptorSet.pImageInfo = &baseColorTexture->descriptor;
-        writeDescriptorSets.push_back(writeDescriptorSet);
-    }
-
-    if (normalTexture != nullptr &&
-        static_cast<bool>(descriptorBindingFlags &
-                          DescriptorBindingFlags::ImageNormalMap)) {
-        imageDescriptors.push_back(normalTexture->descriptor);
-        VkWriteDescriptorSet writeDescriptorSet{};
-        writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        writeDescriptorSet.descriptorType =
-            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        writeDescriptorSet.descriptorCount = 1;
-        writeDescriptorSet.dstSet = descriptorSet;
-        writeDescriptorSet.dstBinding =
-            static_cast<uint32_t>(writeDescriptorSets.size());
-        writeDescriptorSet.pImageInfo = &normalTexture->descriptor;
-        writeDescriptorSets.push_back(writeDescriptorSet);
-    }
-
-    vkUpdateDescriptorSets(*deviceHandler,
-                           static_cast<uint32_t>(writeDescriptorSets.size()),
-                           writeDescriptorSets.data(), 0, nullptr);
-}
-
-/*
-    glTF primitive
-*/
-void gltf_model::Primitive::setDimensions(glm::vec3 min, glm::vec3 max) {
-    dimensions.min = min;
-    dimensions.max = max;
-    dimensions.size = max - min;
-    dimensions.center = (min + max) / 2.0F;
-    dimensions.radius = glm::distance(min, max) / 2.0F;
-}
-
-/*
-    glTF mesh
-*/
-gltf_model::Mesh::Mesh(
-    std::shared_ptr<device::DeviceHandler> device,
-    std::shared_ptr<command_buffer::CommandBufferHandler> cmdBuf,
-    glm::mat4 matrix) {
-    this->deviceHandler = std::move(device);
-    this->commandBuffer = std::move(cmdBuf);
-    this->uniformBlock.matrix = matrix;
-
-    VK_CHECK(
-        deviceHandler->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                    sizeof(uniformBlock), &uniformBuffer.buffer,
-                                    &uniformBuffer.memory, &uniformBlock));
-
-    VK_CHECK(vkMapMemory(*deviceHandler, uniformBuffer.memory, 0,
-                         sizeof(uniformBlock), 0, &uniformBuffer.mapped));
-    uniformBuffer.descriptor = {uniformBuffer.buffer, 0, sizeof(uniformBlock)};
-};
-
-gltf_model::Mesh::~Mesh() {
-    vkDestroyBuffer(*deviceHandler, uniformBuffer.buffer, nullptr);
-    vkFreeMemory(*deviceHandler, uniformBuffer.memory, nullptr);
-    for (auto *primitive : primitives) {
-        delete primitive;
-    }
-}
-
-/*
-    glTF node
-*/
-[[nodiscard]] glm::mat4 gltf_model::Node::localMatrix() const {
-    return glm::translate(glm::mat4(1.0F), translation) * glm::mat4(rotation) *
-           glm::scale(glm::mat4(1.0F), scale) * matrix;
-}
-
-[[nodiscard]] glm::mat4 gltf_model::Node::getMatrix() const {
-    glm::mat4 m = localMatrix();
-    gltf_model::Node *p = parent;
-    while (p) {
-        m = p->localMatrix() * m;
-        p = p->parent;
-    }
-    return m;
-}
-
-void gltf_model::Node::update() {
-    if (mesh != nullptr) {
-        glm::mat4 m = getMatrix();
-        if (skin != nullptr) {
-            mesh->uniformBlock.matrix = m;
-            // Update join matrices
-            glm::mat4 inverseTransform = glm::inverse(m);
-            for (size_t i = 0; i < skin->joints.size(); i++) {
-                gltf_model::Node *jointNode = skin->joints[i];
-                glm::mat4 jointMat =
-                    jointNode->getMatrix() * skin->inverseBindMatrices[i];
-                jointMat = inverseTransform * jointMat;
-                mesh->uniformBlock.jointMatrix[i] = jointMat;
-            }
-            mesh->uniformBlock.jointcount = (float)skin->joints.size();
-            memcpy(mesh->uniformBuffer.mapped, &mesh->uniformBlock,
-                   sizeof(mesh->uniformBlock));
-        } else {
-            memcpy(mesh->uniformBuffer.mapped, &m, sizeof(glm::mat4));
-        }
-    }
-
-    for (auto &child : children) {
-        child->update();
-    }
-}
-
-gltf_model::Node::~Node() {
-    if (mesh != nullptr) {
-        delete mesh;
-    }
-    for (auto &child : children) {
-        delete child;
-    }
-}
-
-/*
-    glTF default vertex layout with easy Vulkan mapping functions
-*/
-
-VkVertexInputBindingDescription
-    gltf_model::Vertex::vertexInputBindingDescription;
-std::vector<VkVertexInputAttributeDescription>
-    gltf_model::Vertex::vertexInputAttributeDescriptions;
-VkPipelineVertexInputStateCreateInfo
-    gltf_model::Vertex::pipelineVertexInputStateCreateInfo;
-
-VkVertexInputBindingDescription
-gltf_model::Vertex::inputBindingDescription(uint32_t binding) {
-    return VkVertexInputBindingDescription(
-        {binding, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX});
-}
-
-VkVertexInputAttributeDescription gltf_model::Vertex::inputAttributeDescription(
-    uint32_t binding, uint32_t location, VertexComponent component) {
-    switch (component) {
-    case VertexComponent::Position:
-        return VkVertexInputAttributeDescription({location, binding,
-                                                  VK_FORMAT_R32G32B32_SFLOAT,
-                                                  offsetof(Vertex, pos)});
-    case VertexComponent::Normal:
-        return VkVertexInputAttributeDescription({location, binding,
-                                                  VK_FORMAT_R32G32B32_SFLOAT,
-                                                  offsetof(Vertex, normal)});
-    case VertexComponent::UV:
-        return VkVertexInputAttributeDescription(
-            {location, binding, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, uv)});
-    case VertexComponent::Color:
-        return VkVertexInputAttributeDescription({location, binding,
-                                                  VK_FORMAT_R32G32B32A32_SFLOAT,
-                                                  offsetof(Vertex, color)});
-    case VertexComponent::Tangent:
-        return VkVertexInputAttributeDescription({location, binding,
-                                                  VK_FORMAT_R32G32B32A32_SFLOAT,
-                                                  offsetof(Vertex, tangent)});
-    case VertexComponent::Joint0:
-        return VkVertexInputAttributeDescription({location, binding,
-                                                  VK_FORMAT_R32G32B32A32_SFLOAT,
-                                                  offsetof(Vertex, joint0)});
-    case VertexComponent::Weight0:
-        return VkVertexInputAttributeDescription({location, binding,
-                                                  VK_FORMAT_R32G32B32A32_SFLOAT,
-                                                  offsetof(Vertex, weight0)});
-    default:
-        return VkVertexInputAttributeDescription({});
-    }
-}
-
-std::vector<VkVertexInputAttributeDescription>
-gltf_model::Vertex::inputAttributeDescriptions(
-    uint32_t binding, const std::vector<VertexComponent> components) {
-    std::vector<VkVertexInputAttributeDescription> result;
-    uint32_t location = 0;
-    for (VertexComponent component : components) {
-        result.push_back(
-            Vertex::inputAttributeDescription(binding, location, component));
-        location++;
-    }
-    return result;
-}
-
-/** @brief Returns the default pipeline vertex input state create info structure
- * for the requested vertex components */
-VkPipelineVertexInputStateCreateInfo *
-gltf_model::Vertex::getPipelineVertexInputState(
-    const std::vector<VertexComponent> components) {
-    vertexInputBindingDescription = Vertex::inputBindingDescription(0);
-    Vertex::vertexInputAttributeDescriptions =
-        Vertex::inputAttributeDescriptions(0, components);
-    pipelineVertexInputStateCreateInfo.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    pipelineVertexInputStateCreateInfo.vertexBindingDescriptionCount = 1;
-    pipelineVertexInputStateCreateInfo.pVertexBindingDescriptions =
-        &Vertex::vertexInputBindingDescription;
-    pipelineVertexInputStateCreateInfo.vertexAttributeDescriptionCount =
-        static_cast<uint32_t>(Vertex::vertexInputAttributeDescriptions.size());
-    pipelineVertexInputStateCreateInfo.pVertexAttributeDescriptions =
-        Vertex::vertexInputAttributeDescriptions.data();
-    return &pipelineVertexInputStateCreateInfo;
-}
-
 gltf_model::Texture *gltf_model::Model::getTexture(uint32_t index) {
 
     if (index < textures.size()) {
@@ -718,7 +73,7 @@ void gltf_model::Model::createEmptyTexture(VkQueue transferQueue) {
     emptyTexture.mipLevels = 1;
 
     size_t bufferSize = emptyTexture.width * emptyTexture.height * 4;
-    unsigned char *buffer = new unsigned char[bufferSize];
+    auto *buffer = new unsigned char[bufferSize];
     memset(buffer, 0, bufferSize);
 
     buffer::StagingBuffer buf =
@@ -823,10 +178,10 @@ gltf_model::Model::~Model() {
     for (auto texture : textures) {
         texture.destroy();
     }
-    for (auto node : nodes) {
+    for (auto *node : nodes) {
         delete node;
     }
-    for (auto skin : skins) {
+    for (auto *skin : skins) {
         delete skin;
     }
     if (descriptorSetLayoutUbo != VK_NULL_HANDLE) {
@@ -849,7 +204,7 @@ void gltf_model::Model::loadNode(gltf_model::Node *parent,
                                  std::vector<uint32_t> &indexBuffer,
                                  std::vector<Vertex> &vertexBuffer,
                                  float globalscale) {
-    gltf_model::Node *newNode = new Node{};
+    auto *newNode = new Node{};
     newNode->index = nodeIndex;
     newNode->parent = parent;
     newNode->name = node.name;
@@ -857,16 +212,16 @@ void gltf_model::Model::loadNode(gltf_model::Node *parent,
     newNode->matrix = glm::mat4(1.0F);
 
     // Generate local node matrix
-    glm::vec3 translation = glm::vec3(0.0F);
+    auto translation = glm::vec3(0.0F);
     if (node.translation.size() == 3) {
         translation = glm::make_vec3(node.translation.data());
         newNode->translation = translation;
     }
     if (node.rotation.size() == 4) {
-        glm::quat q = glm::make_quat(node.rotation.data());
-        newNode->rotation = glm::mat4(q);
+        glm::quat quad = glm::make_quat(node.rotation.data());
+        newNode->rotation = glm::mat4(quad);
     }
-    glm::vec3 scale = glm::vec3(1.0F);
+    auto scale = glm::vec3(1.0F);
     if (node.scale.size() == 3) {
         scale = glm::make_vec3(node.scale.data());
         newNode->scale = scale;
@@ -880,10 +235,10 @@ void gltf_model::Model::loadNode(gltf_model::Node *parent,
     };
 
     // Node with children
-    if (node.children.size() > 0) {
-        for (size_t i = 0; i < node.children.size(); i++) {
-            loadNode(newNode, model.nodes[node.children[i]], node.children[i],
-                     model, indexBuffer, vertexBuffer, globalscale);
+    if (!node.children.empty()) {
+        for (const auto &child : node.children) {
+            loadNode(newNode, model.nodes[child], child, model, indexBuffer,
+                     vertexBuffer, globalscale);
         }
     }
 
@@ -894,13 +249,13 @@ void gltf_model::Model::loadNode(gltf_model::Node *parent,
             new Mesh(m_deviceHandler, m_commandBuffer, newNode->matrix);
         newMesh->name = mesh.name;
 
-        for (size_t j = 0; j < mesh.primitives.size(); j++) {
-            const tinygltf::Primitive &primitive = mesh.primitives[j];
+        for (const auto &prim : mesh.primitives) {
+            const tinygltf::Primitive &primitive = prim;
             if (primitive.indices < 0) {
                 continue;
             }
-            uint32_t indexStart = static_cast<uint32_t>(indexBuffer.size());
-            uint32_t vertexStart = static_cast<uint32_t>(vertexBuffer.size());
+            auto indexStart = static_cast<uint32_t>(indexBuffer.size());
+            auto vertexStart = static_cast<uint32_t>(vertexBuffer.size());
             uint32_t indexCount = 0;
             uint32_t vertexCount = 0;
             glm::vec3 posMin{};
@@ -913,7 +268,7 @@ void gltf_model::Model::loadNode(gltf_model::Node *parent,
                 const float *bufferTexCoords = nullptr;
                 const float *bufferColors = nullptr;
                 const float *bufferTangents = nullptr;
-                uint32_t numColorComponents;
+                uint32_t numColorComponents = 0;
                 const uint16_t *bufferJoints = nullptr;
                 const float *bufferWeights = nullptr;
 
@@ -1019,41 +374,43 @@ void gltf_model::Model::loadNode(gltf_model::Node *parent,
                             .data[uvAccessor.byteOffset + uvView.byteOffset]));
                 }
 
-                hasSkin = (bufferJoints && bufferWeights);
+                hasSkin = static_cast<bool>(bufferJoints) &&
+                          static_cast<bool>(bufferWeights);
 
                 vertexCount = static_cast<uint32_t>(posAccessor.count);
 
-                for (size_t v = 0; v < posAccessor.count; v++) {
+                for (size_t idx = 0; idx < posAccessor.count; idx++) {
                     Vertex vert{};
                     vert.pos =
-                        glm::vec4(glm::make_vec3(&bufferPos[v * 3]), 1.0F);
-                    vert.normal = glm::normalize(glm::vec3(
-                        bufferNormals ? glm::make_vec3(&bufferNormals[v * 3])
+                        glm::vec4(glm::make_vec3(&bufferPos[idx * 3]), 1.0F);
+                    vert.normal = glm::normalize(
+                        glm::vec3(bufferNormals != nullptr
+                                      ? glm::make_vec3(&bufferNormals[idx * 3])
                                       : glm::vec3(0.0F)));
-                    vert.uv = bufferTexCoords
-                                  ? glm::make_vec2(&bufferTexCoords[v * 2])
+                    vert.uv = bufferTexCoords != nullptr
+                                  ? glm::make_vec2(&bufferTexCoords[idx * 2])
                                   : glm::vec3(0.0F);
-                    if (bufferColors) {
+                    if (bufferColors != nullptr) {
                         switch (numColorComponents) {
                         case 3:
                             vert.color = glm::vec4(
-                                glm::make_vec3(&bufferColors[v * 3]), 1.0F);
+                                glm::make_vec3(&bufferColors[idx * 3]), 1.0F);
                         case 4:
-                            vert.color = glm::make_vec4(&bufferColors[v * 4]);
+                            vert.color = glm::make_vec4(&bufferColors[idx * 4]);
                         }
                     } else {
                         vert.color = glm::vec4(1.0F);
                     }
-                    vert.tangent =
-                        bufferTangents
-                            ? glm::vec4(glm::make_vec4(&bufferTangents[v * 4]))
-                            : glm::vec4(0.0F);
+                    vert.tangent = bufferTangents != nullptr
+                                       ? glm::vec4(glm::make_vec4(
+                                             &bufferTangents[idx * 4]))
+                                       : glm::vec4(0.0F);
                     vert.joint0 =
                         hasSkin
-                            ? glm::vec4(glm::make_vec4(&bufferJoints[v * 4]))
+                            ? glm::vec4(glm::make_vec4(&bufferJoints[idx * 4]))
                             : glm::vec4(0.0F);
                     vert.weight0 = hasSkin
-                                       ? glm::make_vec4(&bufferWeights[v * 4])
+                                       ? glm::make_vec4(&bufferWeights[idx * 4])
                                        : glm::vec4(0.0F);
                     vertexBuffer.push_back(vert);
                 }
@@ -1071,7 +428,7 @@ void gltf_model::Model::loadNode(gltf_model::Node *parent,
 
                 switch (accessor.componentType) {
                 case TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT: {
-                    uint32_t *buf = new uint32_t[accessor.count];
+                    auto *buf = new uint32_t[accessor.count];
                     memcpy(buf,
                            &buffer.data[accessor.byteOffset +
                                         bufferView.byteOffset],
@@ -1083,7 +440,7 @@ void gltf_model::Model::loadNode(gltf_model::Node *parent,
                     break;
                 }
                 case TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT: {
-                    uint16_t *buf = new uint16_t[accessor.count];
+                    auto *buf = new uint16_t[accessor.count];
                     memcpy(buf,
                            &buffer.data[accessor.byteOffset +
                                         bufferView.byteOffset],
@@ -1095,7 +452,7 @@ void gltf_model::Model::loadNode(gltf_model::Node *parent,
                     break;
                 }
                 case TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE: {
-                    uint8_t *buf = new uint8_t[accessor.count];
+                    auto *buf = new uint8_t[accessor.count];
                     memcpy(buf,
                            &buffer.data[accessor.byteOffset +
                                         bufferView.byteOffset],
@@ -1113,7 +470,7 @@ void gltf_model::Model::loadNode(gltf_model::Node *parent,
                     return;
                 }
             }
-            Primitive *newPrimitive = new Primitive(
+            auto *newPrimitive = new Primitive(
                 indexStart, indexCount,
                 primitive.material > -1 ? materials[primitive.material]
                                         : materials.back());
@@ -1124,7 +481,7 @@ void gltf_model::Model::loadNode(gltf_model::Node *parent,
         }
         newNode->mesh = newMesh;
     }
-    if (parent) {
+    if (parent != nullptr) {
         parent->children.push_back(newNode);
     } else {
         nodes.push_back(newNode);
@@ -1145,7 +502,7 @@ void gltf_model::Model::loadSkins(tinygltf::Model &gltfModel) {
         // Find joint nodes
         for (int jointIndex : source.joints) {
             Node *node = nodeFromIndex(jointIndex);
-            if (node) {
+            if (node != nullptr) {
                 newSkin->joints.push_back(nodeFromIndex(jointIndex));
             }
         }
@@ -1175,7 +532,8 @@ void gltf_model::Model::loadImages(
 
     for (tinygltf::Image &image : gltfModel.images) {
         gltf_model::Texture texture;
-        texture.fromglTfImage(image, path, device, cmdBuf, transferQueue);
+        texture.fromglTfImage(image, path, std::move(device), std::move(cmdBuf),
+                              transferQueue);
         textures.push_back(texture);
     }
     // Create an empty texture to be used for empty material images
@@ -1296,7 +654,7 @@ void gltf_model::Model::loadAnimations(tinygltf::Model &gltfModel) {
 
                 assert(accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
 
-                float *buf = new float[accessor.count];
+                auto *buf = new float[accessor.count];
                 memcpy(
                     buf,
                     &buffer.data[accessor.byteOffset + bufferView.byteOffset],
@@ -1328,20 +686,19 @@ void gltf_model::Model::loadAnimations(tinygltf::Model &gltfModel) {
 
                 switch (accessor.type) {
                 case TINYGLTF_TYPE_VEC3: {
-                    glm::vec3 *buf = new glm::vec3[accessor.count];
+                    auto *buf = new glm::vec3[accessor.count];
                     memcpy(buf,
                            &buffer.data[accessor.byteOffset +
                                         bufferView.byteOffset],
                            accessor.count * sizeof(glm::vec3));
                     for (size_t index = 0; index < accessor.count; index++) {
-                        sampler.outputsVec4.push_back(
-                            glm::vec4(buf[index], 0.0F));
+                        sampler.outputsVec4.emplace_back(buf[index], 0.0F);
                     }
                     delete[] buf;
                     break;
                 }
                 case TINYGLTF_TYPE_VEC4: {
-                    glm::vec4 *buf = new glm::vec4[accessor.count];
+                    auto *buf = new glm::vec4[accessor.count];
                     memcpy(buf,
                            &buffer.data[accessor.byteOffset +
                                         bufferView.byteOffset],
@@ -1401,7 +758,8 @@ void gltf_model::Model::loadFromFile(
     tinygltf::Model gltfModel;
     tinygltf::TinyGLTF gltfContext;
 
-    if (fileLoadingFlags & FileLoadingFlags::DontLoadImages) {
+    if (static_cast<bool>(fileLoadingFlags &
+                          FileLoadingFlags::DontLoadImages)) {
         gltfContext.SetImageLoader(loadImageDataFuncEmpty, nullptr);
     } else {
         gltfContext.SetImageLoader(loadImageDataFunc, nullptr);
@@ -1410,7 +768,8 @@ void gltf_model::Model::loadFromFile(
     size_t pos = filename.find_last_of('/');
     path = filename.substr(0, pos);
 
-    std::string error, warning;
+    std::string error;
+    std::string warning;
 
     this->m_deviceHandler = std::move(device);
     this->m_commandBuffer = std::move(cmdBuf);
@@ -1422,7 +781,8 @@ void gltf_model::Model::loadFromFile(
     std::vector<Vertex> vertexBuffer;
 
     if (fileLoaded) {
-        if (!(fileLoadingFlags & FileLoadingFlags::DontLoadImages)) {
+        if (!static_cast<bool>(fileLoadingFlags &
+                               FileLoadingFlags::DontLoadImages)) {
             loadImages(gltfModel, m_deviceHandler, m_commandBuffer,
                        transferQueue);
         }
@@ -1431,23 +791,24 @@ void gltf_model::Model::loadFromFile(
             gltfModel
                 .scenes[gltfModel.defaultScene > -1 ? gltfModel.defaultScene
                                                     : 0];
-        for (size_t i = 0; i < scene.nodes.size(); i++) {
-            const tinygltf::Node node = gltfModel.nodes[scene.nodes[i]];
-            loadNode(nullptr, node, scene.nodes[i], gltfModel, indexBuffer,
+        // for (size_t i = 0; i < scene.nodes.size(); i++) {
+        for (const auto &node_idx : scene.nodes) {
+            const tinygltf::Node node = gltfModel.nodes[node_idx];
+            loadNode(nullptr, node, node_idx, gltfModel, indexBuffer,
                      vertexBuffer, scale);
         }
-        if (gltfModel.animations.size() > 0) {
+        if (!gltfModel.animations.empty()) {
             loadAnimations(gltfModel);
         }
         loadSkins(gltfModel);
 
-        for (auto node : linearNodes) {
+        for (auto *node : linearNodes) {
             // Assign skins
             if (node->skinIndex > -1) {
                 node->skin = skins[node->skinIndex];
             }
             // Initial pose
-            if (node->mesh) {
+            if (node->mesh != nullptr) {
                 node->update();
             }
         }
@@ -1459,16 +820,19 @@ void gltf_model::Model::loadFromFile(
     }
 
     // Pre-Calculations for requested features
-    if ((fileLoadingFlags & FileLoadingFlags::PreTransformVertices) ||
-        (fileLoadingFlags & FileLoadingFlags::PreMultiplyVertexColors) ||
-        (fileLoadingFlags & FileLoadingFlags::FlipY)) {
-        const bool preTransform =
-            fileLoadingFlags & FileLoadingFlags::PreTransformVertices;
-        const bool preMultiplyColor =
-            fileLoadingFlags & FileLoadingFlags::PreMultiplyVertexColors;
-        const bool flipY = fileLoadingFlags & FileLoadingFlags::FlipY;
+    if (static_cast<bool>(fileLoadingFlags &
+                          FileLoadingFlags::PreTransformVertices) ||
+        static_cast<bool>(fileLoadingFlags &
+                          FileLoadingFlags::PreMultiplyVertexColors) ||
+        static_cast<bool>(fileLoadingFlags & FileLoadingFlags::FlipY)) {
+        const bool preTransform = static_cast<bool>(
+            fileLoadingFlags & FileLoadingFlags::PreTransformVertices);
+        const bool preMultiplyColor = static_cast<bool>(
+            fileLoadingFlags & FileLoadingFlags::PreMultiplyVertexColors);
+        const bool flipY =
+            static_cast<bool>(fileLoadingFlags & FileLoadingFlags::FlipY);
         for (Node *node : linearNodes) {
-            if (node->mesh) {
+            if (node->mesh != nullptr) {
                 const glm::mat4 localMatrix = node->getMatrix();
                 for (Primitive *primitive : node->mesh->primitives) {
                     for (uint32_t i = 0; i < primitive->vertexCount; i++) {
@@ -1674,8 +1038,9 @@ void gltf_model::Model::loadFromFile(
 }
 
 void gltf_model::Model::bindBuffers(VkCommandBuffer commandBuffer) {
-    const VkDeviceSize offsets[1] = {0};
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertices.buffer, offsets);
+    const std::array<VkDeviceSize, 1> offsets = {0};
+    vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertices.buffer,
+                           offsets.data());
     vkCmdBindIndexBuffer(commandBuffer, indices.buffer, 0,
                          VK_INDEX_TYPE_UINT32);
     buffersBound = true;
@@ -1724,8 +1089,9 @@ void gltf_model::Model::draw(VkCommandBuffer commandBuffer,
                              VkPipelineLayout pipelineLayout,
                              uint32_t bindImageSet) {
     if (!buffersBound) {
-        const VkDeviceSize offsets[1] = {0};
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertices.buffer, offsets);
+        const std::array<VkDeviceSize, 1> offsets = {0};
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertices.buffer,
+                               offsets.data());
         vkCmdBindIndexBuffer(commandBuffer, indices.buffer, 0,
                              VK_INDEX_TYPE_UINT32);
     }
@@ -1797,37 +1163,37 @@ void gltf_model::Model::updateAnimation(uint32_t index, float time) {
         for (size_t i = 0; i < sampler.inputs.size() - 1; i++) {
             if ((time >= sampler.inputs[i]) &&
                 (time <= sampler.inputs[i + 1])) {
-                float u = std::max(0.0F, time - sampler.inputs[i]) /
-                          (sampler.inputs[i + 1] - sampler.inputs[i]);
-                if (u <= 1.0F) {
+                float interpCoef = std::max(0.0F, time - sampler.inputs[i]) /
+                                   (sampler.inputs[i + 1] - sampler.inputs[i]);
+                if (interpCoef <= 1.0F) {
                     switch (channel.path) {
                     case gltf_model::AnimationChannel::PathType::TRANSLATION: {
                         glm::vec4 trans =
                             glm::mix(sampler.outputsVec4[i],
-                                     sampler.outputsVec4[i + 1], u);
+                                     sampler.outputsVec4[i + 1], interpCoef);
                         channel.node->translation = glm::vec3(trans);
                         break;
                     }
                     case gltf_model::AnimationChannel::PathType::SCALE: {
                         glm::vec4 trans =
                             glm::mix(sampler.outputsVec4[i],
-                                     sampler.outputsVec4[i + 1], u);
+                                     sampler.outputsVec4[i + 1], interpCoef);
                         channel.node->scale = glm::vec3(trans);
                         break;
                     }
                     case gltf_model::AnimationChannel::PathType::ROTATION: {
-                        glm::quat q1;
-                        q1.x = sampler.outputsVec4[i].x;
-                        q1.y = sampler.outputsVec4[i].y;
-                        q1.z = sampler.outputsVec4[i].z;
-                        q1.w = sampler.outputsVec4[i].w;
-                        glm::quat q2;
-                        q2.x = sampler.outputsVec4[i + 1].x;
-                        q2.y = sampler.outputsVec4[i + 1].y;
-                        q2.z = sampler.outputsVec4[i + 1].z;
-                        q2.w = sampler.outputsVec4[i + 1].w;
-                        channel.node->rotation =
-                            glm::normalize(glm::slerp(q1, q2, u));
+                        glm::quat quad1;
+                        quad1.x = sampler.outputsVec4[i].x;
+                        quad1.y = sampler.outputsVec4[i].y;
+                        quad1.z = sampler.outputsVec4[i].z;
+                        quad1.w = sampler.outputsVec4[i].w;
+                        glm::quat quad2;
+                        quad2.x = sampler.outputsVec4[i + 1].x;
+                        quad2.y = sampler.outputsVec4[i + 1].y;
+                        quad2.z = sampler.outputsVec4[i + 1].z;
+                        quad2.w = sampler.outputsVec4[i + 1].w;
+                        channel.node->rotation = glm::normalize(
+                            glm::slerp(quad1, quad2, interpCoef));
                         break;
                     }
                     }

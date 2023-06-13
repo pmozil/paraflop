@@ -135,10 +135,41 @@ void DeviceHandler::m_createLogicalDevice(VkAllocationCallbacks *pAllocator) {
     }
 
     VkPhysicalDeviceFeatures deviceFeatures = {};
+    // deviceFeatures.bufferDeviceAddress = VK_TRUE;
 
     VkDeviceCreateInfo createInfo =
         create_info::deviceCreateInfo(queueCreateInfos, m_deviceExtensions,
                                       m_validationLayers, &deviceFeatures);
+
+    VkPhysicalDeviceBufferDeviceAddressFeatures
+        enabledBufferDeviceAddresFeatures{};
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR
+        enabledRayTracingPipelineFeatures{};
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR
+        enabledAccelerationStructureFeatures{};
+    enabledBufferDeviceAddresFeatures.sType =
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+    enabledBufferDeviceAddresFeatures.bufferDeviceAddress = VK_TRUE;
+
+    enabledRayTracingPipelineFeatures.sType =
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+    enabledRayTracingPipelineFeatures.rayTracingPipeline = VK_TRUE;
+    enabledRayTracingPipelineFeatures.pNext =
+        &enabledBufferDeviceAddresFeatures;
+
+    enabledAccelerationStructureFeatures.sType =
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+    enabledAccelerationStructureFeatures.accelerationStructure = VK_TRUE;
+    enabledAccelerationStructureFeatures.pNext =
+        &enabledRayTracingPipelineFeatures;
+
+    VkPhysicalDeviceFeatures2 physicalDeviceFeatures2{};
+    physicalDeviceFeatures2.sType =
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    physicalDeviceFeatures2.features = enabledFeatures;
+    physicalDeviceFeatures2.pNext = &enabledAccelerationStructureFeatures;
+    createInfo.pEnabledFeatures = nullptr;
+    createInfo.pNext = &physicalDeviceFeatures2;
 
     VK_CHECK(vkCreateDevice(physicalDevice, &createInfo, pAllocator,
                             &logicalDevice));
@@ -147,6 +178,7 @@ void DeviceHandler::m_createLogicalDevice(VkAllocationCallbacks *pAllocator) {
                      &graphicsQueue);
     vkGetDeviceQueue(logicalDevice, indices.presentFamily.value(), 0,
                      &presentQueue);
+
     if (indices.hasDedicatedTransfer()) {
         vkGetDeviceQueue(logicalDevice, indices.transferFamily.value(), 0,
                          &transferQueue);
@@ -195,8 +227,8 @@ DeviceHandler::getQueueFamilyIndices(VkPhysicalDevice &device) {
     return indices;
 }
 
-DeviceHandler::DeviceHandler(std::vector<const char *> &devExt,
-                             std::vector<const char *> &validations,
+DeviceHandler::DeviceHandler(std::vector<const char *> devExt,
+                             std::vector<const char *> validations,
                              VkInstance m_vkInstance, VkSurfaceKHR m_vkSurface)
     : m_deviceExtensions(devExt), m_validationLayers(validations),
       m_vkInstance(m_vkInstance), m_vkSurface(m_vkSurface) {

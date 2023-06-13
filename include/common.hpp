@@ -39,12 +39,19 @@ const std::vector<const char *> VALIDATION_LAYERS = {
     "VK_LAYER_KHRONOS_validation",
 };
 
-// Device extensions required for swap chain
-const std::vector<const char *> DEVICE_EXTENSIONS = {
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+// // Device extensions required for swap chain
+// const std::vector<const char *> DEVICE_EXTENSIONS = {
+//     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+//     VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+//     VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+//     VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+//     VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+//     VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+//     VK_KHR_SPIRV_1_4_EXTENSION_NAME,
+//     VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME};
 
 // Vulkan API version and global version
-#define PARAFLOP_VK_API_VERSION VK_API_VERSION_1_3
+#define PARAFLOP_VK_API_VERSION VK_API_VERSION_1_1
 #define GLOBAL_VERSION VK_MAKE_VERSION(1, 0, 0)
 
 #define UNUSED(x) (void)(x)

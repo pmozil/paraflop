@@ -9,11 +9,12 @@ class Raytracer : public raytracer::RaytracerBase {
         std::shared_ptr<device::DeviceHandler> m_deviceHandler,
         std::shared_ptr<swap_chain::DepthBufferSwapChain> m_swapChain,
         std::shared_ptr<command_buffer::CommandBufferHandler> m_commandBuffer,
-        std::shared_ptr<gltf_model::Model> m_model, GLFWwindow *window)
+        GLFWwindow *window)
         : raytracer::RaytracerBase(std::move(m_deviceHandler),
                                    std::move(m_swapChain),
                                    std::move(m_commandBuffer)),
-          window(window), scene(std::move(m_model)) {
+          window(window) {
+        prepare();
 
         createBottomLevelAccelerationStructure();
         createTopLevelAccelerationStructure();
@@ -28,6 +29,30 @@ class Raytracer : public raytracer::RaytracerBase {
         createDescriptorSets();
         buildCommandBuffers();
     }
+    // Raytracer(
+    //     std::shared_ptr<device::DeviceHandler> m_deviceHandler,
+    //     std::shared_ptr<swap_chain::DepthBufferSwapChain> m_swapChain,
+    //     std::shared_ptr<command_buffer::CommandBufferHandler>
+    //     m_commandBuffer, std::shared_ptr<gltf_model::Model> m_model,
+    //     GLFWwindow *window) :
+    //     raytracer::RaytracerBase(std::move(m_deviceHandler),
+    //                                std::move(m_swapChain),
+    //                                std::move(m_commandBuffer)),
+    //       window(window), scene(std::move(m_model)) {
+
+    //     createBottomLevelAccelerationStructure();
+    //     createTopLevelAccelerationStructure();
+
+    //     uint32_t width = m_swapChain->swapChainExtent.width;
+    //     uint32_t height = m_swapChain->swapChainExtent.height;
+    //     createStorageImage(m_swapChain->swapChainImageFormat,
+    //                        {width, height, 1});
+    //     createUniformBuffer();
+    //     createRayTracingPipeline();
+    //     createShaderBindingTables();
+    //     createDescriptorSets();
+    //     buildCommandBuffers();
+    // }
 
     AccelerationStructure bottomLevelAS;
     AccelerationStructure topLevelAS;
@@ -64,6 +89,7 @@ class Raytracer : public raytracer::RaytracerBase {
         VkMemoryPropertyFlags memoryPropertyFlags;
         VkResult map(VkDeviceSize size = VK_WHOLE_SIZE,
                      VkDeviceSize offset = 0);
+        void destroy() const;
     } ubo;
 
     bool resized = false;
@@ -76,7 +102,8 @@ class Raytracer : public raytracer::RaytracerBase {
     VkDescriptorSet descriptorSet;
     VkDescriptorSetLayout descriptorSetLayout;
 
-    std::shared_ptr<gltf_model::Model> scene;
+    gltf_model::Model scene;
+    // std::shared_ptr<gltf_model::Model> scene;
 
     void createBottomLevelAccelerationStructure();
     void createTopLevelAccelerationStructure();

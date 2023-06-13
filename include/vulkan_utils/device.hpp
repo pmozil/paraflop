@@ -31,8 +31,8 @@ class DeviceHandler {
      * \param vkSurface The Vulkan surface associated with the
      * device.
      */
-    DeviceHandler(std::vector<const char *> &devExt,
-                  std::vector<const char *> &validations, VkInstance vkInstance,
+    DeviceHandler(std::vector<const char *> devExt,
+                  std::vector<const char *> validations, VkInstance vkInstance,
                   VkSurfaceKHR vkSurface);
 
     /**
@@ -162,9 +162,9 @@ class DeviceHandler {
 
   private:
     std::vector<const char *>
-        &m_deviceExtensions; /**< The required device extensions. */
+        m_deviceExtensions; /**< The required device extensions. */
     std::vector<const char *>
-        &m_validationLayers; /**< The enabled validation layers. */
+        m_validationLayers;  /**< The enabled validation layers. */
     VkInstance m_vkInstance; /**< The Vulkan instance associated with the
                                 device. */
     VkSurfaceKHR

@@ -27,25 +27,28 @@ int main() {
     std::vector<const char *> validation = {"VK_LAYER_KHRONOS_validation"};
 
     std::vector<const char *> devExt = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
         VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
-        VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
         VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
         VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
         VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
         VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
         VK_KHR_SPIRV_1_4_EXTENSION_NAME,
-        VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME};
+        VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+
     GLFWwindow *window =
         window::initWindow(nullptr, nullptr, nullptr, nullptr, nullptr);
     std::unique_ptr<vk_instance::Instance> instance =
         std::make_unique<vk_instance::Instance>();
     debug::createDebugMessenger(instance->instance);
+
     std::unique_ptr<surface::Surface> surface =
         std::make_unique<surface::Surface>(instance->instance, window, nullptr);
+
     std::shared_ptr<device::DeviceHandler> deviceHandler =
         std::make_shared<device::DeviceHandler>(
             devExt, validation, instance->instance, surface->surface);
+
     std::shared_ptr<swap_chain::DepthBufferSwapChain> swapChain =
         std::make_shared<swap_chain::DepthBufferSwapChain>(
             window, surface->surface, deviceHandler);
@@ -54,19 +57,18 @@ int main() {
         std::make_shared<command_buffer::CommandBufferHandler>(deviceHandler,
                                                                swapChain);
 
-    const uint32_t glTFLoadingFlags =
-        gltf_model::FileLoadingFlags::PreTransformVertices |
-        gltf_model::FileLoadingFlags::PreMultiplyVertexColors |
-        gltf_model::FileLoadingFlags::FlipY;
+    // const uint32_t glTFLoadingFlags =
+    //     gltf_model::FileLoadingFlags::PreTransformVertices |
+    //     gltf_model::FileLoadingFlags::PreMultiplyVertexColors |
+    //     gltf_model::FileLoadingFlags::FlipY;
 
-    std::shared_ptr<gltf_model::Model> model =
-        std::make_shared<gltf_model::Model>();
-    model->loadFromFile("assets/models/sponza/sponza.gltf", deviceHandler,
-                        commandBuffer, deviceHandler->getTransferQueue(),
-                        glTFLoadingFlags);
+    // std::shared_ptr<gltf_model::Model> model =
+    //     std::make_shared<gltf_model::Model>();
+    // model->loadFromFile("assets/models/sponza/sponza.gltf", deviceHandler,
+    //                     commandBuffer, deviceHandler->getTransferQueue(),
+    //                     glTFLoadingFlags);
 
-    auto renderer =
-        Raytracer(deviceHandler, swapChain, commandBuffer, model, window);
+    auto renderer = Raytracer(deviceHandler, swapChain, commandBuffer, window);
 
     while (!static_cast<bool>(glfwWindowShouldClose(window))) {
         glfwPollEvents();

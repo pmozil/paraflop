@@ -16,25 +16,24 @@ void Raytracer::createBottomLevelAccelerationStructure() {
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
-    // const uint32_t glTFLoadingFlags =
-    //     gltf_model::FileLoadingFlags::PreTransformVertices |
-    //     gltf_model::FileLoadingFlags::PreMultiplyVertexColors |
-    //     gltf_model::FileLoadingFlags::FlipY;
-    // scene.loadFromFile("asets/models/vulkanscene_shadow.gltf",
-    // m_deviceHandler,
-    //                    m_deviceHandler->getTransferQueue(),
-    //                    glTFLoadingFlags);
+    const uint32_t glTFLoadingFlags =
+        gltf_model::FileLoadingFlags::PreTransformVertices |
+        gltf_model::FileLoadingFlags::PreMultiplyVertexColors |
+        gltf_model::FileLoadingFlags::FlipY;
+    scene.loadFromFile("assets/models/vulkanscene_shadow.gltf", m_deviceHandler,
+                       m_commandBuffer, m_deviceHandler->getTransferQueue(),
+                       glTFLoadingFlags);
 
     VkDeviceOrHostAddressConstKHR vertexBufferDeviceAddress{};
     VkDeviceOrHostAddressConstKHR indexBufferDeviceAddress{};
 
     vertexBufferDeviceAddress.deviceAddress =
-        getBufferDeviceAddress(scene->vertices.buffer);
+        getBufferDeviceAddress(scene.vertices.buffer);
     indexBufferDeviceAddress.deviceAddress =
-        getBufferDeviceAddress(scene->indices.buffer);
+        getBufferDeviceAddress(scene.indices.buffer);
 
-    uint32_t numTriangles = static_cast<uint32_t>(scene->indices.count) / 3;
-    uint32_t maxVertex = scene->vertices.count;
+    uint32_t numTriangles = static_cast<uint32_t>(scene.indices.count) / 3;
+    uint32_t maxVertex = scene.vertices.count;
 
     // Build
     VkAccelerationStructureGeometryKHR accelerationStructureGeometry{};
@@ -149,7 +148,7 @@ void Raytracer::createTopLevelAccelerationStructure() {
     instance.accelerationStructureReference = bottomLevelAS.deviceAddress;
 
     // Buffer for instance data
-    buffer::Buffer instancesBuffer;
+    Raytracer::Buffer instancesBuffer;
     VK_CHECK(m_deviceHandler->createBuffer(
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
@@ -345,9 +344,9 @@ void Raytracer::createDescriptorSets() {
 
     VkDescriptorImageInfo storageImageDescriptor{
         VK_NULL_HANDLE, storageImage.view, VK_IMAGE_LAYOUT_GENERAL};
-    VkDescriptorBufferInfo vertexBufferDescriptor{scene->vertices.buffer, 0,
+    VkDescriptorBufferInfo vertexBufferDescriptor{scene.vertices.buffer, 0,
                                                   VK_WHOLE_SIZE};
-    VkDescriptorBufferInfo indexBufferDescriptor{scene->indices.buffer, 0,
+    VkDescriptorBufferInfo indexBufferDescriptor{scene.indices.buffer, 0,
                                                  VK_WHOLE_SIZE};
 
     std::vector<VkWriteDescriptorSet> writeDescriptorSets = {
@@ -688,4 +687,14 @@ void Raytracer::renderFrame() {
                            VK_NULL_HANDLE));
 
     submitFrame();
+}
+
+void Raytracer::Buffer::destroy() const {
+
+    if (buffer) {
+        vkDestroyBuffer(device, buffer, nullptr);
+    }
+    if (memory) {
+        vkFreeMemory(device, memory, nullptr);
+    }
 }

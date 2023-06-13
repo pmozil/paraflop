@@ -196,6 +196,7 @@ uint64_t RaytracerBase::getBufferDeviceAddress(VkBuffer buffer) {
     VkBufferDeviceAddressInfoKHR bufferDeviceAI{};
     bufferDeviceAI.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
     bufferDeviceAI.buffer = buffer;
+
     return vkGetBufferDeviceAddressKHR(*m_deviceHandler, &bufferDeviceAI);
 }
 

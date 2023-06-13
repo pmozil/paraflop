@@ -361,4 +361,20 @@ void SwapChain::m_destroySyncObjects() {
         vkDestroyFence(*m_deviceHandler, inFlightFences[i], nullptr);
     }
 }
+
+VkResult SwapChain::queuePresent(VkQueue queue, uint32_t imageIndex) {
+    VkPresentInfoKHR presentInfo = {};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.pNext = nullptr;
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = &swapChain;
+    presentInfo.pImageIndices = &imageIndex;
+    // Check if a wait semaphore has been specified to wait for before
+    // presenting the image
+    if (renderFinishedSemaphores[imageIndex] != VK_NULL_HANDLE) {
+        presentInfo.pWaitSemaphores = &renderFinishedSemaphores[imageIndex];
+        presentInfo.waitSemaphoreCount = 1;
+    }
+    return vkQueuePresentKHR(queue, &presentInfo);
+}
 } // namespace swap_chain

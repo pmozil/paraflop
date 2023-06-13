@@ -1,13 +1,3 @@
-/*
- * Vulkan glTF model and texture loading class based on tinyglTF
- * (https://github.com/syoyo/tinygltf)
- *
- * Copyright (C) 2018 by Sascha Willems - www.saschawillems.de
- *
- * This code is licensed under the MIT license (MIT)
- * (http://opensource.org/licenses/MIT)
- */
-
 #pragma once
 
 #include "gltf_model/animation.hpp"
@@ -90,13 +80,13 @@ class Model {
                  uint32_t fileLoadingFlags = gltf_model::FileLoadingFlags::None,
                  float scale = 1.0F);
     void bindBuffers(VkCommandBuffer commandBuffer);
-    void drawNode(Node *node, VkCommandBuffer commandBuffer,
-                  uint32_t renderFlags = 0,
-                  VkPipelineLayout pipelineLayout = VK_NULL_HANDLE,
-                  uint32_t bindImageSet = 1);
-    void draw(VkCommandBuffer commandBuffer, uint32_t renderFlags = 0,
-              VkPipelineLayout pipelineLayout = VK_NULL_HANDLE,
-              uint32_t bindImageSet = 1);
+    // void drawNode(Node *node, VkCommandBuffer commandBuffer,
+    //               uint32_t renderFlags = 0,
+    //               VkPipelineLayout pipelineLayout = VK_NULL_HANDLE,
+    //               uint32_t bindImageSet = 1);
+    // void draw(VkCommandBuffer commandBuffer, uint32_t renderFlags = 0,
+    //           VkPipelineLayout pipelineLayout = VK_NULL_HANDLE,
+    //           uint32_t bindImageSet = 1);
     void getNodeDimensions(Node *node, glm::vec3 &min, glm::vec3 &max);
     void getSceneDimensions();
     void updateAnimation(uint32_t index, float time);

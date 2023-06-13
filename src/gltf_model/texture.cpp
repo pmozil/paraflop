@@ -1,13 +1,3 @@
-/*
- * Vulkan glTF model and texture loading class based on tinyglTF
- * (https://github.com/syoyo/tinygltf)
- *
- * Copyright (C) 2018 by Sascha Willems - www.saschawillems.de
- *
- * This code is licensed under the MIT license (MIT)
- * (http://opensource.org/licenses/MIT)
- */
-
 #include "gltf_model/texture.hpp"
 #include "vulkan_utils/create_info.hpp"
 #include "vulkan_utils/staging_buffer.hpp"
@@ -376,8 +366,8 @@ void gltf_model::Texture::fromglTfImage(
 
     bool isKtx = false;
     // Image points to an external ktx file
-    if (gltfimage.uri.find_last_of(".") != std::string::npos) {
-        if (gltfimage.uri.substr(gltfimage.uri.find_last_of(".") + 1) ==
+    if (gltfimage.uri.find_last_of('.') != std::string::npos) {
+        if (gltfimage.uri.substr(gltfimage.uri.find_last_of('.') + 1) ==
             "ktx") {
             isKtx = true;
         }

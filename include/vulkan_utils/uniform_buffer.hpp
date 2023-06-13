@@ -41,6 +41,8 @@ class UniformBuffer : public Buffer {
                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                  VK_SHARING_MODE_EXCLUSIVE, size){};
 
+    UniformBuffer() = default;
+
     /**
      * \fn UniformBuffer(std::shared_ptr<device::DeviceHandler> deviceHandler,
      *                   std::shared_ptr<command_buffer::CommandBufferHandler>

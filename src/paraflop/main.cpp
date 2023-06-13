@@ -1,4 +1,5 @@
 #include "common.hpp"
+#include "gltf_model/model.hpp"
 #include "vulkan_utils/buffer.hpp"
 #include "vulkan_utils/command_buffer.hpp"
 #include "vulkan_utils/create_info.hpp"
@@ -15,7 +16,7 @@
 #include "vulkan_utils/vk_instance.hpp"
 #include "vulkan_utils/window.hpp"
 
-#include "custom_graphics_pipeline.hpp"
+#include "raytracer.hpp"
 
 std::vector<VkWriteDescriptorSet>
 getDescriptorWrites(VkDescriptorBufferInfo *bufferInfo,
@@ -25,7 +26,16 @@ std::vector<VkDescriptorPoolSize> getDescriptorSizes();
 int main() {
     std::vector<const char *> validation = {"VK_LAYER_KHRONOS_validation"};
 
-    std::vector<const char *> devExt = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    std::vector<const char *> devExt = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+        VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+        VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+        VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+        VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+        VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+        VK_KHR_SPIRV_1_4_EXTENSION_NAME,
+        VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME};
     GLFWwindow *window =
         window::initWindow(nullptr, nullptr, nullptr, nullptr, nullptr);
     std::unique_ptr<vk_instance::Instance> instance =
@@ -40,36 +50,31 @@ int main() {
         std::make_shared<swap_chain::DepthBufferSwapChain>(
             window, surface->surface, deviceHandler);
 
-    std::array<VkDescriptorSetLayoutBinding, 2> uboBindings = {
-        create_info::descriptorSetLayoutBinding(
-            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0,
-            1),
-        create_info::descriptorSetLayoutBinding(
-            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1),
-    };
-
-    std::shared_ptr<descriptor_set::DescriptorSetLayout> layout =
-        std::make_shared<descriptor_set::DescriptorSetLayout>(
-            deviceHandler, uboBindings.data(), uboBindings.size());
-
     std::shared_ptr<command_buffer::CommandBufferHandler> commandBuffer =
         std::make_shared<command_buffer::CommandBufferHandler>(deviceHandler,
                                                                swapChain);
 
+    const uint32_t glTFLoadingFlags =
+        gltf_model::FileLoadingFlags::PreTransformVertices |
+        gltf_model::FileLoadingFlags::PreMultiplyVertexColors |
+        gltf_model::FileLoadingFlags::FlipY;
+
     std::shared_ptr<gltf_model::Model> model =
         std::make_shared<gltf_model::Model>();
     model->loadFromFile("assets/models/sponza/sponza.gltf", deviceHandler,
-                        commandBuffer, deviceHandler->getTransferQueue());
+                        commandBuffer, deviceHandler->getTransferQueue(),
+                        glTFLoadingFlags);
 
-    std::shared_ptr<graphics_pipeline::CustomRasterPipeline> pipeline =
-        std::make_shared<graphics_pipeline::CustomRasterPipeline>(
-            deviceHandler, swapChain, model);
+    auto renderer =
+        Raytracer(deviceHandler, swapChain, commandBuffer, model, window);
 
-    std::shared_ptr<command_buffer::ImageCommandBufferHandler>
-        imageCommandBuffer =
-            std::make_shared<command_buffer::ImageCommandBufferHandler>(
-                deviceHandler, swapChain, pipeline);
+    while (!static_cast<bool>(glfwWindowShouldClose(window))) {
+        glfwPollEvents();
+        renderer.renderFrame();
+    }
+
+    glfwDestroyWindow(window);
+    glfwTerminate();
 
     return 0;
 }

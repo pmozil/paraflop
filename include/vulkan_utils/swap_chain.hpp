@@ -170,6 +170,8 @@ class SwapChain {
         createFrameBuffers();
     }
 
+    VkResult queuePresent(VkQueue queue, uint32_t imageIndex);
+
   protected:
     GLFWwindow *m_window;
     VkSurfaceKHR m_surface;

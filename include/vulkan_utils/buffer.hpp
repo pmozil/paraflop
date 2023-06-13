@@ -31,6 +31,8 @@ class Buffer {
         VkMemoryPropertyFlags memoryPropertyFlags, VkSharingMode sharingMode,
         VkDeviceSize size);
 
+    Buffer() = default;
+
     /**
      * \brief Destroys the Buffer object.
      *

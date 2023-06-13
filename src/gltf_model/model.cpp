@@ -1,13 +1,3 @@
-/*
- * Vulkan glTF model and texture loading class based on tinyglTF
- * (https://github.com/syoyo/tinygltf)
- *
- * Copyright (C) 2018 by Sascha Willems - www.saschawillems.de
- *
- * This code is licensed under the MIT license (MIT)
- * (http://opensource.org/licenses/MIT)
- */
-
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #define TINYGLTF_NO_STB_IMAGE_WRITE
@@ -36,8 +26,8 @@ bool loadImageDataFunc(tinygltf::Image *image, const int imageIndex,
                        int req_height, const unsigned char *bytes, int size,
                        void *userData) {
     // KTX files will be handled by our own code
-    if (image->uri.find_last_of(".") != std::string::npos) {
-        if (image->uri.substr(image->uri.find_last_of(".") + 1) == "ktx") {
+    if (image->uri.find_last_of('.') != std::string::npos) {
+        if (image->uri.substr(image->uri.find_last_of('.') + 1) == "ktx") {
             return true;
         }
     }
@@ -67,7 +57,6 @@ bool loadImageDataFuncEmpty(tinygltf::Image *image, const int imageIndex,
 }
 
 gltf_model::Texture *gltf_model::Model::getTexture(uint32_t index) {
-
     if (index < textures.size()) {
         return &textures[index];
     }
@@ -540,11 +529,8 @@ void gltf_model::Model::loadImages(
     tinygltf::Model &gltfModel, std::shared_ptr<device::DeviceHandler> device,
     std::shared_ptr<command_buffer::CommandBufferHandler> cmdBuf,
     VkQueue transferQueue) {
-
-    int idx = 0;
     for (tinygltf::Image &image : gltfModel.images) {
         gltf_model::Texture texture;
-        idx++;
 
         texture.fromglTfImage(image, path, device, cmdBuf, transferQueue);
         textures.push_back(texture);
@@ -768,7 +754,6 @@ void gltf_model::Model::loadFromFile(
     std::string filename, std::shared_ptr<device::DeviceHandler> device,
     std::shared_ptr<command_buffer::CommandBufferHandler> cmdBuf,
     VkQueue transferQueue, uint32_t fileLoadingFlags, float scale) {
-
     tinygltf::Model gltfModel;
     tinygltf::TinyGLTF gltfContext;
 
@@ -1057,63 +1042,51 @@ void gltf_model::Model::bindBuffers(VkCommandBuffer commandBuffer) {
                            offsets.data());
     vkCmdBindIndexBuffer(commandBuffer, indices.buffer, 0,
                          VK_INDEX_TYPE_UINT32);
-    buffersBound = true;
 }
 
-void gltf_model::Model::drawNode(Node *node, VkCommandBuffer commandBuffer,
-                                 uint32_t renderFlags,
-                                 VkPipelineLayout pipelineLayout,
-                                 uint32_t bindImageSet) {
-    if (node->mesh != nullptr) {
-        for (Primitive *primitive : node->mesh->primitives) {
-            bool skip = false;
-            const gltf_model::Material &material = primitive->material;
-            if (static_cast<bool>(renderFlags &
-                                  RenderFlags::RenderOpaqueNodes)) {
-                skip = (material.alphaMode != Material::ALPHAMODE_OPAQUE);
-            }
-            if (static_cast<bool>(renderFlags &
-                                  RenderFlags::RenderAlphaMaskedNodes)) {
-                skip = (material.alphaMode != Material::ALPHAMODE_MASK);
-            }
-            if (static_cast<bool>(renderFlags &
-                                  RenderFlags::RenderAlphaBlendedNodes)) {
-                skip = (material.alphaMode != Material::ALPHAMODE_BLEND);
-            }
-            if (!skip) {
-                if (static_cast<bool>(renderFlags & RenderFlags::BindImages)) {
-                    vkCmdBindDescriptorSets(
-                        commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                        pipelineLayout, bindImageSet, 1,
-                        &material.descriptorSet, 0, nullptr);
-                }
-                vkCmdDrawIndexed(commandBuffer, primitive->indexCount, 1,
-                                 primitive->firstIndex, 0, 0);
-            }
-        }
-    }
-    for (auto &child : node->children) {
-        drawNode(child, commandBuffer, renderFlags, pipelineLayout,
-                 bindImageSet);
-    }
-}
+// void gltf_model::Model::drawNode(Node *node, VkCommandBuffer commandBuffer,
+//                                  uint32_t renderFlags,
+//                                  VkPipelineLayout pipelineLayout,
+//                                  uint32_t bindImageSet) {
+//     if (node->mesh) {
+//         // Render mesh primitives
+//         for (auto *primitive : node->mesh->primitives) {
+//             if (primitive->material.alphaMode & renderFlags) {
 
-void gltf_model::Model::draw(VkCommandBuffer commandBuffer,
-                             uint32_t renderFlags,
-                             VkPipelineLayout pipelineLayout,
-                             uint32_t bindImageSet) {
-    if (!buffersBound) {
-        const std::array<VkDeviceSize, 1> offsets = {0};
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertices.buffer,
-                               offsets.data());
-        vkCmdBindIndexBuffer(commandBuffer, indices.buffer, 0,
-                             VK_INDEX_TYPE_UINT32);
-    }
-    for (auto &node : nodes) {
-        drawNode(node, commandBuffer, renderFlags, pipelineLayout,
-                 bindImageSet);
-    }
-}
+//                 const std::vector<VkDescriptorSet> descriptorsets = {
+//                     node->mesh->uniformBuffer.descriptorSet,
+//                     primitive->material.descriptorSet,
+//                 };
+//                 vkCmdBindDescriptorSets(
+//                     commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+//                     pipelineLayout, 0,
+//                     static_cast<uint32_t>(descriptorsets.size()),
+//                     descriptorsets.data(), 0, nullptr);
+
+//                 vkCmdDrawIndexed(commandBuffer, primitive->indexCount, 1,
+//                                  primitive->firstIndex, 0, 0);
+//             }
+//         }
+//     };
+//     for (auto child : node->children) {
+//         drawNode(child, commandBuffer, alphaMode);
+//     }
+// }
+
+// void gltf_model::Model::draw(VkCommandBuffer commandBuffer,
+//                              uint32_t renderFlags,
+//                              VkPipelineLayout pipelineLayout,
+//                              uint32_t bindImageSet) {
+//     const std::array<VkDeviceSize, 1> offsets = {0};
+//     vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertices.buffer,
+//                            offsets.data());
+//     vkCmdBindIndexBuffer(commandBuffer, indices.buffer, 0,
+//                          VK_INDEX_TYPE_UINT32);
+//     for (auto &node : nodes) {
+//         drawNode(node, commandBuffer, renderFlags, pipelineLayout,
+//                  bindImageSet);
+//     }
+// }
 
 void gltf_model::Model::getNodeDimensions(Node *node, glm::vec3 &min,
                                           glm::vec3 &max) {

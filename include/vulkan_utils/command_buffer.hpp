@@ -112,6 +112,7 @@ class ImageCommandBufferHandler : public CommandBufferHandler {
         std::shared_ptr<swap_chain::SwapChain> m_swapChain,
         std::shared_ptr<graphics_pipeline::AbstractGraphicsPipeline>
             m_graphicsPipeline);
+
     std::vector<VkCommandBuffer>
         commandBuffers; /**< The Vulkan command buffers. */
 

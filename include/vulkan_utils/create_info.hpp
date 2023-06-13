@@ -297,7 +297,7 @@ descriptorSetAllocInfo(VkDescriptorPool descriptorPool,
 VkDescriptorSetLayoutBinding
 descriptorSetLayoutBinding(VkDescriptorType descType,
                            VkShaderStageFlags stageFlags, uint32_t binding,
-                           uint32_t descriptors);
+                           uint32_t descriptors = 1);
 
 /**
  * \fn VkDescriptorSetLayoutCreateInfo
@@ -370,4 +370,38 @@ VkVertexInputBindingDescription
 vertexInputBindingDescription(uint32_t binding, uint32_t stride,
                               VkVertexInputRate inputRate);
 
+/**
+* \fn VkWriteDescriptorSet writeDescriptorSet(VkDescriptorSet dstSet,
+                                     VkDescriptorType type, uint32_t binding,
+                                     VkDescriptorImageInfo *imageInfo,
+                                     uint32_t descriptorCount = 1);
+ * \ create a descriptor set
+*/
+VkWriteDescriptorSet writeDescriptorSet(VkDescriptorSet dstSet,
+                                        VkDescriptorType type, uint32_t binding,
+                                        VkDescriptorImageInfo *imageInfo,
+                                        uint32_t descriptorCount = 1);
+
+/**
+* \fn VkWriteDescriptorSet writeDescriptorSet(VkDescriptorSet dstSet,
+                                     VkDescriptorType type, uint32_t binding,
+                                     VkDescriptorBufferInfo *imageInfo,
+                                     uint32_t descriptorCount = 1);
+ * \ create a descriptor set
+*/
+VkWriteDescriptorSet writeDescriptorSet(VkDescriptorSet dstSet,
+                                        VkDescriptorType type, uint32_t binding,
+                                        VkDescriptorBufferInfo *bufferInfo,
+                                        uint32_t descriptorCount = 1);
+
+VkDescriptorSetLayoutCreateInfo
+descriptorSetLayoutCreateInfo(const VkDescriptorSetLayoutBinding *pBindings,
+                              uint32_t bindingCount);
+
+VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo(
+    const std::vector<VkDescriptorSetLayoutBinding> &bindings);
+
+VkPipelineLayoutCreateInfo
+pipelineLayoutCreateInfo(const VkDescriptorSetLayout *pSetLayouts,
+                         uint32_t setLayoutCount = 1);
 } // namespace create_info

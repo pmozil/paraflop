@@ -150,4 +150,39 @@ void setImageLayout(VkCommandBuffer cmdbuffer, VkImage image,
     setImageLayout(cmdbuffer, image, oldImageLayout, newImageLayout,
                    subresourceRange, srcStageMask, dstStageMask);
 }
+
+uint32_t alignedSize(uint32_t value, uint32_t alignment) {
+    return (value + alignment - 1) & ~(alignment - 1);
+}
+
+VkShaderModule loadShader(const char *fileName, VkDevice device) {
+    std::ifstream input(fileName,
+                        std::ios::binary | std::ios::in | std::ios::ate);
+
+    if (input.is_open()) {
+        size_t size = input.tellg();
+        input.seekg(0, std::ios::beg);
+        char *shaderCode = new char[size];
+        input.read(shaderCode, size);
+        input.close();
+
+        assert(size > 0);
+
+        VkShaderModule shaderModule;
+        VkShaderModuleCreateInfo moduleCreateInfo{};
+        moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        moduleCreateInfo.codeSize = size;
+        moduleCreateInfo.pCode = (uint32_t *)shaderCode;
+
+        VK_CHECK(vkCreateShaderModule(device, &moduleCreateInfo, nullptr,
+                                      &shaderModule));
+
+        delete[] shaderCode;
+
+        return shaderModule;
+    }
+    std::cerr << "Error: Could not open shader file \"" << fileName << "\""
+              << "\n";
+    return VK_NULL_HANDLE;
+}
 } // namespace utils

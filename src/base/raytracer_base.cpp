@@ -337,13 +337,13 @@ RaytracerBase::getSbtEntryStridedDeviceAddressRegion(VkBuffer buffer,
 void RaytracerBase::createShaderBindingTable(
     ShaderBindingTable &shaderBindingTable, uint32_t handleCount) {
     // Create buffer to hold all shader handles for the SBT
-    VK_CHECK(m_deviceHandler->createBuffer(
+    VK_CHECK(shaderBindingTable.create(
+        m_deviceHandler,
         VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR |
             VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        rayTracingPipelineProperties.shaderGroupHandleSize * handleCount,
-        &shaderBindingTable.buffer, &shaderBindingTable.memory, nullptr));
+        rayTracingPipelineProperties.shaderGroupHandleSize * handleCount));
     // Get the strided address to be used when dispatching the rays
     shaderBindingTable.stridedDeviceAddressRegion =
         getSbtEntryStridedDeviceAddressRegion(shaderBindingTable.buffer,
@@ -374,5 +374,114 @@ RaytracerBase::loadShader(std::string fileName, VkShaderStageFlagBits stage) {
     assert(shaderStage.module != VK_NULL_HANDLE);
     shaderModules.push_back(shaderStage.module);
     return shaderStage;
+}
+
+VkResult RaytracerBase::ShaderBindingTable::map(VkDeviceSize size,
+                                                VkDeviceSize offset) {
+    return vkMapMemory(device, memory, offset, size, 0, &mapped);
+}
+
+void RaytracerBase::ShaderBindingTable::unmap() {
+    if (mapped != nullptr) {
+        vkUnmapMemory(device, memory);
+        mapped = nullptr;
+    }
+}
+
+[[nodiscard]] VkResult
+RaytracerBase::ShaderBindingTable::bind(VkDeviceSize offset) const {
+    return vkBindBufferMemory(device, buffer, memory, offset);
+}
+
+void RaytracerBase::ShaderBindingTable::setupDescriptor(VkDeviceSize size,
+                                                        VkDeviceSize offset) {
+    descriptor.offset = offset;
+    descriptor.buffer = buffer;
+    descriptor.range = size;
+}
+
+[[nodiscard]] VkResult
+RaytracerBase::ShaderBindingTable::flush(VkDeviceSize size,
+                                         VkDeviceSize offset) const {
+    VkMappedMemoryRange mappedRange = {};
+    mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+    mappedRange.memory = memory;
+    mappedRange.offset = offset;
+    mappedRange.size = size;
+    return vkFlushMappedMemoryRanges(device, 1, &mappedRange);
+}
+
+[[nodiscard]] VkResult
+RaytracerBase::ShaderBindingTable::invalidate(VkDeviceSize size,
+                                              VkDeviceSize offset) const {
+    VkMappedMemoryRange mappedRange = {};
+    mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+    mappedRange.memory = memory;
+    mappedRange.offset = offset;
+    mappedRange.size = size;
+    return vkInvalidateMappedMemoryRanges(device, 1, &mappedRange);
+}
+
+void RaytracerBase::ShaderBindingTable::destroy() const {
+    if (buffer != VK_NULL_HANDLE) {
+        vkDestroyBuffer(device, buffer, nullptr);
+    }
+    if (memory != VK_NULL_HANDLE) {
+        vkFreeMemory(device, memory, nullptr);
+    }
+}
+
+VkResult RaytracerBase::ShaderBindingTable::create(
+    std::shared_ptr<device::DeviceHandler> &deviceHandler,
+    VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags,
+    VkDeviceSize size, void *data) {
+    this->device = *deviceHandler;
+
+    // Create the buffer handle
+    VkBufferCreateInfo bufferCreateInfo =
+        create_info::bufferCreateInfo(usageFlags, size);
+    VK_CHECK(vkCreateBuffer(this->device, &bufferCreateInfo, nullptr, &buffer));
+
+    // Create the memory backing up the buffer handle
+    VkMemoryRequirements memReqs;
+    VkMemoryAllocateInfo memAlloc = create_info::memoryAllocateInfo();
+    vkGetBufferMemoryRequirements(*deviceHandler, buffer, &memReqs);
+    memAlloc.allocationSize = memReqs.size;
+    // Find a memory type index that fits the properties of the buffer
+    memAlloc.memoryTypeIndex = deviceHandler->getMemoryType(
+        memReqs.memoryTypeBits, memoryPropertyFlags);
+    // If the buffer has VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT set we also
+    // need to enable the appropriate flag during allocation
+    VkMemoryAllocateFlagsInfoKHR allocFlagsInfo{};
+    if (static_cast<bool>(usageFlags &
+                          VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)) {
+        allocFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO_KHR;
+        allocFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+        memAlloc.pNext = &allocFlagsInfo;
+    }
+    VK_CHECK(vkAllocateMemory(*deviceHandler, &memAlloc, nullptr, &memory));
+
+    this->alignment = memReqs.alignment;
+    this->size = size;
+    this->usageFlags = usageFlags;
+    this->memoryPropertyFlags = memoryPropertyFlags;
+
+    // If a pointer to the buffer data has been passed, map the buffer and copy
+    // over the data
+    if (data != nullptr) {
+        VK_CHECK(map());
+        memcpy(mapped, data, size);
+        if ((memoryPropertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
+            VK_CHECK(flush());
+        }
+
+        unmap();
+    }
+
+    // Initialize a default descriptor that covers the whole buffer size
+    setupDescriptor();
+
+    // Attach the memory to the buffer object
+    return bind();
 }
 } // namespace raytracer

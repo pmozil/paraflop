@@ -51,7 +51,7 @@ const std::vector<const char *> VALIDATION_LAYERS = {
 //     VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME};
 
 // Vulkan API version and global version
-#define PARAFLOP_VK_API_VERSION VK_API_VERSION_1_1
+#define PARAFLOP_VK_API_VERSION VK_API_VERSION_1_3
 #define GLOBAL_VERSION VK_MAKE_VERSION(1, 0, 0)
 
 #define UNUSED(x) (void)(x)

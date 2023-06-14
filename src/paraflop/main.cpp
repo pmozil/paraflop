@@ -18,11 +18,6 @@
 
 #include "raytracer.hpp"
 
-std::vector<VkWriteDescriptorSet>
-getDescriptorWrites(VkDescriptorBufferInfo *bufferInfo,
-                    VkDescriptorImageInfo *imageInfo);
-std::vector<VkDescriptorPoolSize> getDescriptorSizes();
-
 int main() {
     std::vector<const char *> validation = {"VK_LAYER_KHRONOS_validation"};
 
@@ -57,18 +52,21 @@ int main() {
         std::make_shared<command_buffer::CommandBufferHandler>(deviceHandler,
                                                                swapChain);
 
-    // const uint32_t glTFLoadingFlags =
-    //     gltf_model::FileLoadingFlags::PreTransformVertices |
-    //     gltf_model::FileLoadingFlags::PreMultiplyVertexColors |
-    //     gltf_model::FileLoadingFlags::FlipY;
+    const uint32_t glTFLoadingFlags =
+        gltf_model::FileLoadingFlags::PreTransformVertices |
+        gltf_model::FileLoadingFlags::PreMultiplyVertexColors |
+        gltf_model::FileLoadingFlags::FlipY;
 
-    // std::shared_ptr<gltf_model::Model> model =
-    //     std::make_shared<gltf_model::Model>();
-    // model->loadFromFile("assets/models/sponza/sponza.gltf", deviceHandler,
-    //                     commandBuffer, deviceHandler->getTransferQueue(),
-    //                     glTFLoadingFlags);
+    std::shared_ptr<gltf_model::Model> model =
+        std::make_shared<gltf_model::Model>();
+    model->loadFromFile("assets/models/sponza/sponza.gltf", deviceHandler,
+                        commandBuffer, deviceHandler->getTransferQueue(),
+                        glTFLoadingFlags);
 
-    auto renderer = Raytracer(deviceHandler, swapChain, commandBuffer, window);
+    std::cout << "FINISHED LOADING MODEL\n";
+
+    auto renderer =
+        Raytracer(deviceHandler, swapChain, commandBuffer, model, window);
 
     while (!static_cast<bool>(glfwWindowShouldClose(window))) {
         glfwPollEvents();

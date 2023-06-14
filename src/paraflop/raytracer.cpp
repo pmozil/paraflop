@@ -1,5 +1,4 @@
 #include "raytracer.hpp"
-#include "vulkan_utils/create_info.hpp"
 #include "vulkan_utils/utils.hpp"
 
 /*
@@ -7,38 +6,21 @@
    geometry (vertices, triangles)
 */
 void Raytracer::createBottomLevelAccelerationStructure() {
-    // Instead of a simple triangle, we'll be loading a more complex scene for
-    // this example The shaders are accessing the vertex and index buffers of
-    // the scene, so the proper usage flag has to be set on the vertex and index
-    // buffers for the scene
-    gltf_model::memoryPropertyFlags =
-        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
-        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-
-    const uint32_t glTFLoadingFlags =
-        gltf_model::FileLoadingFlags::PreTransformVertices |
-        gltf_model::FileLoadingFlags::PreMultiplyVertexColors |
-        gltf_model::FileLoadingFlags::FlipY;
-    scene.loadFromFile("assets/models/vulkanscene_shadow.gltf", m_deviceHandler,
-                       m_commandBuffer, m_deviceHandler->getTransferQueue(),
-                       glTFLoadingFlags);
-
     VkDeviceOrHostAddressConstKHR vertexBufferDeviceAddress{};
     VkDeviceOrHostAddressConstKHR indexBufferDeviceAddress{};
 
     vertexBufferDeviceAddress.deviceAddress =
-        getBufferDeviceAddress(scene.vertices.buffer);
-    indexBufferDeviceAddress.deviceAddress =
-        getBufferDeviceAddress(scene.indices.buffer);
+        getBufferDeviceAddress(scene->vertices.buffer);
 
-    uint32_t numTriangles = static_cast<uint32_t>(scene.indices.count) / 3;
-    uint32_t maxVertex = scene.vertices.count;
+    indexBufferDeviceAddress.deviceAddress =
+        getBufferDeviceAddress(scene->indices.buffer);
+
+    uint32_t numTriangles = static_cast<uint32_t>(scene->indices.count) / 3;
+    uint32_t maxVertex = scene->vertices.count;
 
     // Build
-    VkAccelerationStructureGeometryKHR accelerationStructureGeometry{};
-    accelerationStructureGeometry.sType =
-        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+    VkAccelerationStructureGeometryKHR accelerationStructureGeometry =
+        create_info::accelerationStructureGeometryKHR();
     accelerationStructureGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
     accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
     accelerationStructureGeometry.geometry.triangles.sType =
@@ -61,9 +43,8 @@ void Raytracer::createBottomLevelAccelerationStructure() {
 
     // Get size info
     VkAccelerationStructureBuildGeometryInfoKHR
-        accelerationStructureBuildGeometryInfo{};
-    accelerationStructureBuildGeometryInfo.sType =
-        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+        accelerationStructureBuildGeometryInfo =
+            create_info::accelerationStructureBuildGeometryInfoKHR();
     accelerationStructureBuildGeometryInfo.type =
         VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
     accelerationStructureBuildGeometryInfo.flags =
@@ -73,9 +54,8 @@ void Raytracer::createBottomLevelAccelerationStructure() {
         &accelerationStructureGeometry;
 
     VkAccelerationStructureBuildSizesInfoKHR
-        accelerationStructureBuildSizesInfo{};
-    accelerationStructureBuildSizesInfo.sType =
-        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
+        accelerationStructureBuildSizesInfo =
+            create_info::accelerationStructureBuildSizesInfoKHR();
     vkGetAccelerationStructureBuildSizesKHR(
         *m_deviceHandler, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
         &accelerationStructureBuildGeometryInfo, &numTriangles,
@@ -90,9 +70,8 @@ void Raytracer::createBottomLevelAccelerationStructure() {
     ScratchBuffer scratchBuffer = createScratchBuffer(
         accelerationStructureBuildSizesInfo.buildScratchSize);
 
-    VkAccelerationStructureBuildGeometryInfoKHR accelerationBuildGeometryInfo{};
-    accelerationStructureBuildGeometryInfo.sType =
-        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+    VkAccelerationStructureBuildGeometryInfoKHR accelerationBuildGeometryInfo =
+        create_info::accelerationStructureBuildGeometryInfoKHR();
     accelerationBuildGeometryInfo.type =
         VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
     accelerationBuildGeometryInfo.flags =
@@ -127,7 +106,7 @@ void Raytracer::createBottomLevelAccelerationStructure() {
         commandBuffer, 1, &accelerationBuildGeometryInfo,
         accelerationBuildStructureRangeInfos.data());
     m_commandBuffer->flushCommandBuffer(commandBuffer,
-                                        m_deviceHandler->getTransferQueue());
+                                        m_deviceHandler->graphicsQueue);
 
     deleteScratchBuffer(scratchBuffer);
 }
@@ -161,9 +140,8 @@ void Raytracer::createTopLevelAccelerationStructure() {
     instanceDataDeviceAddress.deviceAddress =
         getBufferDeviceAddress(instancesBuffer.buffer);
 
-    VkAccelerationStructureGeometryKHR accelerationStructureGeometry{};
-    accelerationStructureGeometry.sType =
-        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+    VkAccelerationStructureGeometryKHR accelerationStructureGeometry =
+        create_info::accelerationStructureGeometryKHR();
     accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
     accelerationStructureGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
     accelerationStructureGeometry.geometry.instances.sType =
@@ -174,9 +152,8 @@ void Raytracer::createTopLevelAccelerationStructure() {
 
     // Get size info
     VkAccelerationStructureBuildGeometryInfoKHR
-        accelerationStructureBuildGeometryInfo{};
-    accelerationStructureBuildGeometryInfo.sType =
-        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+        accelerationStructureBuildGeometryInfo =
+            create_info::accelerationStructureBuildGeometryInfoKHR();
     accelerationStructureBuildGeometryInfo.type =
         VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
     accelerationStructureBuildGeometryInfo.flags =
@@ -188,10 +165,8 @@ void Raytracer::createTopLevelAccelerationStructure() {
     uint32_t primitive_count = 1;
 
     VkAccelerationStructureBuildSizesInfoKHR
-        accelerationStructureBuildSizesInfo{};
-    accelerationStructureBuildSizesInfo.sType =
-        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
-
+        accelerationStructureBuildSizesInfo =
+            create_info::accelerationStructureBuildSizesInfoKHR();
     vkGetAccelerationStructureBuildSizesKHR(
         *m_deviceHandler, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
         &accelerationStructureBuildGeometryInfo, &primitive_count,
@@ -207,9 +182,8 @@ void Raytracer::createTopLevelAccelerationStructure() {
     ScratchBuffer scratchBuffer = createScratchBuffer(
         accelerationStructureBuildSizesInfo.buildScratchSize);
 
-    VkAccelerationStructureBuildGeometryInfoKHR accelerationBuildGeometryInfo{};
-    accelerationStructureBuildGeometryInfo.sType =
-        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+    VkAccelerationStructureBuildGeometryInfoKHR accelerationBuildGeometryInfo =
+        create_info::accelerationStructureBuildGeometryInfoKHR();
     accelerationBuildGeometryInfo.type =
         VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
     accelerationBuildGeometryInfo.flags =
@@ -243,7 +217,7 @@ void Raytracer::createTopLevelAccelerationStructure() {
         commandBuffer, 1, &accelerationBuildGeometryInfo,
         accelerationBuildStructureRangeInfos.data());
     m_commandBuffer->flushCommandBuffer(commandBuffer,
-                                        m_deviceHandler->getTransferQueue());
+                                        m_deviceHandler->graphicsQueue);
 
     deleteScratchBuffer(scratchBuffer);
     instancesBuffer.destroy();
@@ -344,9 +318,9 @@ void Raytracer::createDescriptorSets() {
 
     VkDescriptorImageInfo storageImageDescriptor{
         VK_NULL_HANDLE, storageImage.view, VK_IMAGE_LAYOUT_GENERAL};
-    VkDescriptorBufferInfo vertexBufferDescriptor{scene.vertices.buffer, 0,
+    VkDescriptorBufferInfo vertexBufferDescriptor{scene->vertices.buffer, 0,
                                                   VK_WHOLE_SIZE};
-    VkDescriptorBufferInfo indexBufferDescriptor{scene.indices.buffer, 0,
+    VkDescriptorBufferInfo indexBufferDescriptor{scene->indices.buffer, 0,
                                                  VK_WHOLE_SIZE};
 
     std::vector<VkWriteDescriptorSet> writeDescriptorSets = {
@@ -424,7 +398,7 @@ void Raytracer::createRayTracingPipeline() {
 
     // Ray generation group
     {
-        shaderStages.push_back(loadShader("assets/shaders/raygen.rgen.spv",
+        shaderStages.push_back(loadShader("shaders/raygen.rgen.spv",
                                           VK_SHADER_STAGE_RAYGEN_BIT_KHR));
         VkRayTracingShaderGroupCreateInfoKHR shaderGroup{};
         shaderGroup.sType =
@@ -440,8 +414,8 @@ void Raytracer::createRayTracingPipeline() {
 
     // Miss group
     {
-        shaderStages.push_back(loadShader("assets/shaders/miss.rmiss.spv",
-                                          VK_SHADER_STAGE_MISS_BIT_KHR));
+        shaderStages.push_back(
+            loadShader("shaders/miss.rmiss.spv", VK_SHADER_STAGE_MISS_BIT_KHR));
         VkRayTracingShaderGroupCreateInfoKHR shaderGroup{};
         shaderGroup.sType =
             VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
@@ -453,7 +427,7 @@ void Raytracer::createRayTracingPipeline() {
         shaderGroup.intersectionShader = VK_SHADER_UNUSED_KHR;
         shaderGroups.push_back(shaderGroup);
         // Second shader for shadows
-        shaderStages.push_back(loadShader("assets/shaders/shadow.rmiss.spv",
+        shaderStages.push_back(loadShader("shaders/shadow.rmiss.spv",
                                           VK_SHADER_STAGE_MISS_BIT_KHR));
         shaderGroup.generalShader =
             static_cast<uint32_t>(shaderStages.size()) - 1;
@@ -462,7 +436,7 @@ void Raytracer::createRayTracingPipeline() {
 
     // Closest hit group
     {
-        shaderStages.push_back(loadShader("assets/shaders/closesthit.rchit.spv",
+        shaderStages.push_back(loadShader("shaders/closesthit.rchit.spv",
                                           VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR));
         VkRayTracingShaderGroupCreateInfoKHR shaderGroup{};
         shaderGroup.sType =
@@ -493,7 +467,8 @@ void Raytracer::createRayTracingPipeline() {
         &rayTracingPipelineCI, nullptr, &pipeline));
 }
 
-VkResult Raytracer::Buffer::map(VkDeviceSize size, VkDeviceSize offset) {
+VkResult Raytracer::Buffer::map(VkDevice device, VkDeviceSize size,
+                                VkDeviceSize offset) {
     return vkMapMemory(device, memory, offset, size, 0, &mapped);
 }
 
@@ -506,8 +481,8 @@ void Raytracer::createUniformBuffer() {
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        sizeof(UniformData), &ubo.buffer, &ubo.memory, &uniformData));
-    VK_CHECK(ubo.map());
+        sizeof(UniformData), &ubo.buffer, &ubo.memory, nullptr));
+    VK_CHECK(ubo.map(*m_deviceHandler));
 
     updateUniformBuffers();
 }
@@ -532,12 +507,20 @@ void Raytracer::handleResize() {
 
     m_swapChain->init();
 
+    resized = false;
+
     clearCommandBuffers();
     makeCommandBuffers();
+    std::cout << "DEBUGm count after make: " << &drawCmdBuffers[imageIdx]
+              << "\n";
+    buildCommandBuffers();
+    std::cout << "DEBUG, count after build: " << &drawCmdBuffers[imageIdx]
+              << "\n";
 
     uint32_t width = m_swapChain->swapChainExtent.width;
     uint32_t height = m_swapChain->swapChainExtent.height;
     createStorageImage(m_swapChain->swapChainImageFormat, {width, height, 1});
+
     // Update descriptor
     VkDescriptorImageInfo storageImageDescriptor{
         VK_NULL_HANDLE, storageImage.view, VK_IMAGE_LAYOUT_GENERAL};
@@ -546,10 +529,6 @@ void Raytracer::handleResize() {
         &storageImageDescriptor);
     vkUpdateDescriptorSets(*m_deviceHandler, 1, &resultImageWrite, 0,
                            VK_NULL_HANDLE);
-
-    buildCommandBuffers();
-
-    resized = false;
 }
 
 void Raytracer::makeCommandBuffers() {
@@ -647,7 +626,8 @@ void Raytracer::buildCommandBuffers() {
 }
 
 void Raytracer::prepareFrame() {
-    VkResult result = m_swapChain->getNextImage(imageIdx, &imageIdx);
+    VkResult result = m_swapChain->getNextImage(
+        (imageIdx + 1) % m_swapChain->swapChainFramebuffers.size(), &imageIdx);
 
     // Recreate the swapchain if it's no longer compatible with the surface
     // (OUT_OF_DATE) SRS - If no longer optimal (VK_SUBOPTIMAL_KHR), wait until
@@ -658,6 +638,7 @@ void Raytracer::prepareFrame() {
         }
         return;
     }
+
     VK_CHECK(result);
 }
 
@@ -675,14 +656,20 @@ void Raytracer::submitFrame() {
     } else {
         VK_CHECK(result);
     }
+
     VK_CHECK(vkQueueWaitIdle(m_deviceHandler->presentQueue));
 }
 
 void Raytracer::renderFrame() {
     prepareFrame();
 
+    std::cout << "DEBUG: " << &drawCmdBuffers[imageIdx] << "\n";
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &drawCmdBuffers[imageIdx];
+    submitInfo.pWaitSemaphores =
+        &this->m_swapChain->imageAvailableSemaphores[imageIdx];
+    submitInfo.pSignalSemaphores =
+        &this->m_swapChain->renderFinishedSemaphores[imageIdx];
     VK_CHECK(vkQueueSubmit(m_deviceHandler->graphicsQueue, 1, &submitInfo,
                            VK_NULL_HANDLE));
 
@@ -691,10 +678,10 @@ void Raytracer::renderFrame() {
 
 void Raytracer::Buffer::destroy() const {
 
-    if (buffer) {
+    if (buffer != VK_NULL_HANDLE) {
         vkDestroyBuffer(device, buffer, nullptr);
     }
-    if (memory) {
+    if (memory != VK_NULL_HANDLE) {
         vkFreeMemory(device, memory, nullptr);
     }
 }

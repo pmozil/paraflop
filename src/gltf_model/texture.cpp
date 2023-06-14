@@ -266,7 +266,8 @@ void gltf_model::Texture::makeKTXImage(const std::string &filename,
     ktx_uint8_t *ktxTextureData = ktxTexture_GetData(ktxTexture);
     ktx_size_t ktxTextureSize = ktxTexture_GetDataSize(ktxTexture);
     // @todo: Use ktxTexture_GetVkFormat(ktxTexture)
-    format = ktxTexture_GetVkFormat(ktxTexture);
+    // format = ktxTexture_GetVkFormat(ktxTexture);
+    format = VK_FORMAT_R8G8B8A8_UNORM;
 
     // Get device properties for the requested texture format
 

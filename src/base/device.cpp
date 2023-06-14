@@ -265,7 +265,7 @@ VkResult DeviceHandler::createBuffer(VkBufferUsageFlags usageFlags,
                                      VkDeviceMemory *memory, void *data) const {
     // Create the buffer handle
     VkBufferCreateInfo bufferCreateInfo =
-        create_info::bufferCreateInfo(size, usageFlags);
+        create_info::bufferCreateInfo(usageFlags, size);
     VK_CHECK(vkCreateBuffer(logicalDevice, &bufferCreateInfo, nullptr, buffer));
 
     // Create the memory backing up the buffer handle

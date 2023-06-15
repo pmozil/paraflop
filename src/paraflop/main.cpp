@@ -61,13 +61,13 @@ int main() {
         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
     physicalDeviceFeatures2.pNext = &enabledAccelerationStructureFeatures;
 
-    // auto *cam = new CameraRotation(nullptr);
+    auto *cam = new CameraRotation(nullptr);
 
-    // GLFWwindow *window = window::initWindow(nullptr, handleKeyPress,
-    //                                         handleCursor, handleFocus, cam);
+    GLFWwindow *window = window::initWindow(nullptr, handleKeyPress,
+                                            handleCursor, handleFocus, cam);
 
-    GLFWwindow *window =
-        window::initWindow(nullptr, nullptr, nullptr, nullptr, nullptr);
+    // GLFWwindow *window =
+    //     window::initWindow(nullptr, nullptr, nullptr, nullptr, nullptr);
 
     std::unique_ptr<vk_instance::Instance> instance =
         std::make_unique<vk_instance::Instance>();
@@ -105,60 +105,69 @@ int main() {
     auto renderer =
         Raytracer(deviceHandler, swapChain, commandBuffer, model, window);
 
-    // std::shared_ptr<geometry::Camera> camera =
-    //     std::make_shared<geometry::Camera>();
+    std::shared_ptr<geometry::Camera> camera =
+        std::make_shared<geometry::Camera>();
 
-    // cam->camera = camera;
+    cam->camera = camera;
 
-    // glm::vec3 pos = {0.0F, 3.0F, -10.0F};
+    glm::vec3 pos = {0.0F, 3.0F, -10.0F};
 
-    // camera->position = pos;
-    Camera camera{};
-    camera.type = Camera::CameraType::lookat;
-    camera.setPerspective(60.0f,
-                          (float)swapChain->swapChainExtent.width /
-                              (float)swapChain->swapChainExtent.height,
-                          0.1f, 512.0f);
-    camera.setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
-    camera.setTranslation(glm::vec3(0.0f, 3.0f, -100.0f));
+    camera->position = pos;
 
+    camera->moveForward(0.0F);
+    auto mats = camera->transformMatrices(swapChain->swapChainExtent.width,
+                                          swapChain->swapChainExtent.height);
     glm::vec4 lightPos =
         glm::vec4(cos(glm::radians(0 * 360.0f)) * 40.0f,
                   -50.0f + sin(glm::radians(0 * 360.0f)) * 20.0f,
                   25.0f + sin(glm::radians(0 * 360.0f)) * 5.0f, 0.0f);
 
-    // camera->moveForward(0.0F);
-
-    // auto mats = camera->transformMatrices(swapChain->swapChainExtent.width,
-    //                                       swapChain->swapChainExtent.height);
+    renderer.updateUniformBuffers(mats.proj, mats.view, lightPos);
 
     static auto startTime = std::chrono::system_clock::now();
     auto prevTime = startTime;
 
-    renderer.updateUniformBuffers(camera.matrices.perspective,
-                                  camera.matrices.view, lightPos);
+    // Camera camera{};
+    // camera.type = Camera::CameraType::lookat;
+    // camera.setPerspective(60.0f,
+    //                       (float)swapChain->swapChainExtent.width /
+    //                           (float)swapChain->swapChainExtent.height,
+    //                       0.1f, 512.0f);
+    // camera.setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
+    // camera.setTranslation(glm::vec3(0.0f, 3.0f, -100.0f));
+
+    // glm::vec4 lightPos =
+    //     glm::vec4(cos(glm::radians(0 * 360.0f)) * 40.0f,
+    //               -50.0f + sin(glm::radians(0 * 360.0f)) * 20.0f,
+    //               25.0f + sin(glm::radians(0 * 360.0f)) * 5.0f, 0.0f);
+
+    // renderer.updateUniformBuffers(camera.matrices.perspective,
+    //                               camera.matrices.view, lightPos);
 
     while (!static_cast<bool>(glfwWindowShouldClose(window))) {
         glfwPollEvents();
 
-        // auto currentTime = std::chrono::high_resolution_clock::now();
+        auto currentTime = std::chrono::high_resolution_clock::now();
 
-        // cam->timePassed =
-        //     std::chrono::duration<float, std::chrono::seconds::period>(
-        //         currentTime - prevTime)
-        //         .count();
+        cam->timePassed =
+            std::chrono::duration<float, std::chrono::seconds::period>(
+                currentTime - prevTime)
+                .count();
 
-        // mats = camera->transformMatrices(swapChain->swapChainExtent.width,
-        //                                  swapChain->swapChainExtent.height);
-        camera.setPerspective(60.0f,
-                              (float)swapChain->swapChainExtent.width /
-                                  (float)swapChain->swapChainExtent.height,
-                              0.1f, 512.0f);
+        mats = camera->transformMatrices(swapChain->swapChainExtent.width,
+                                         swapChain->swapChainExtent.height);
 
-        renderer.updateUniformBuffers(camera.matrices.perspective,
-                                      camera.matrices.view, lightPos);
+        prevTime = currentTime;
 
-        // prevTime = currentTime;
+        renderer.updateUniformBuffers(mats.proj, mats.view, lightPos);
+
+        // camera.setPerspective(60.0f,
+        //                       (float)swapChain->swapChainExtent.width /
+        //                           (float)swapChain->swapChainExtent.height,
+        //                       0.1f, 512.0f);
+
+        // renderer.updateUniformBuffers(camera.matrices.perspective,
+        //                               camera.matrices.view, lightPos);
 
         renderer.renderFrame();
     }

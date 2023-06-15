@@ -507,8 +507,12 @@ void Raytracer::updateUniformBuffers() {
 
 void Raytracer::updateUniformBuffers(glm::mat4 proj, glm::mat4 view,
                                      glm::vec4 pos) {
+    glm::mat4 invYAxisMatrix = {
+        1.0F, 0.0F, 0.0F, 0.0F, 0.0F, -1.0F, 0.0F, 0.0F,
+        0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F,  0.0F, 1.0F,
+    };
     uniformData.projInverse = glm::inverse(proj);
-    uniformData.viewInverse = glm::inverse(view);
+    uniformData.viewInverse = glm::inverse(view * invYAxisMatrix);
     uniformData.lightPos = pos;
     // glm::vec4(cos(glm::radians(0 * 360.0f)) * 40.0f,
     //           -50.0f + sin(glm::radians(0 * 360.0f)) * 20.0f,

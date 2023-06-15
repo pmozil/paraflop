@@ -24,6 +24,9 @@ void handleKeyPress(GLFWwindow *window, int key, int sancode, int action,
     if (key == GLFW_KEY_E) {
         cam->camera->moveUp(-cam->timePassed);
     }
+    if (key == GLFW_KEY_Y) {
+        cam->camera->calcRotation(0.0F, 0.0F);
+    }
 }
 
 void handleFocus(GLFWwindow *window, int focused) {

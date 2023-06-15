@@ -111,12 +111,16 @@ int main() {
     cam->camera = camera;
 
     glm::vec3 pos = {0.0F, 3.0F, -10.0F};
+    camera->moveForward(0.0F);
 
     camera->position = pos;
+    camera->position.y = -camera->position.y;
 
-    camera->moveForward(0.0F);
     auto mats = camera->transformMatrices(swapChain->swapChainExtent.width,
                                           swapChain->swapChainExtent.height);
+
+    camera->position.y = -camera->position.y;
+
     glm::vec4 lightPos =
         glm::vec4(cos(glm::radians(0 * 360.0f)) * 40.0f,
                   -50.0f + sin(glm::radians(0 * 360.0f)) * 20.0f,
@@ -154,8 +158,10 @@ int main() {
                 currentTime - prevTime)
                 .count();
 
+        camera->position.y = -camera->position.y;
         mats = camera->transformMatrices(swapChain->swapChainExtent.width,
                                          swapChain->swapChainExtent.height);
+        camera->position.y = -camera->position.y;
 
         prevTime = currentTime;
 

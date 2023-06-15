@@ -31,16 +31,14 @@ class Raytracer : public raytracer::RaytracerBase {
         submitInfo = create_info::submitInfo();
         submitInfo.pWaitDstStageMask = &stages;
         submitInfo.waitSemaphoreCount = 1;
-        // submitInfo.pWaitSemaphores =
-        //     &this->m_swapChain->renderFinishedSemaphores.dat;
         submitInfo.signalSemaphoreCount = 1;
-        // submitInfo.pSignalSemaphores = &semaphores.renderComplete;
 
         createUniformBuffer();
+
         createRayTracingPipeline();
         createShaderBindingTables();
-        std::cout << "BUILT TOP LEVEL AS \n";
         createDescriptorSets();
+
         makeCommandBuffers();
         buildCommandBuffers();
     }
@@ -106,6 +104,7 @@ class Raytracer : public raytracer::RaytracerBase {
     void handleResize();
     void buildCommandBuffers();
     void updateUniformBuffers();
+    void updateUniformBuffers(glm::mat4 proj, glm::mat4 view, glm::vec4 pos);
 
     void makeCommandBuffers();
     void clearCommandBuffers();
@@ -114,4 +113,5 @@ class Raytracer : public raytracer::RaytracerBase {
     void submitFrame();
 
     uint32_t imageIdx;
+    uint32_t curFrame = 0;
 };

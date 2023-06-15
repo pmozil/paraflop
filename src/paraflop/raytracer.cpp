@@ -272,6 +272,8 @@ void Raytracer::createShaderBindingTables() {
     Create the descriptor sets used for the ray tracing dispatch
 */
 void Raytracer::createDescriptorSets() {
+    std::cout << "BUFFER ADDR: " << ubo.buffer;
+
     std::vector<VkDescriptorPoolSize> poolSizes = {
         {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1},
         {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1},
@@ -484,6 +486,10 @@ void Raytracer::createUniformBuffer() {
         sizeof(UniformData), &ubo.buffer, &ubo.memory, nullptr));
     VK_CHECK(ubo.map(*m_deviceHandler));
 
+    ubo.descriptor.offset = 0;
+    ubo.descriptor.buffer = ubo.buffer;
+    ubo.descriptor.range = sizeof(UniformData);
+
     updateUniformBuffers();
 }
 
@@ -494,6 +500,19 @@ void Raytracer::updateUniformBuffers() {
         glm::vec4(cos(glm::radians(0 * 360.0f)) * 40.0f,
                   -50.0f + sin(glm::radians(0 * 360.0f)) * 20.0f,
                   25.0f + sin(glm::radians(0 * 360.0f)) * 5.0f, 0.0f);
+    // Pass the vertex size to the shader for unpacking vertices
+    uniformData.vertexSize = sizeof(gltf_model::Vertex);
+    memcpy(ubo.mapped, &uniformData, sizeof(uniformData));
+}
+
+void Raytracer::updateUniformBuffers(glm::mat4 proj, glm::mat4 view,
+                                     glm::vec4 pos) {
+    uniformData.projInverse = glm::inverse(proj);
+    uniformData.viewInverse = glm::inverse(view);
+    uniformData.lightPos = pos;
+    // glm::vec4(cos(glm::radians(0 * 360.0f)) * 40.0f,
+    //           -50.0f + sin(glm::radians(0 * 360.0f)) * 20.0f,
+    //           25.0f + sin(glm::radians(0 * 360.0f)) * 5.0f, 0.0f);
     // Pass the vertex size to the shader for unpacking vertices
     uniformData.vertexSize = sizeof(gltf_model::Vertex);
     memcpy(ubo.mapped, &uniformData, sizeof(uniformData));
@@ -511,11 +530,6 @@ void Raytracer::handleResize() {
 
     clearCommandBuffers();
     makeCommandBuffers();
-    std::cout << "DEBUGm count after make: " << &drawCmdBuffers[imageIdx]
-              << "\n";
-    buildCommandBuffers();
-    std::cout << "DEBUG, count after build: " << &drawCmdBuffers[imageIdx]
-              << "\n";
 
     uint32_t width = m_swapChain->swapChainExtent.width;
     uint32_t height = m_swapChain->swapChainExtent.height;
@@ -626,8 +640,11 @@ void Raytracer::buildCommandBuffers() {
 }
 
 void Raytracer::prepareFrame() {
-    VkResult result = m_swapChain->getNextImage(
-        (imageIdx + 1) % m_swapChain->swapChainFramebuffers.size(), &imageIdx);
+    vkWaitForFences(m_deviceHandler->logicalDevice, 1,
+                    &m_swapChain->inFlightFences[curFrame], VK_TRUE,
+                    UINT64_MAX);
+
+    VkResult result = m_swapChain->getNextImage(curFrame, &imageIdx);
 
     // Recreate the swapchain if it's no longer compatible with the surface
     // (OUT_OF_DATE) SRS - If no longer optimal (VK_SUBOPTIMAL_KHR), wait until
@@ -640,6 +657,9 @@ void Raytracer::prepareFrame() {
     }
 
     VK_CHECK(result);
+
+    vkResetFences(m_deviceHandler->logicalDevice, 1,
+                  &m_swapChain->inFlightFences[curFrame]);
 }
 
 void Raytracer::submitFrame() {
@@ -663,17 +683,19 @@ void Raytracer::submitFrame() {
 void Raytracer::renderFrame() {
     prepareFrame();
 
-    std::cout << "DEBUG: " << &drawCmdBuffers[imageIdx] << "\n";
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &drawCmdBuffers[imageIdx];
     submitInfo.pWaitSemaphores =
         &this->m_swapChain->imageAvailableSemaphores[imageIdx];
     submitInfo.pSignalSemaphores =
         &this->m_swapChain->renderFinishedSemaphores[imageIdx];
+
     VK_CHECK(vkQueueSubmit(m_deviceHandler->graphicsQueue, 1, &submitInfo,
-                           VK_NULL_HANDLE));
+                           m_swapChain->inFlightFences[curFrame]));
 
     submitFrame();
+
+    curFrame = (curFrame + 1) % m_swapChain->swapChainFramebuffers.size();
 }
 
 void Raytracer::Buffer::destroy() const {

@@ -113,7 +113,8 @@ void DeviceHandler::m_pickDevice() {
     }
 }
 
-void DeviceHandler::m_createLogicalDevice(VkAllocationCallbacks *pAllocator) {
+void DeviceHandler::m_createLogicalDevice(VkPhysicalDeviceFeatures2 *pNext,
+                                          VkAllocationCallbacks *pAllocator) {
     QueueFamilyIndices indices = getQueueFamilyIndices(physicalDevice);
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -141,35 +142,11 @@ void DeviceHandler::m_createLogicalDevice(VkAllocationCallbacks *pAllocator) {
         create_info::deviceCreateInfo(queueCreateInfos, m_deviceExtensions,
                                       m_validationLayers, &deviceFeatures);
 
-    VkPhysicalDeviceBufferDeviceAddressFeatures
-        enabledBufferDeviceAddresFeatures{};
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR
-        enabledRayTracingPipelineFeatures{};
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR
-        enabledAccelerationStructureFeatures{};
-    enabledBufferDeviceAddresFeatures.sType =
-        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
-    enabledBufferDeviceAddresFeatures.bufferDeviceAddress = VK_TRUE;
-
-    enabledRayTracingPipelineFeatures.sType =
-        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
-    enabledRayTracingPipelineFeatures.rayTracingPipeline = VK_TRUE;
-    enabledRayTracingPipelineFeatures.pNext =
-        &enabledBufferDeviceAddresFeatures;
-
-    enabledAccelerationStructureFeatures.sType =
-        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
-    enabledAccelerationStructureFeatures.accelerationStructure = VK_TRUE;
-    enabledAccelerationStructureFeatures.pNext =
-        &enabledRayTracingPipelineFeatures;
-
-    VkPhysicalDeviceFeatures2 physicalDeviceFeatures2{};
-    physicalDeviceFeatures2.sType =
-        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    physicalDeviceFeatures2.features = enabledFeatures;
-    physicalDeviceFeatures2.pNext = &enabledAccelerationStructureFeatures;
-    createInfo.pEnabledFeatures = nullptr;
-    createInfo.pNext = &physicalDeviceFeatures2;
+    if (pNext != VK_NULL_HANDLE) {
+        pNext->features = enabledFeatures;
+        createInfo.pEnabledFeatures = nullptr;
+        createInfo.pNext = pNext;
+    }
 
     VK_CHECK(vkCreateDevice(physicalDevice, &createInfo, pAllocator,
                             &logicalDevice));
@@ -227,13 +204,14 @@ DeviceHandler::getQueueFamilyIndices(VkPhysicalDevice &device) {
     return indices;
 }
 
-DeviceHandler::DeviceHandler(std::vector<const char *> devExt,
-                             std::vector<const char *> validations,
-                             VkInstance m_vkInstance, VkSurfaceKHR m_vkSurface)
+DeviceHandler::DeviceHandler(std::vector<const char *> &devExt,
+                             std::vector<const char *> &validations,
+                             VkInstance m_vkInstance, VkSurfaceKHR m_vkSurface,
+                             VkPhysicalDeviceFeatures2 *pNext)
     : m_deviceExtensions(devExt), m_validationLayers(validations),
       m_vkInstance(m_vkInstance), m_vkSurface(m_vkSurface) {
     m_pickDevice();
-    m_createLogicalDevice(nullptr);
+    m_createLogicalDevice(pNext);
 }
 
 uint32_t DeviceHandler::getMemoryType(uint32_t typeBits,

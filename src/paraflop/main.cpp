@@ -31,6 +31,33 @@ int main() {
         VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
         VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
+    VkPhysicalDeviceBufferDeviceAddressFeatures
+        enabledBufferDeviceAddresFeatures{};
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR
+        enabledRayTracingPipelineFeatures{};
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR
+        enabledAccelerationStructureFeatures{};
+    enabledBufferDeviceAddresFeatures.sType =
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+    enabledBufferDeviceAddresFeatures.bufferDeviceAddress = VK_TRUE;
+
+    enabledRayTracingPipelineFeatures.sType =
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+    enabledRayTracingPipelineFeatures.rayTracingPipeline = VK_TRUE;
+    enabledRayTracingPipelineFeatures.pNext =
+        &enabledBufferDeviceAddresFeatures;
+
+    enabledAccelerationStructureFeatures.sType =
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+    enabledAccelerationStructureFeatures.accelerationStructure = VK_TRUE;
+    enabledAccelerationStructureFeatures.pNext =
+        &enabledRayTracingPipelineFeatures;
+
+    VkPhysicalDeviceFeatures2 physicalDeviceFeatures2{};
+    physicalDeviceFeatures2.sType =
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    physicalDeviceFeatures2.pNext = &enabledAccelerationStructureFeatures;
+
     GLFWwindow *window =
         window::initWindow(nullptr, nullptr, nullptr, nullptr, nullptr);
     std::unique_ptr<vk_instance::Instance> instance =
@@ -42,7 +69,8 @@ int main() {
 
     std::shared_ptr<device::DeviceHandler> deviceHandler =
         std::make_shared<device::DeviceHandler>(
-            devExt, validation, instance->instance, surface->surface);
+            devExt, validation, instance->instance, surface->surface,
+            &physicalDeviceFeatures2);
 
     std::shared_ptr<swap_chain::DepthBufferSwapChain> swapChain =
         std::make_shared<swap_chain::DepthBufferSwapChain>(

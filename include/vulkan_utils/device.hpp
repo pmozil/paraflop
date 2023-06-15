@@ -29,11 +29,13 @@ class DeviceHandler {
      * \param vkInstance The Vulkan instance associated
      * with the device.
      * \param vkSurface The Vulkan surface associated with the
+     * \param pNext The pNext with extensions.
      * device.
      */
-    DeviceHandler(std::vector<const char *> devExt,
-                  std::vector<const char *> validations, VkInstance vkInstance,
-                  VkSurfaceKHR vkSurface);
+    DeviceHandler(std::vector<const char *> &devExt,
+                  std::vector<const char *> &validations, VkInstance vkInstance,
+                  VkSurfaceKHR vkSurface,
+                  VkPhysicalDeviceFeatures2 *pNext = VK_NULL_HANDLE);
 
     /**
      * \fn ~DeviceHandler()
@@ -162,9 +164,9 @@ class DeviceHandler {
 
   private:
     std::vector<const char *>
-        m_deviceExtensions; /**< The required device extensions. */
+        &m_deviceExtensions; /**< The required device extensions. */
     std::vector<const char *>
-        m_validationLayers;  /**< The enabled validation layers. */
+        &m_validationLayers; /**< The enabled validation layers. */
     VkInstance m_vkInstance; /**< The Vulkan instance associated with the
                                 device. */
     VkSurfaceKHR
@@ -206,7 +208,9 @@ class DeviceHandler {
      *
      * \param pAllocator The optional allocator to use for device creation.
      */
-    void m_createLogicalDevice(VkAllocationCallbacks *pAllocator);
+    void
+    m_createLogicalDevice(VkPhysicalDeviceFeatures2 *pNext = VK_NULL_HANDLE,
+                          VkAllocationCallbacks *pAllocator = nullptr);
 
     /**
      * \fn int m_rateDevice(VkPhysicalDevice device)

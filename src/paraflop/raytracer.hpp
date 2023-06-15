@@ -50,9 +50,9 @@ class Raytracer : public raytracer::RaytracerBase {
 
     std::vector<VkRayTracingShaderGroupCreateInfoKHR> shaderGroups{};
     struct ShaderBindingTables {
-        ShaderBindingTable raygen;
-        ShaderBindingTable miss;
-        ShaderBindingTable hit;
+        raytracer::ShaderBindingTable raygen;
+        raytracer::ShaderBindingTable miss;
+        raytracer::ShaderBindingTable hit;
     } shaderBindingTables;
 
     struct UniformData {

@@ -90,6 +90,8 @@ class Raytracer : public raytracer::RaytracerBase {
     VkPipelineLayout pipelineLayout;
     VkDescriptorSet descriptorSet;
     VkDescriptorSetLayout descriptorSetLayout;
+    VkSampler sampler;
+    std::vector<VkDescriptorImageInfo> textureDescriptors;
 
     // gltf_model::Model scene;
     std::shared_ptr<gltf_model::Model> scene;

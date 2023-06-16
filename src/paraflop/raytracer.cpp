@@ -272,13 +272,16 @@ void Raytracer::createShaderBindingTables() {
     Create the descriptor sets used for the ray tracing dispatch
 */
 void Raytracer::createDescriptorSets() {
-    std::cout << "BUFFER ADDR: " << ubo.buffer;
-
     std::vector<VkDescriptorPoolSize> poolSizes = {
         {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1},
         {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1},
         {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1},
-        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2}};
+        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2},
+        {VK_DESCRIPTOR_TYPE_SAMPLER, 1},
+        {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+         static_cast<uint32_t>(scene->textures.size())},
+    };
+
     VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{};
     descriptorPoolCreateInfo.sType =
         VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -286,6 +289,8 @@ void Raytracer::createDescriptorSets() {
         static_cast<uint32_t>(poolSizes.size());
     descriptorPoolCreateInfo.pPoolSizes = poolSizes.data();
     descriptorPoolCreateInfo.maxSets = 1;
+    descriptorPoolCreateInfo.flags =
+        VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
 
     VK_CHECK(vkCreateDescriptorPool(*m_deviceHandler, &descriptorPoolCreateInfo,
                                     nullptr, &descriptorPool));
@@ -325,6 +330,19 @@ void Raytracer::createDescriptorSets() {
     VkDescriptorBufferInfo indexBufferDescriptor{scene->indices.buffer, 0,
                                                  VK_WHOLE_SIZE};
 
+    VkSamplerCreateInfo createInfo =
+        create_info::samplerCreateInfo(VK_FILTER_LINEAR);
+
+    VK_CHECK(vkCreateSampler(*m_deviceHandler, &createInfo, nullptr, &sampler));
+    textureDescriptors.clear();
+
+    for (auto &texture : scene->textures) {
+        textureDescriptors.push_back(texture.descriptor);
+    }
+
+    VkDescriptorImageInfo samplerInfo = {};
+    samplerInfo.sampler = sampler;
+
     std::vector<VkWriteDescriptorSet> writeDescriptorSets = {
         // Binding 0: Top level acceleration structure
         accelerationStructureWrite,
@@ -344,7 +362,16 @@ void Raytracer::createDescriptorSets() {
         create_info::writeDescriptorSet(descriptorSet,
                                         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 4,
                                         &indexBufferDescriptor),
+        // Binding 5: Texture sampler
+        create_info::writeDescriptorSet(
+            descriptorSet, VK_DESCRIPTOR_TYPE_SAMPLER, 5, &samplerInfo),
+
+        // // Binding 6: Sampled textures
+        create_info::writeDescriptorSet(
+            descriptorSet, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 6,
+            textureDescriptors.data(), textureDescriptors.size()),
     };
+
     vkUpdateDescriptorSets(*m_deviceHandler,
                            static_cast<uint32_t>(writeDescriptorSets.size()),
                            writeDescriptorSets.data(), 0, VK_NULL_HANDLE);
@@ -380,10 +407,33 @@ void Raytracer::createRayTracingPipeline() {
         create_info::descriptorSetLayoutBinding(
             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
             VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, 4),
+        // Binding 5: Uniform buffer
+        create_info::descriptorSetLayoutBinding(
+            VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, 5),
+        // // Binding 6: Uniform buffer
+        create_info::descriptorSetLayoutBinding(
+            VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+            VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, 6, scene->textures.size()),
     };
+
+    std::vector<VkDescriptorBindingFlags> flags(
+        setLayoutBindings.size(),
+        VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
+            VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlags{};
+    bindingFlags.sType =
+        VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+    bindingFlags.pNext = nullptr;
+    bindingFlags.pBindingFlags = flags.data();
+    bindingFlags.bindingCount = flags.size();
 
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI =
         create_info::descriptorSetLayoutCreateInfo(setLayoutBindings);
+    descriptorSetLayoutCI.flags =
+        VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+    descriptorSetLayoutCI.pNext = &bindingFlags;
+
     VK_CHECK(vkCreateDescriptorSetLayout(*m_deviceHandler,
                                          &descriptorSetLayoutCI, nullptr,
                                          &descriptorSetLayout));
@@ -651,8 +701,9 @@ void Raytracer::prepareFrame() {
     VkResult result = m_swapChain->getNextImage(curFrame, &imageIdx);
 
     // Recreate the swapchain if it's no longer compatible with the surface
-    // (OUT_OF_DATE) SRS - If no longer optimal (VK_SUBOPTIMAL_KHR), wait until
-    // submitFrame() in case number of swapchain images will change on resize
+    // (OUT_OF_DATE) SRS - If no longer optimal (VK_SUBOPTIMAL_KHR), wait
+    // until submitFrame() in case number of swapchain images will change on
+    // resize
     if ((result == VK_ERROR_OUT_OF_DATE_KHR) || (result == VK_SUBOPTIMAL_KHR)) {
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
             handleResize();

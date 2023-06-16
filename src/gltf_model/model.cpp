@@ -1026,13 +1026,13 @@ void gltf_model::Model::loadFromFile(
                                                  &descriptorLayoutCI, nullptr,
                                                  &descriptorSetLayoutImage));
         }
-        for (auto &material : materials) {
-            if (material.baseColorTexture != nullptr) {
-                material.createDescriptorSet(
-                    descriptorPool, gltf_model::descriptorSetLayoutImage,
-                    descriptorBindingFlags);
-            }
-        }
+        // for (auto &material : materials) {
+        //     if (material.baseColorTexture != nullptr) {
+        //         material.createDescriptorSet(
+        //             descriptorPool, gltf_model::descriptorSetLayoutImage,
+        //             descriptorBindingFlags);
+        //     }
+        // }
     }
 }
 

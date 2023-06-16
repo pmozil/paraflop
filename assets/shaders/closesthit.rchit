@@ -16,6 +16,8 @@ layout(binding = 2, set = 0) uniform UBO
 } ubo;
 layout(binding = 3, set = 0) buffer Vertices { vec4 v[]; } vertices;
 layout(binding = 4, set = 0) buffer Indices { uint i[]; } indices;
+layout(binding = 5, set = 0) uniform sampler samp;
+layout(binding = 6, set = 0) uniform texture2D textures[];
 
 struct Vertex
 {
@@ -69,6 +71,7 @@ void main()
 	shadowed = true;  
 	// Trace shadow ray and offset indices to match shadow hit/miss shader group indices
 	traceRayEXT(topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT, 0xFF, 0, 0, 1, origin, tmin, lightVector, tmax, 2);
+        hitValue += texture(sampler2D(textures[0], samp), vec2(0.0, 0.0)).xyz;
 	if (shadowed) {
 		hitValue *= 0.3;
 	}

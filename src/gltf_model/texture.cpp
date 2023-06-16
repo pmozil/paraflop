@@ -383,22 +383,23 @@ void gltf_model::Texture::fromglTfImage(
         makeKTXImage(path + "/" + gltfimage.uri, format, copyQueue);
     }
 
-    VkSamplerCreateInfo samplerInfo{};
-    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerInfo.magFilter = VK_FILTER_LINEAR;
-    samplerInfo.minFilter = VK_FILTER_LINEAR;
-    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-    samplerInfo.compareOp = VK_COMPARE_OP_NEVER;
-    samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-    samplerInfo.maxAnisotropy = 1.0;
-    samplerInfo.anisotropyEnable = VK_FALSE;
-    samplerInfo.maxLod = (float)mipLevels;
-    samplerInfo.maxAnisotropy = MAX_ANISOTROPY;
-    samplerInfo.anisotropyEnable = VK_TRUE;
-    VK_CHECK(vkCreateSampler(*deviceHandler, &samplerInfo, nullptr, &sampler));
+    // VkSamplerCreateInfo samplerInfo{};
+    // samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    // samplerInfo.magFilter = VK_FILTER_LINEAR;
+    // samplerInfo.minFilter = VK_FILTER_LINEAR;
+    // samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    // samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+    // samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+    // samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+    // samplerInfo.compareOp = VK_COMPARE_OP_NEVER;
+    // samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+    // samplerInfo.maxAnisotropy = 1.0;
+    // samplerInfo.anisotropyEnable = VK_FALSE;
+    // samplerInfo.maxLod = (float)mipLevels;
+    // samplerInfo.maxAnisotropy = MAX_ANISOTROPY;
+    // samplerInfo.anisotropyEnable = VK_TRUE;
+    // VK_CHECK(vkCreateSampler(*deviceHandler, &samplerInfo, nullptr,
+    // &sampler));
 
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -410,7 +411,7 @@ void gltf_model::Texture::fromglTfImage(
     viewInfo.subresourceRange.levelCount = mipLevels;
     VK_CHECK(vkCreateImageView(*deviceHandler, &viewInfo, nullptr, &view));
 
-    descriptor.sampler = sampler;
+    descriptor.sampler = nullptr;
     descriptor.imageView = view;
     descriptor.imageLayout = imageLayout;
 }

@@ -40,9 +40,15 @@ int main() {
         enabledRayTracingPipelineFeatures{};
     VkPhysicalDeviceAccelerationStructureFeaturesKHR
         enabledAccelerationStructureFeatures{};
+    VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexingFeatures{};
+    indexingFeatures.sType =
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
+    indexingFeatures.pNext = nullptr;
+
     enabledBufferDeviceAddresFeatures.sType =
         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
     enabledBufferDeviceAddresFeatures.bufferDeviceAddress = VK_TRUE;
+    enabledBufferDeviceAddresFeatures.pNext = &indexingFeatures;
 
     enabledRayTracingPipelineFeatures.sType =
         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
@@ -99,8 +105,6 @@ int main() {
     model->loadFromFile("assets/models/sponza/sponza.gltf", deviceHandler,
                         commandBuffer, deviceHandler->getTransferQueue(),
                         glTFLoadingFlags);
-
-    std::cout << "FINISHED LOADING MODEL\n";
 
     auto renderer =
         Raytracer(deviceHandler, swapChain, commandBuffer, model, window);

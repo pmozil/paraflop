@@ -197,6 +197,20 @@ gltf_model::Model::~Model() {
     emptyTexture.destroy();
 }
 
+uint32_t gltf_model::Model::findTexture(gltf_model::Texture *tex) {
+    if (tex == nullptr) {
+        return this->textures.size() - 1;
+    }
+    uint32_t res = -1;
+    for (const auto &texture : this->textures) {
+        res++;
+        if (tex->name == texture.name) {
+            return res;
+        }
+    }
+    return res;
+}
+
 void gltf_model::Model::loadNode(gltf_model::Node *parent,
                                  const tinygltf::Node &node, uint32_t nodeIndex,
                                  const tinygltf::Model &model,
@@ -405,10 +419,17 @@ void gltf_model::Model::loadNode(gltf_model::Node *parent,
                                        ? glm::vec4(glm::make_vec4(
                                              &bufferTangents[idx * 4]))
                                        : glm::vec4(0.0F);
-                    vert.joint0 =
-                        hasSkin
-                            ? glm::vec4(glm::make_vec4(&bufferJoints[idx * 4]))
-                            : glm::vec4(0.0F);
+                    vert.texId = {
+                        findTexture(
+                            this->materials[prim.material].baseColorTexture),
+                        findTexture(
+                            this->materials[prim.material].normalTexture),
+                        findTexture(
+                            this->materials[prim.material].diffuseTexture),
+                        findTexture(
+                            this->materials[prim.material].emissiveTexture),
+                    };
+
                     vert.weight0 = hasSkin
                                        ? glm::make_vec4(&bufferWeights[idx * 4])
                                        : glm::vec4(0.0F);
@@ -531,6 +552,7 @@ void gltf_model::Model::loadImages(
     VkQueue transferQueue) {
     for (tinygltf::Image &image : gltfModel.images) {
         gltf_model::Texture texture;
+        texture.name = image.uri;
 
         texture.fromglTfImage(image, path, device, cmdBuf, transferQueue);
         textures.push_back(texture);

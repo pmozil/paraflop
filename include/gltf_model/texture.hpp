@@ -11,6 +11,7 @@ static const float MAX_ANISOTROPY = 8.0F;
 struct Texture {
     std::shared_ptr<device::DeviceHandler> deviceHandler;
     std::shared_ptr<command_buffer::CommandBufferHandler> commandBuffer;
+    std::string name;
     VkImage image;
     VkImageLayout imageLayout;
     VkDeviceMemory deviceMemory;

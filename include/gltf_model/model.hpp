@@ -94,5 +94,6 @@ class Model {
     Node *nodeFromIndex(uint32_t index);
     void prepareNodeDescriptor(gltf_model::Node *node,
                                VkDescriptorSetLayout descriptorSetLayout);
+    uint32_t findTexture(gltf_model::Texture *tex);
 };
 } // namespace gltf_model

@@ -25,7 +25,7 @@ struct Vertex
   vec3 normal;
   vec2 uv;
   vec4 color;
-  vec4 _pad0;
+  vec4  texId;
   vec4 _pad1;
  };
 
@@ -38,11 +38,14 @@ Vertex unpack(uint index)
 	vec4 d0 = vertices.v[m * index + 0];
 	vec4 d1 = vertices.v[m * index + 1];
 	vec4 d2 = vertices.v[m * index + 2];
+	vec4 d3 = vertices.v[m * index + 3];
 
 	Vertex v;
 	v.pos = d0.xyz;
 	v.normal = vec3(d0.w, d1.x, d1.y);
 	v.color = vec4(d2.x, d2.y, d2.z, 1.0);
+    v.uv = d1.zw;
+    v.texId = vec4(d2.w, d3.x, d3.y, d3.z);
 
 	return v;
 }
@@ -58,11 +61,15 @@ void main()
 	// Interpolate normal
 	const vec3 barycentricCoords = vec3(1.0f - attribs.x - attribs.y, attribs.x, attribs.y);
 	vec3 normal = normalize(v0.normal * barycentricCoords.x + v1.normal * barycentricCoords.y + v2.normal * barycentricCoords.z);
+    vec2 uv = v0.uv * barycentricCoords.x + v1.uv * barycentricCoords.y + v2.uv * barycentricCoords.z;
 
 	// Basic lighting
 	vec3 lightVector = normalize(ubo.lightPos.xyz);
 	float dot_product = max(dot(lightVector, normal), 0.2);
-	hitValue = v0.color.rgb * dot_product;
+    vec3 c1 = texture(sampler2D(textures[uint(v0.texId.x)], samp), uv).xyz;
+    vec3 c2 = texture(sampler2D(textures[uint(v1.texId.x)], samp), uv).xyz;
+    vec3 c3 = texture(sampler2D(textures[uint(v2.texId.x)], samp), uv).xyz;
+	hitValue = (c1 + c2 + c3) * dot_product;
  
 	// Shadow casting
 	float tmin = 0.001;
@@ -71,7 +78,6 @@ void main()
 	shadowed = true;  
 	// Trace shadow ray and offset indices to match shadow hit/miss shader group indices
 	traceRayEXT(topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT, 0xFF, 0, 0, 1, origin, tmin, lightVector, tmax, 2);
-        hitValue += texture(sampler2D(textures[0], samp), vec2(0.0, 0.0)).xyz;
 	if (shadowed) {
 		hitValue *= 0.3;
 	}

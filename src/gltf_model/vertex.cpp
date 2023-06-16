@@ -39,14 +39,14 @@ VkVertexInputAttributeDescription gltf_model::Vertex::inputAttributeDescription(
         return VkVertexInputAttributeDescription({location, binding,
                                                   VK_FORMAT_R32G32B32A32_SFLOAT,
                                                   offsetof(Vertex, tangent)});
-    case VertexComponent::Joint0:
-        return VkVertexInputAttributeDescription({location, binding,
-                                                  VK_FORMAT_R32G32B32A32_SFLOAT,
-                                                  offsetof(Vertex, joint0)});
     case VertexComponent::Weight0:
         return VkVertexInputAttributeDescription({location, binding,
                                                   VK_FORMAT_R32G32B32A32_SFLOAT,
                                                   offsetof(Vertex, weight0)});
+    case VertexComponent::TextureID:
+        return VkVertexInputAttributeDescription({location, binding,
+                                                  VK_FORMAT_R32G32B32A32_SFLOAT,
+                                                  offsetof(Vertex, texId)});
     default:
         return VkVertexInputAttributeDescription({});
     }

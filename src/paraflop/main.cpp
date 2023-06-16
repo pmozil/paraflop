@@ -134,6 +134,11 @@ int main() {
 
     static auto startTime = std::chrono::system_clock::now();
     auto prevTime = startTime;
+    int count = 0;
+    for (auto *node : model->nodes) {
+        count += node->mesh->primitives.size();
+    }
+    std::cout << "TOTAL PRIMITIVES: " << count << "\n";
 
     // Camera camera{};
     // camera.type = Camera::CameraType::lookat;

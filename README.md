@@ -1,5 +1,8 @@
 # Paraflop
 
+![](assets/images/pic1.png)
+![](assets/images/pic2.png)
+
 This project contains chunks of code from
 [the vulkan tutorial](https://vulkan-tutorial.com/) and
 [Sacha Willems' vulkan samples](https://github.com/SaschaWillems/Vulkan). A big

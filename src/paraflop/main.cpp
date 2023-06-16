@@ -102,9 +102,18 @@ int main() {
 
     std::shared_ptr<gltf_model::Model> model =
         std::make_shared<gltf_model::Model>();
-    model->loadFromFile("assets/models/sponza/sponza.gltf", deviceHandler,
-                        commandBuffer, deviceHandler->getTransferQueue(),
-                        glTFLoadingFlags);
+    // model->loadFromFile("assets/models/sponza/sponza.gltf", deviceHandler,
+    //                     commandBuffer, deviceHandler->getTransferQueue(),
+    //                     glTFLoadingFlags);
+    // model->loadFromFile("assets/models/FlightHelmet/glTF/FlightHelmet.gltf",
+    //                     deviceHandler, commandBuffer,
+    //                     deviceHandler->getTransferQueue(), glTFLoadingFlags);
+    model->loadFromFile("assets/models/CesiumMan/glTF/CesiumMan.gltf",
+                        deviceHandler, commandBuffer,
+                        deviceHandler->getTransferQueue(), glTFLoadingFlags);
+    // model->loadFromFile("assets/models/retroufo_glow.gltf", deviceHandler,
+    //                     commandBuffer, deviceHandler->getTransferQueue(),
+    //                     glTFLoadingFlags);
 
     auto renderer =
         Raytracer(deviceHandler, swapChain, commandBuffer, model, window);
@@ -134,11 +143,6 @@ int main() {
 
     static auto startTime = std::chrono::system_clock::now();
     auto prevTime = startTime;
-    int count = 0;
-    for (auto *node : model->nodes) {
-        count += node->mesh->primitives.size();
-    }
-    std::cout << "TOTAL PRIMITIVES: " << count << "\n";
 
     // Camera camera{};
     // camera.type = Camera::CameraType::lookat;
@@ -178,7 +182,7 @@ int main() {
 
         // camera.setPerspective(60.0f,
         //                       (float)swapChain->swapChainExtent.width /
-        //                           (float)swapChain->swapChainExtent.height,
+        // (float)swapChain->swapChainExtent.height,
         //                       0.1f, 512.0f);
 
         // renderer.updateUniformBuffers(camera.matrices.perspective,

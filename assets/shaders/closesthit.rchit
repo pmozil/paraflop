@@ -69,7 +69,7 @@ void main()
     vec3 c1 = texture(sampler2D(textures[uint(v0.texId.y)], samp), uv).xyz;
     vec3 c2 = texture(sampler2D(textures[uint(v1.texId.y)], samp), uv).xyz;
     vec3 c3 = texture(sampler2D(textures[uint(v2.texId.y)], samp), uv).xyz;
-	hitValue = (c1 + c2 + c3) * dot_product;
+	hitValue = (v0.color.xyz + (c1 + c2 + c3)) * dot_product;
  
 	// Shadow casting
 	float tmin = 0.001;

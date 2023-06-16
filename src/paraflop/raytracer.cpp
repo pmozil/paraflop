@@ -582,21 +582,29 @@ void Raytracer::handleResize() {
 
     resized = false;
 
-    clearCommandBuffers();
-    makeCommandBuffers();
-
     uint32_t width = m_swapChain->swapChainExtent.width;
     uint32_t height = m_swapChain->swapChainExtent.height;
     createStorageImage(m_swapChain->swapChainImageFormat, {width, height, 1});
 
     // Update descriptor
-    VkDescriptorImageInfo storageImageDescriptor{
-        VK_NULL_HANDLE, storageImage.view, VK_IMAGE_LAYOUT_GENERAL};
-    VkWriteDescriptorSet resultImageWrite = create_info::writeDescriptorSet(
-        descriptorSet, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1,
-        &storageImageDescriptor);
-    vkUpdateDescriptorSets(*m_deviceHandler, 1, &resultImageWrite, 0,
-                           VK_NULL_HANDLE);
+    // VkDescriptorImageInfo storageImageDescriptor{
+    //     VK_NULL_HANDLE, storageImage.view, VK_IMAGE_LAYOUT_GENERAL};
+    // VkWriteDescriptorSet resultImageWrite = create_info::writeDescriptorSet(
+    //     descriptorSet, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1,
+    //     &storageImageDescriptor);
+    // vkUpdateDescriptorSets(*m_deviceHandler, 1, &resultImageWrite, 0,
+    //                        VK_NULL_HANDLE);
+
+    vkDestroyPipeline(*m_deviceHandler, pipeline, nullptr);
+    vkDestroyPipelineLayout(*m_deviceHandler, pipelineLayout, nullptr);
+    vkDestroyDescriptorSetLayout(*m_deviceHandler, descriptorSetLayout,
+                                 nullptr);
+
+    createRayTracingPipeline();
+    createDescriptorSets();
+
+    clearCommandBuffers();
+    makeCommandBuffers();
 }
 
 void Raytracer::makeCommandBuffers() {
@@ -712,9 +720,6 @@ void Raytracer::prepareFrame() {
     }
 
     VK_CHECK(result);
-
-    vkResetFences(m_deviceHandler->logicalDevice, 1,
-                  &m_swapChain->inFlightFences[curFrame]);
 }
 
 void Raytracer::submitFrame() {
@@ -738,10 +743,15 @@ void Raytracer::submitFrame() {
 void Raytracer::renderFrame() {
     prepareFrame();
 
+    vkResetFences(m_deviceHandler->logicalDevice, 1,
+                  &m_swapChain->inFlightFences[curFrame]);
+
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &drawCmdBuffers[imageIdx];
+
     submitInfo.pWaitSemaphores =
         &this->m_swapChain->imageAvailableSemaphores[imageIdx];
+
     submitInfo.pSignalSemaphores =
         &this->m_swapChain->renderFinishedSemaphores[imageIdx];
 

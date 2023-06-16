@@ -66,9 +66,9 @@ void main()
 	// Basic lighting
 	vec3 lightVector = normalize(ubo.lightPos.xyz);
 	float dot_product = max(dot(lightVector, normal), 0.2);
-    vec3 c1 = texture(sampler2D(textures[uint(v0.texId.x)], samp), uv).xyz;
-    vec3 c2 = texture(sampler2D(textures[uint(v1.texId.x)], samp), uv).xyz;
-    vec3 c3 = texture(sampler2D(textures[uint(v2.texId.x)], samp), uv).xyz;
+    vec3 c1 = texture(sampler2D(textures[uint(v0.texId.y)], samp), uv).xyz;
+    vec3 c2 = texture(sampler2D(textures[uint(v1.texId.y)], samp), uv).xyz;
+    vec3 c3 = texture(sampler2D(textures[uint(v2.texId.y)], samp), uv).xyz;
 	hitValue = (c1 + c2 + c3) * dot_product;
  
 	// Shadow casting

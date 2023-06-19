@@ -362,18 +362,18 @@ void gltf_model::Model::loadNode(gltf_model::Node *parent,
 
                 // Skinning
                 // Joints
-                if (primitive.attributes.find("JOINTS_0") !=
-                    primitive.attributes.end()) {
-                    const tinygltf::Accessor &jointAccessor =
-                        model.accessors[primitive.attributes.find("JOINTS_0")
-                                            ->second];
-                    const tinygltf::BufferView &jointView =
-                        model.bufferViews[jointAccessor.bufferView];
-                    bufferJoints = reinterpret_cast<const uint16_t *>(
-                        &(model.buffers[jointView.buffer]
-                              .data[jointAccessor.byteOffset +
-                                    jointView.byteOffset]));
-                }
+                // if (primitive.attributes.find("JOINTS_0") !=
+                //     primitive.attributes.end()) {
+                //     const tinygltf::Accessor &jointAccessor =
+                //         model.accessors[primitive.attributes.find("JOINTS_0")
+                //                             ->second];
+                //     const tinygltf::BufferView &jointView =
+                //         model.bufferViews[jointAccessor.bufferView];
+                //     bufferJoints = reinterpret_cast<const uint16_t *>(
+                //         &(model.buffers[jointView.buffer]
+                //               .data[jointAccessor.byteOffset +
+                //                     jointView.byteOffset]));
+                // }
 
                 if (primitive.attributes.find("WEIGHTS_0") !=
                     primitive.attributes.end()) {
@@ -1065,50 +1065,6 @@ void gltf_model::Model::bindBuffers(VkCommandBuffer commandBuffer) {
     vkCmdBindIndexBuffer(commandBuffer, indices.buffer, 0,
                          VK_INDEX_TYPE_UINT32);
 }
-
-// void gltf_model::Model::drawNode(Node *node, VkCommandBuffer commandBuffer,
-//                                  uint32_t renderFlags,
-//                                  VkPipelineLayout pipelineLayout,
-//                                  uint32_t bindImageSet) {
-//     if (node->mesh) {
-//         // Render mesh primitives
-//         for (auto *primitive : node->mesh->primitives) {
-//             if (primitive->material.alphaMode & renderFlags) {
-
-//                 const std::vector<VkDescriptorSet> descriptorsets = {
-//                     node->mesh->uniformBuffer.descriptorSet,
-//                     primitive->material.descriptorSet,
-//                 };
-//                 vkCmdBindDescriptorSets(
-//                     commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-//                     pipelineLayout, 0,
-//                     static_cast<uint32_t>(descriptorsets.size()),
-//                     descriptorsets.data(), 0, nullptr);
-
-//                 vkCmdDrawIndexed(commandBuffer, primitive->indexCount, 1,
-//                                  primitive->firstIndex, 0, 0);
-//             }
-//         }
-//     };
-//     for (auto child : node->children) {
-//         drawNode(child, commandBuffer, alphaMode);
-//     }
-// }
-
-// void gltf_model::Model::draw(VkCommandBuffer commandBuffer,
-//                              uint32_t renderFlags,
-//                              VkPipelineLayout pipelineLayout,
-//                              uint32_t bindImageSet) {
-//     const std::array<VkDeviceSize, 1> offsets = {0};
-//     vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertices.buffer,
-//                            offsets.data());
-//     vkCmdBindIndexBuffer(commandBuffer, indices.buffer, 0,
-//                          VK_INDEX_TYPE_UINT32);
-//     for (auto &node : nodes) {
-//         drawNode(node, commandBuffer, renderFlags, pipelineLayout,
-//                  bindImageSet);
-//     }
-// }
 
 void gltf_model::Model::getNodeDimensions(Node *node, glm::vec3 &min,
                                           glm::vec3 &max) {

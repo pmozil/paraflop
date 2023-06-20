@@ -43,6 +43,20 @@ class Raytracer : public raytracer::RaytracerBase {
         buildCommandBuffers();
     }
 
+    ~Raytracer() {
+        vkDestroyPipeline(*m_deviceHandler, pipeline, nullptr);
+        vkDestroyPipelineLayout(*m_deviceHandler, pipelineLayout, nullptr);
+        vkDestroyDescriptorSetLayout(*m_deviceHandler, descriptorSetLayout,
+                                     nullptr);
+        deleteStorageImage();
+        deleteAccelerationStructure(bottomLevelAS);
+        deleteAccelerationStructure(topLevelAS);
+        shaderBindingTables.raygen.destroy();
+        shaderBindingTables.miss.destroy();
+        shaderBindingTables.hit.destroy();
+        ubo.destroy();
+    }
+
     AccelerationStructure bottomLevelAS;
     AccelerationStructure topLevelAS;
 

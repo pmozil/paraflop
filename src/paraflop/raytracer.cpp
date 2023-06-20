@@ -586,15 +586,6 @@ void Raytracer::handleResize() {
     uint32_t height = m_swapChain->swapChainExtent.height;
     createStorageImage(m_swapChain->swapChainImageFormat, {width, height, 1});
 
-    // Update descriptor
-    // VkDescriptorImageInfo storageImageDescriptor{
-    //     VK_NULL_HANDLE, storageImage.view, VK_IMAGE_LAYOUT_GENERAL};
-    // VkWriteDescriptorSet resultImageWrite = create_info::writeDescriptorSet(
-    //     descriptorSet, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1,
-    //     &storageImageDescriptor);
-    // vkUpdateDescriptorSets(*m_deviceHandler, 1, &resultImageWrite, 0,
-    //                        VK_NULL_HANDLE);
-
     vkDestroyPipeline(*m_deviceHandler, pipeline, nullptr);
     vkDestroyPipelineLayout(*m_deviceHandler, pipelineLayout, nullptr);
     vkDestroyDescriptorSetLayout(*m_deviceHandler, descriptorSetLayout,
@@ -605,6 +596,7 @@ void Raytracer::handleResize() {
 
     clearCommandBuffers();
     makeCommandBuffers();
+    buildCommandBuffers();
 }
 
 void Raytracer::makeCommandBuffers() {

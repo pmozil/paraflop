@@ -512,7 +512,7 @@ void Raytracer::createRayTracingPipeline() {
     rayTracingPipelineCI.groupCount =
         static_cast<uint32_t>(shaderGroups.size());
     rayTracingPipelineCI.pGroups = shaderGroups.data();
-    rayTracingPipelineCI.maxPipelineRayRecursionDepth = 2;
+    rayTracingPipelineCI.maxPipelineRayRecursionDepth = 12;
     rayTracingPipelineCI.layout = pipelineLayout;
     VK_CHECK(vkCreateRayTracingPipelinesKHR(
         *m_deviceHandler, VK_NULL_HANDLE, VK_NULL_HANDLE, 1,
@@ -573,26 +573,28 @@ void Raytracer::updateUniformBuffers(glm::mat4 proj, glm::mat4 view,
 }
 
 void Raytracer::handleResize() {
-    // Recreate image
     vkDeviceWaitIdle(*m_deviceHandler);
 
     m_swapChain->cleanup();
-
     m_swapChain->init();
+    updateRenderPass();
 
-    resized = false;
+    vkDeviceWaitIdle(*m_deviceHandler);
 
-    uint32_t width = m_swapChain->swapChainExtent.width;
-    uint32_t height = m_swapChain->swapChainExtent.height;
-    createStorageImage(m_swapChain->swapChainImageFormat, {width, height, 1});
+    uint32_t width = this->m_swapChain->swapChainExtent.width;
+    uint32_t height = this->m_swapChain->swapChainExtent.height;
+    createStorageImage(this->m_swapChain->swapChainImageFormat,
+                       {width, height, 1});
 
-    vkDestroyPipeline(*m_deviceHandler, pipeline, nullptr);
-    vkDestroyPipelineLayout(*m_deviceHandler, pipelineLayout, nullptr);
-    vkDestroyDescriptorSetLayout(*m_deviceHandler, descriptorSetLayout,
-                                 nullptr);
+    VkDescriptorImageInfo storageImageDescriptor{
+        VK_NULL_HANDLE, storageImage.view, VK_IMAGE_LAYOUT_GENERAL};
 
-    createRayTracingPipeline();
-    createDescriptorSets();
+    VkWriteDescriptorSet resultImageWrite = create_info::writeDescriptorSet(
+        descriptorSet, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1,
+        &storageImageDescriptor);
+
+    vkUpdateDescriptorSets(*m_deviceHandler, 1, &resultImageWrite, 0,
+                           VK_NULL_HANDLE);
 
     clearCommandBuffers();
     makeCommandBuffers();
@@ -619,10 +621,6 @@ void Raytracer::clearCommandBuffers() {
 void Raytracer::buildCommandBuffers() {
     uint32_t width = m_swapChain->swapChainExtent.width;
     uint32_t height = m_swapChain->swapChainExtent.height;
-
-    if (resized) {
-        handleResize();
-    }
 
     VkCommandBufferBeginInfo cmdBufInfo = create_info::commandBufferBeginInfo();
 
@@ -717,7 +715,7 @@ void Raytracer::prepareFrame() {
 void Raytracer::submitFrame() {
 
     VkResult result =
-        m_swapChain->queuePresent(m_deviceHandler->presentQueue, imageIdx);
+        m_swapChain->queuePresent(m_deviceHandler->presentQueue, curFrame);
     // Recreate the swapchain if it's no longer compatible with the surface
     // (OUT_OF_DATE) or no longer optimal for presentation (SUBOPTIMAL)
     if ((result == VK_ERROR_OUT_OF_DATE_KHR) || (result == VK_SUBOPTIMAL_KHR)) {
@@ -725,10 +723,9 @@ void Raytracer::submitFrame() {
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
             return;
         }
-    } else {
-        VK_CHECK(result);
     }
 
+    VK_CHECK(result);
     VK_CHECK(vkQueueWaitIdle(m_deviceHandler->presentQueue));
 }
 
@@ -739,13 +736,13 @@ void Raytracer::renderFrame() {
                   &m_swapChain->inFlightFences[curFrame]);
 
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &drawCmdBuffers[imageIdx];
+    submitInfo.pCommandBuffers = &drawCmdBuffers[curFrame];
 
     submitInfo.pWaitSemaphores =
-        &this->m_swapChain->imageAvailableSemaphores[imageIdx];
+        &this->m_swapChain->imageAvailableSemaphores[curFrame];
 
     submitInfo.pSignalSemaphores =
-        &this->m_swapChain->renderFinishedSemaphores[imageIdx];
+        &this->m_swapChain->renderFinishedSemaphores[curFrame];
 
     VK_CHECK(vkQueueSubmit(m_deviceHandler->graphicsQueue, 1, &submitInfo,
                            m_swapChain->inFlightFences[curFrame]));

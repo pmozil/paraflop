@@ -102,16 +102,19 @@ int main() {
 
     std::shared_ptr<gltf_model::Model> model =
         std::make_shared<gltf_model::Model>();
-    // model->loadFromFile("assets/models/sponza/sponza.gltf", deviceHandler,
-    //                     commandBuffer, deviceHandler->getTransferQueue(),
-    //                     glTFLoadingFlags);
+    model->loadFromFile("assets/models/sponza/sponza.gltf", deviceHandler,
+                        commandBuffer, deviceHandler->getTransferQueue(),
+                        glTFLoadingFlags);
     // model->loadFromFile("assets/models/FlightHelmet/glTF/FlightHelmet.gltf",
     //                     deviceHandler, commandBuffer,
     //                     deviceHandler->getTransferQueue(), glTFLoadingFlags);
-    model->loadFromFile("assets/models/CesiumMan/glTF/CesiumMan.gltf",
-                        deviceHandler, commandBuffer,
-                        deviceHandler->getTransferQueue(), glTFLoadingFlags);
+    // model->loadFromFile("assets/models/CesiumMan/glTF/CesiumMan.gltf",
+    //                     deviceHandler, commandBuffer,
+    //                     deviceHandler->getTransferQueue(), glTFLoadingFlags);
     // model->loadFromFile("assets/models/retroufo_glow.gltf", deviceHandler,
+    //                     commandBuffer, deviceHandler->getTransferQueue(),
+    //                     glTFLoadingFlags);
+    // model->loadFromFile("assets/models/chinesedragon.gltf", deviceHandler,
     //                     commandBuffer, deviceHandler->getTransferQueue(),
     //                     glTFLoadingFlags);
 

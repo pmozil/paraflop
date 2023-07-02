@@ -199,8 +199,9 @@ gltf_model::Model::~Model() {
 
 uint32_t gltf_model::Model::findTexture(gltf_model::Texture *tex) {
     if (tex == nullptr) {
-        return this->textures.size() - 1;
+        return 0;
     }
+
     uint32_t res = -1;
     for (const auto &texture : this->textures) {
         res++;
@@ -208,6 +209,7 @@ uint32_t gltf_model::Model::findTexture(gltf_model::Texture *tex) {
             return res;
         }
     }
+
     return res;
 }
 
@@ -415,6 +417,7 @@ void gltf_model::Model::loadNode(gltf_model::Node *parent,
                     } else {
                         vert.color = glm::vec4(1.0F);
                     }
+
                     vert.tangent = bufferTangents != nullptr
                                        ? glm::vec4(glm::make_vec4(
                                              &bufferTangents[idx * 4]))
@@ -547,9 +550,12 @@ void gltf_model::Model::loadSkins(tinygltf::Model &gltfModel) {
 }
 
 void gltf_model::Model::loadImages(
-    tinygltf::Model &gltfModel, std::shared_ptr<device::DeviceHandler> device,
-    std::shared_ptr<command_buffer::CommandBufferHandler> cmdBuf,
+    tinygltf::Model &gltfModel, std::shared_ptr<device::DeviceHandler> &device,
+    std::shared_ptr<command_buffer::CommandBufferHandler> &cmdBuf,
     VkQueue transferQueue) {
+    // Create an empty texture to be used for empty material images
+    createEmptyTexture(transferQueue);
+
     for (tinygltf::Image &image : gltfModel.images) {
         gltf_model::Texture texture;
         texture.name = image.uri;
@@ -557,8 +563,6 @@ void gltf_model::Model::loadImages(
         texture.fromglTfImage(image, path, device, cmdBuf, transferQueue);
         textures.push_back(texture);
     }
-    // Create an empty texture to be used for empty material images
-    createEmptyTexture(transferQueue);
 }
 
 void gltf_model::Model::loadMaterials(tinygltf::Model &gltfModel) {
@@ -806,6 +810,10 @@ void gltf_model::Model::loadFromFile(
                                FileLoadingFlags::DontLoadImages)) {
             loadImages(gltfModel, m_deviceHandler, m_commandBuffer,
                        transferQueue);
+        } else {
+
+            // Create an empty texture to be used for empty material images
+            createEmptyTexture(transferQueue);
         }
         loadMaterials(gltfModel);
         const tinygltf::Scene &scene =

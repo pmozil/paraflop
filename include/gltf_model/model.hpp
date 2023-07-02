@@ -67,8 +67,8 @@ class Model {
     void loadSkins(tinygltf::Model &gltfModel);
     void
     loadImages(tinygltf::Model &gltfModel,
-               std::shared_ptr<device::DeviceHandler> device,
-               std::shared_ptr<command_buffer::CommandBufferHandler> cmdBuf,
+               std::shared_ptr<device::DeviceHandler> &device,
+               std::shared_ptr<command_buffer::CommandBufferHandler> &cmdBuf,
                VkQueue transferQueue);
     void loadMaterials(tinygltf::Model &gltfModel);
     void loadAnimations(tinygltf::Model &gltfModel);
@@ -80,13 +80,6 @@ class Model {
                  uint32_t fileLoadingFlags = gltf_model::FileLoadingFlags::None,
                  float scale = 1.0F);
     void bindBuffers(VkCommandBuffer commandBuffer);
-    // void drawNode(Node *node, VkCommandBuffer commandBuffer,
-    //               uint32_t renderFlags = 0,
-    //               VkPipelineLayout pipelineLayout = VK_NULL_HANDLE,
-    //               uint32_t bindImageSet = 1);
-    // void draw(VkCommandBuffer commandBuffer, uint32_t renderFlags = 0,
-    //           VkPipelineLayout pipelineLayout = VK_NULL_HANDLE,
-    //           uint32_t bindImageSet = 1);
     void getNodeDimensions(Node *node, glm::vec3 &min, glm::vec3 &max);
     void getSceneDimensions();
     void updateAnimation(uint32_t index, float time);

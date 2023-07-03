@@ -2,6 +2,15 @@
 #extension GL_EXT_ray_tracing : require
 #extension GL_EXT_nonuniform_qualifier : enable
 
+struct RayPayload {
+	vec3 color;
+	float distance;
+	vec3 normal;
+	float reflector;
+};
+
+layout(location = 0) rayPayloadInEXT RayPayload hitValue;
+layout(location = 2) rayPayloadInEXT bool shadowed;
 hitAttributeEXT vec2 attribs;
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
@@ -26,16 +35,6 @@ struct Vertex
   vec4  texId;
   vec4 _pad1;
  };
-
-struct RayPayload {
-	vec3 color;
-	float distance;
-	vec3 normal;
-	float reflector;
-};
-
-layout(location = 0) rayPayloadInEXT RayPayload hitValue;
-layout(location = 2) rayPayloadInEXT bool shadowed;
 
 Vertex unpack(uint index)
 {
@@ -70,6 +69,7 @@ void main()
 	const vec3 barycentricCoords = vec3(1.0f - attribs.x - attribs.y, attribs.x, attribs.y);
 	vec3 normal = normalize(v0.normal * barycentricCoords.x + v1.normal * barycentricCoords.y + v2.normal * barycentricCoords.z);
     vec2 uv = v0.uv * barycentricCoords.x + v1.uv * barycentricCoords.y + v2.uv * barycentricCoords.z;
+    vec3 color = vec3(0.0F);
 
 	// Basic lighting
 	vec3 lightVector = normalize(ubo.lightPos.xyz);
@@ -77,7 +77,7 @@ void main()
     vec3 c1 = texture(sampler2D(textures[uint(v0.texId.y)], samp), uv).xyz;
     vec3 c2 = texture(sampler2D(textures[uint(v1.texId.y)], samp), uv).xyz;
     vec3 c3 = texture(sampler2D(textures[uint(v2.texId.y)], samp), uv).xyz;
-	hitValue.color = (v0.color.xyz + (c1 + c2 + c3)) * dot_product;
+	color = (c1 + c2 + c3) * dot_product;
  
 	// Shadow casting
 	float tmin = 0.001;
@@ -87,10 +87,11 @@ void main()
 	// Trace shadow ray and offset indices to match shadow hit/miss shader group indices
 	traceRayEXT(topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT, 0xFF, 0, 0, 1, origin, tmin, lightVector, tmax, 2);
 	if (shadowed) {
-		hitValue.color *= 0.3;
+		color *= 0.3;
 	}
 
+    hitValue.color = color;
+    hitValue.distance = gl_RayTmaxEXT;
     hitValue.normal = normal;
-    hitValue.distance = -gl_RayTmaxEXT;
-    hitValue.reflector = 1.0f;
+    hitValue.reflector = length(color) / 4.0F;
 }

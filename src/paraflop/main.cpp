@@ -114,7 +114,8 @@ int main() {
     // model->loadFromFile("assets/models/retroufo_glow.gltf", deviceHandler,
     //                     commandBuffer, deviceHandler->getTransferQueue(),
     //                     glTFLoadingFlags);
-    // model->loadFromFile("assets/models/chinesedragon.gltf", deviceHandler,
+    // model->loadFromFile("assets/models/vulkanscene_shadow.gltf",
+    // deviceHandler,
     //                     commandBuffer, deviceHandler->getTransferQueue(),
     //                     glTFLoadingFlags);
 

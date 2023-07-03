@@ -202,6 +202,10 @@ uint32_t gltf_model::Model::findTexture(gltf_model::Texture *tex) {
         return 0;
     }
 
+    if (tex->name.empty()) {
+        return 0;
+    }
+
     uint32_t res = -1;
     for (const auto &texture : this->textures) {
         res++;

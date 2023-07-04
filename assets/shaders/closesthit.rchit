@@ -1,6 +1,7 @@
 #version 460
 #extension GL_EXT_ray_tracing : require
 #extension GL_EXT_nonuniform_qualifier : enable
+#define EPSILON 0.01F
 
 struct RayPayload {
 	vec3 color;
@@ -18,13 +19,14 @@ layout(binding = 2, set = 0) uniform UBO
 {
 	mat4 viewInverse;
 	mat4 projInverse;
-	vec4 lightPos;
 	int vertexSize;
+    int lightsCount;
 } ubo;
-layout(binding = 3, set = 0) buffer Vertices { vec4 v[]; } vertices;
-layout(binding = 4, set = 0) buffer Indices { uint i[]; } indices;
-layout(binding = 5, set = 0) uniform sampler samp;
-layout(binding = 6, set = 0) uniform texture2D textures[];
+layout(binding = 3, set = 0) buffer Lights { vec4 l[]; } lights;
+layout(binding = 4, set = 0) buffer Vertices { vec4 v[]; } vertices;
+layout(binding = 5, set = 0) buffer Indices { uint i[]; } indices;
+layout(binding = 6, set = 0) uniform sampler samp;
+layout(binding = 7, set = 0) uniform texture2D textures[];
 
 struct Vertex
 {
@@ -72,23 +74,32 @@ void main()
     vec3 color = vec3(0.0F);
 
 	// Basic lighting
-	vec3 lightVector = normalize(ubo.lightPos.xyz);
-	float dot_product = max(dot(lightVector, normal), 0.2);
-    vec3 c1 = texture(sampler2D(textures[uint(v0.texId.y)], samp), uv).xyz;
-    vec3 c2 = texture(sampler2D(textures[uint(v1.texId.y)], samp), uv).xyz;
-    vec3 c3 = texture(sampler2D(textures[uint(v2.texId.y)], samp), uv).xyz;
-	color = (c1 + c2 + c3) * dot_product;
+    for(int i = 0; i < ubo.lightsCount; i++) {
+        vec3 col = vec3(0.0F);
+        vec4 lightPos = lights.l[i];
+	    vec3 lightVector = normalize(lightPos.xyz);
+	    float dot_product = max(dot(lightVector, normal), 0.2);
+
+        if(v0.texId.y > EPSILON && length(v0.color) > EPSILON) {
+            vec3 tex_col = texture(sampler2D(textures[uint(v0.texId.y)], samp), uv).xyz;
+	        col = (tex_col * 3 + v0.color.xyz) * dot_product;
+        } else if (length(v0.color) > EPSILON) {
+            col = v0.color.xyz * dot_product;
+        }
  
-	// Shadow casting
-	float tmin = 0.001;
-	float tmax = 10000.0;
-	vec3 origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
-	shadowed = true;  
-	// Trace shadow ray and offset indices to match shadow hit/miss shader group indices
-	traceRayEXT(topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT, 0xFF, 0, 0, 1, origin, tmin, lightVector, tmax, 2);
-	if (shadowed) {
-		color *= 0.3;
-	}
+	    // Shadow casting
+	    float tmin = 0.001;
+	    float tmax = 10000.0;
+	    vec3 origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
+	    shadowed = true;  
+	    // Trace shadow ray and offset indices to match shadow hit/miss shader group indices
+	    traceRayEXT(topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT, 0xFF, 0, 0, 1, origin, tmin, lightVector, tmax, 2);
+	    if (shadowed) {
+	    	col *= 0.3;
+	    }
+
+        color += col;
+    }
 
     hitValue.color = color;
     hitValue.distance = gl_RayTmaxEXT;

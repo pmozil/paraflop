@@ -115,8 +115,8 @@ void Raytracer::createBottomLevelAccelerationStructure() {
     The top level acceleration structure contains the scene's object instances
 */
 void Raytracer::createTopLevelAccelerationStructure() {
-    VkTransformMatrixKHR transformMatrix = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-                                            0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f};
+    VkTransformMatrixKHR transformMatrix = {1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F,
+                                            0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F};
 
     VkAccelerationStructureInstanceKHR instance{};
     instance.transform = transformMatrix;
@@ -276,7 +276,7 @@ void Raytracer::createDescriptorSets() {
         {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1},
         {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1},
         {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1},
-        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2},
+        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3},
         {VK_DESCRIPTOR_TYPE_SAMPLER, 1},
         {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
          static_cast<uint32_t>(scene->textures.size())},
@@ -329,6 +329,8 @@ void Raytracer::createDescriptorSets() {
                                                   VK_WHOLE_SIZE};
     VkDescriptorBufferInfo indexBufferDescriptor{scene->indices.buffer, 0,
                                                  VK_WHOLE_SIZE};
+    VkDescriptorBufferInfo lightsBufferDescriptor{this->lights.buffer, 0,
+                                                  VK_WHOLE_SIZE};
 
     VkSamplerCreateInfo createInfo =
         create_info::samplerCreateInfo(VK_FILTER_LINEAR);
@@ -354,21 +356,25 @@ void Raytracer::createDescriptorSets() {
         create_info::writeDescriptorSet(descriptorSet,
                                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2,
                                         &ubo.descriptor),
-        // Binding 3: Scene vertex buffer
+        // Binding 4: Scene index buffer
         create_info::writeDescriptorSet(descriptorSet,
                                         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3,
+                                        &lightsBufferDescriptor),
+        // Binding 3: Scene vertex buffer
+        create_info::writeDescriptorSet(descriptorSet,
+                                        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 4,
                                         &vertexBufferDescriptor),
         // Binding 4: Scene index buffer
         create_info::writeDescriptorSet(descriptorSet,
-                                        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 4,
+                                        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 5,
                                         &indexBufferDescriptor),
         // Binding 5: Texture sampler
         create_info::writeDescriptorSet(
-            descriptorSet, VK_DESCRIPTOR_TYPE_SAMPLER, 5, &samplerInfo),
+            descriptorSet, VK_DESCRIPTOR_TYPE_SAMPLER, 6, &samplerInfo),
 
         // // Binding 6: Sampled textures
         create_info::writeDescriptorSet(
-            descriptorSet, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 6,
+            descriptorSet, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 7,
             textureDescriptors.data(), textureDescriptors.size()),
     };
 
@@ -399,21 +405,25 @@ void Raytracer::createRayTracingPipeline() {
                 VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
                 VK_SHADER_STAGE_MISS_BIT_KHR,
             2),
-        // Binding 3: Vertex buffer
+        // Binding 3: Lights buffer
         create_info::descriptorSetLayoutBinding(
             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
             VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, 3),
-        // Binding 4: Index buffer
+        // Binding 4: Vertex buffer
         create_info::descriptorSetLayoutBinding(
             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
             VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, 4),
-        // Binding 5: Uniform buffer
+        // Binding 5: Index buffer
         create_info::descriptorSetLayoutBinding(
-            VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, 5),
-        // // Binding 6: Uniform buffer
+            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, 5),
+        // Binding 6: Uniform buffer
+        create_info::descriptorSetLayoutBinding(
+            VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, 6),
+        // // Binding 7: Uniform buffer
         create_info::descriptorSetLayoutBinding(
             VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-            VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, 6, scene->textures.size()),
+            VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, 7, scene->textures.size()),
     };
 
     std::vector<VkDescriptorBindingFlags> flags(
@@ -512,7 +522,7 @@ void Raytracer::createRayTracingPipeline() {
     rayTracingPipelineCI.groupCount =
         static_cast<uint32_t>(shaderGroups.size());
     rayTracingPipelineCI.pGroups = shaderGroups.data();
-    rayTracingPipelineCI.maxPipelineRayRecursionDepth = 12;
+    rayTracingPipelineCI.maxPipelineRayRecursionDepth = 4;
     rayTracingPipelineCI.layout = pipelineLayout;
     VK_CHECK(vkCreateRayTracingPipelinesKHR(
         *m_deviceHandler, VK_NULL_HANDLE, VK_NULL_HANDLE, 1,
@@ -522,6 +532,82 @@ void Raytracer::createRayTracingPipeline() {
 VkResult Raytracer::Buffer::map(VkDevice device, VkDeviceSize size,
                                 VkDeviceSize offset) {
     return vkMapMemory(device, memory, offset, size, 0, &mapped);
+}
+
+void Raytracer::setupLightsBuffer() {
+    if (lights.lights.empty()) {
+        return;
+    }
+
+    updateUniformBuffers();
+
+    lights.size = lights.lights.size() * sizeof(lights.lights[0]);
+    lights.usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    lights.memoryPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    VK_CHECK(m_deviceHandler->createBuffer(
+        lights.usageFlags, lights.memoryPropertyFlags, lights.size,
+        &lights.buffer, &lights.memory, lights.mapped));
+
+    std::cout << "DEBUG: CREATED LIGHTS BUFFER, SIZE = " << lights.size << "\n";
+
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    VK_CHECK(m_deviceHandler->createBuffer(
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        lights.size, &stagingBuffer, &stagingBufferMemory, nullptr));
+
+    void *mem;
+    vkMapMemory(*m_deviceHandler, stagingBufferMemory, 0, lights.size, 0, &mem);
+    memcpy(mem, lights.lights.data(), (size_t)lights.size);
+    vkUnmapMemory(*m_deviceHandler, stagingBufferMemory);
+
+    VkCommandBufferAllocateInfo allocInfo =
+        create_info::commandBufferAllocInfo(m_commandBuffer->commandPool, 1);
+
+    VkCommandBuffer cmdBuffer;
+    vkAllocateCommandBuffers(*m_deviceHandler, &allocInfo, &cmdBuffer);
+
+    VkCommandBufferBeginInfo beginInfo = create_info::commandBufferBeginInfo();
+
+    vkBeginCommandBuffer(cmdBuffer, &beginInfo);
+
+    VkBufferCopy copyRegion = create_info::copyRegion(lights.size);
+    vkCmdCopyBuffer(cmdBuffer, stagingBuffer, lights.buffer, 1, &copyRegion);
+
+    vkEndCommandBuffer(cmdBuffer);
+
+    VkSubmitInfo submitInfo = create_info::submitInfo(1, &cmdBuffer);
+
+    VkQueue transferQueue = m_deviceHandler->getTransferQueue();
+
+    vkQueueSubmit(transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(transferQueue);
+
+    vkFreeCommandBuffers(*m_deviceHandler, m_commandBuffer->commandPool, 1,
+                         &cmdBuffer);
+
+    vkDestroyBuffer(*m_deviceHandler, stagingBuffer, nullptr);
+    vkFreeMemory(*m_deviceHandler, stagingBufferMemory, nullptr);
+}
+
+void Raytracer::updateLightsBuffer(std::vector<glm::vec4> newLights) {
+    this->lights.lights = std::move(newLights);
+    cleanupLightsBuffer();
+    setupLightsBuffer();
+}
+
+void Raytracer::cleanupLightsBuffer() {
+    if (lights.memory != VK_NULL_HANDLE) {
+        vkUnmapMemory(*m_deviceHandler, lights.memory);
+    }
+
+    if (lights.buffer != VK_NULL_HANDLE) {
+        vkFreeMemory(*m_deviceHandler, lights.memory, nullptr);
+    }
 }
 
 /*
@@ -546,27 +632,23 @@ void Raytracer::createUniformBuffer() {
 void Raytracer::updateUniformBuffers() {
     uniformData.projInverse = glm::inverse(glm::identity<glm::mat4>());
     uniformData.viewInverse = glm::inverse(glm::identity<glm::mat4>());
-    uniformData.lightPos =
-        glm::vec4(cos(glm::radians(0 * 360.0f)) * 40.0f,
-                  -50.0f + sin(glm::radians(0 * 360.0f)) * 20.0f,
-                  25.0f + sin(glm::radians(0 * 360.0f)) * 5.0f, 0.0f);
     // Pass the vertex size to the shader for unpacking vertices
     uniformData.vertexSize = sizeof(gltf_model::Vertex);
+    uniformData.lightsCount = lights.lights.size();
     memcpy(ubo.mapped, &uniformData, sizeof(uniformData));
 }
 
-void Raytracer::updateUniformBuffers(glm::mat4 proj, glm::mat4 view,
-                                     glm::vec4 pos) {
+void Raytracer::updateUniformBuffers(glm::mat4 proj, glm::mat4 view) {
     glm::mat4 invYAxisMatrix = {
         1.0F, 0.0F, 0.0F, 0.0F, 0.0F, -1.0F, 0.0F, 0.0F,
         0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F,  0.0F, 1.0F,
     };
     uniformData.projInverse = glm::inverse(proj);
     uniformData.viewInverse = glm::inverse(view * invYAxisMatrix);
-    uniformData.lightPos = pos;
-    // glm::vec4(cos(glm::radians(0 * 360.0f)) * 40.0f,
-    //           -50.0f + sin(glm::radians(0 * 360.0f)) * 20.0f,
-    //           25.0f + sin(glm::radians(0 * 360.0f)) * 5.0f, 0.0f);
+    // uniformData.lightPos = pos;
+    // glm::vec4(cos(glm::radians(0 * 360.0F)) * 40.0F,
+    //           -50.0F + sin(glm::radians(0 * 360.0F)) * 20.0F,
+    //           25.0F + sin(glm::radians(0 * 360.0F)) * 5.0F, 0.0F);
     // Pass the vertex size to the shader for unpacking vertices
     uniformData.vertexSize = sizeof(gltf_model::Vertex);
     memcpy(ubo.mapped, &uniformData, sizeof(uniformData));

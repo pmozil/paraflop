@@ -19,6 +19,7 @@ class Raytracer : public raytracer::RaytracerBase {
         raytracer::RaytracerBase::prepare();
         createBottomLevelAccelerationStructure();
         createTopLevelAccelerationStructure();
+        createUniformBuffer();
 
         uint32_t width = this->m_swapChain->swapChainExtent.width;
         uint32_t height = this->m_swapChain->swapChainExtent.height;
@@ -33,8 +34,7 @@ class Raytracer : public raytracer::RaytracerBase {
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.signalSemaphoreCount = 1;
 
-        createUniformBuffer();
-
+        setupLightsBuffer();
         createRayTracingPipeline();
         createShaderBindingTables();
         createDescriptorSets();
@@ -48,6 +48,7 @@ class Raytracer : public raytracer::RaytracerBase {
         vkDestroyPipelineLayout(*m_deviceHandler, pipelineLayout, nullptr);
         vkDestroyDescriptorSetLayout(*m_deviceHandler, descriptorSetLayout,
                                      nullptr);
+        cleanupLightsBuffer();
         deleteStorageImage();
         deleteAccelerationStructure(bottomLevelAS);
         deleteAccelerationStructure(topLevelAS);
@@ -70,9 +71,25 @@ class Raytracer : public raytracer::RaytracerBase {
     struct UniformData {
         glm::mat4 viewInverse;
         glm::mat4 projInverse;
-        glm::vec4 lightPos;
         int32_t vertexSize;
+        int32_t lightsCount;
     } uniformData;
+
+    struct Lights {
+        std::vector<glm::vec4> lights;
+        VkBuffer buffer;
+        VkDeviceMemory memory = VK_NULL_HANDLE;
+        VkDescriptorBufferInfo descriptor;
+        VkDeviceSize size = 0;
+        VkDeviceSize alignment = 0;
+        void *mapped = nullptr;
+        /** @brief Usage flags to be filled by external source at buffer
+         * creation (to query at some later point) */
+        VkBufferUsageFlags usageFlags;
+        /** @brief Memory property flags to be filled by external source at
+         * buffer creation (to query at some later point) */
+        VkMemoryPropertyFlags memoryPropertyFlags;
+    } lights;
 
     std::vector<VkCommandBuffer> drawCmdBuffers;
 
@@ -112,6 +129,9 @@ class Raytracer : public raytracer::RaytracerBase {
 
     void createBottomLevelAccelerationStructure();
     void createTopLevelAccelerationStructure();
+    void setupLightsBuffer();
+    void updateLightsBuffer(std::vector<glm::vec4> newLights);
+    void cleanupLightsBuffer();
 
     void createShaderBindingTables();
     void createDescriptorSets();
@@ -120,7 +140,7 @@ class Raytracer : public raytracer::RaytracerBase {
     void handleResize();
     void buildCommandBuffers();
     void updateUniformBuffers();
-    void updateUniformBuffers(glm::mat4 proj, glm::mat4 view, glm::vec4 pos);
+    void updateUniformBuffers(glm::mat4 proj, glm::mat4 view);
 
     void makeCommandBuffers();
     void clearCommandBuffers();

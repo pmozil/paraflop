@@ -143,7 +143,8 @@ int main() {
                   -50.0f + sin(glm::radians(0 * 360.0f)) * 20.0f,
                   25.0f + sin(glm::radians(0 * 360.0f)) * 5.0f, 0.0f);
 
-    renderer.updateUniformBuffers(mats.proj, mats.view, lightPos);
+    renderer.updateUniformBuffers(mats.proj, mats.view);
+    renderer.updateLightsBuffer({lightPos});
 
     static auto startTime = std::chrono::system_clock::now();
     auto prevTime = startTime;
@@ -182,7 +183,7 @@ int main() {
 
         prevTime = currentTime;
 
-        renderer.updateUniformBuffers(mats.proj, mats.view, lightPos);
+        renderer.updateUniformBuffers(mats.proj, mats.view);
 
         // camera.setPerspective(60.0f,
         //                       (float)swapChain->swapChainExtent.width /

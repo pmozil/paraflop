@@ -138,10 +138,8 @@ int main() {
 
     camera->position.y = -camera->position.y;
 
-    std::vector<glm::vec4> lightPos = {
-        glm::vec4(cos(glm::radians(0 * 360.0f)) * 40.0f,
-                  -50.0f + sin(glm::radians(0 * 360.0f)) * 20.0f,
-                  25.0f + sin(glm::radians(0 * 360.0f)) * 5.0f, 10.0f)};
+    std::vector<glm::vec4> lightPos = {glm::vec4(40.0f, -50.0f, 25.0f, 10.0f),
+                                       glm::vec4(40.0f, -50.0f, -25.0f, 6.0f)};
 
     renderer.updateUniformBuffers(mats.proj, mats.view);
     renderer.updateLightsBuffer(lightPos);

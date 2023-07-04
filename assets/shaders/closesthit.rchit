@@ -5,6 +5,7 @@
 
 struct RayPayload {
 	vec3 color;
+    vec3 emission;
 	float distance;
 	vec3 normal;
 	float reflector;
@@ -95,20 +96,20 @@ void main()
 	    float tmax = 10000.0;
 	    vec3 origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
         float dist = distance(origin, lightPos.xyz);
-        float light = 144 * lightPos.w / (dist * dist);
+        float light = 16 * lightPos.w / (dist * dist);
 	    shadowed = true;  
 	    // Trace shadow ray and offset indices to match shadow hit/miss shader group indices
 	    traceRayEXT(topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT, 0xFF, 0, 0, 1, origin, tmin, lightVector, tmax, 2);
 	    if (shadowed) {
-	    	light *= 0.2F;
+	    	light *= 0.3F;
 	    }
 
         lighting  += light;
     }
-    color *= lighting;
 
+    hitValue.emission = vec3(lighting);
     hitValue.color = color;
     hitValue.distance = gl_RayTmaxEXT;
     hitValue.normal = normal;
-    hitValue.reflector = length(color) / 4.0F;
+    hitValue.reflector = min(length(color) / 4.0F, 0.6F);
 }

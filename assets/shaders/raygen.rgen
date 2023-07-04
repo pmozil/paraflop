@@ -1,6 +1,8 @@
 #version 460
 #extension GL_EXT_ray_tracing : require
 #define MAX_RECURSION 4
+#define SAMPLES 4
+#define EPSILON 0.01F
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
 layout(binding = 1, set = 0, rgba8) uniform image2D image;
@@ -12,6 +14,7 @@ layout(binding = 2, set = 0) uniform CameraProperties
 
 struct RayPayload {
 	vec3 color;
+    vec3 emission;
 	float distance;
 	vec3 normal;
 	float reflector;
@@ -23,8 +26,6 @@ uint hash( uint x ) {
     x += ( x << 10u );
     x ^= ( x >>  6u );
     x += ( x <<  3u );
-    x ^= ( x >> 11u );
-    x += ( x << 15u );
     return x;
 }
 
@@ -56,26 +57,48 @@ void main()  {
 
     vec3 color = vec3(0.0F);
     float reflection_coeff = 1.0F;
+    vec3 tmp_orig = origin.xyz;
+    vec3 tmp_dir = origin.xyz;
+    vec3 tmp_dir_shift = vec3(0.0F);
+    vec3 dir_shift = vec3(0.0F);
+    bool trace = true;
+    vec4 hitPos = vec4(0.0F);
+    vec3 col = vec3(0.0F);
 
-	for (int i = 0; i < MAX_RECURSION; i++) {
-		traceRayEXT(topLevelAS, rayFlags, cullMask, 0, 0, 0, origin.xyz, tmin, direction.xyz, tmax, 0);
+	for (int i = 0; i < MAX_RECURSION && trace; i++) {
+        dir_shift = vec3(0.0F);
+        for (int i = 0; i < SAMPLES; i++) {
+            tmp_orig = origin.xyz;
+            tmp_dir = direction.xyz;
+		    traceRayEXT(topLevelAS, rayFlags, cullMask, 0, 0, 0, tmp_orig, tmin, tmp_dir, tmax, 0);
 
-        color += hitValue.color * reflection_coeff;
+            col += hitValue.color * hitValue.emission * reflection_coeff;
 
-		if (hitValue.distance >= 0.0F) {
-			const vec4 hitPos = origin + direction * hitValue.distance;
-            reflection_coeff *= hitValue.reflector * 0.6F;
+		    if (hitValue.distance >= 0.0F) {
+		    	hitPos = origin + direction * hitValue.distance;
+                reflection_coeff *= hitValue.reflector;
 
-			origin.xyz = hitPos.xyz + hitValue.normal * 0.001F;
-			direction.xyz = normalize(reflect(direction.xyz, hitValue.normal)) + normalize(vec3(
-                    random(direction.x),
-                    random(direction.y),
-                    random(direction.z))
-                ) * (1 - reflection_coeff);
-		} else {
-            break;
+		    	origin.xyz = hitPos.xyz + hitValue.normal * 0.001F;
+		    	tmp_dir_shift = normalize(reflect(direction.xyz, hitValue.normal)) + normalize(vec3(
+                        random(origin.x),
+                        random(origin.z),
+                        random(origin.y))
+                    ) * (1 - reflection_coeff);
+                dir_shift += tmp_dir_shift;
+                tmp_dir  += tmp_dir_shift;
+		    } else {
+                trace = false;
+            }
         }
+        color += col / SAMPLES;
+        dir_shift /= SAMPLES;
+		origin.xyz = hitPos.xyz + hitValue.normal * 0.001F;
+        direction.xyz += dir_shift;
 	}
 
-	imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(color, 0.0));
+    if (length(color) > EPSILON) {
+	    imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(color, 0.0));
+    } else {
+	    imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(0.0F, 0.0F, 0.2F, 0.0));
+    }
 }

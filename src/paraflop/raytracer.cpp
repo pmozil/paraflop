@@ -539,9 +539,13 @@ void Raytracer::setupLightsBuffer() {
         return;
     }
 
-    updateUniformBuffers();
+    std::cout << "DEBUG: LIGHT: " << lights.lights[0].x << " "
+              << lights.lights[0].y << " " << lights.lights[0].z << " "
+              << lights.lights[0].w << " "
+              << "\n";
 
-    lights.size = lights.lights.size() * sizeof(lights.lights[0]);
+    lights.size = lights.lights.size() * sizeof(glm::vec4);
+
     lights.usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     lights.memoryPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                                  VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -549,8 +553,6 @@ void Raytracer::setupLightsBuffer() {
     VK_CHECK(m_deviceHandler->createBuffer(
         lights.usageFlags, lights.memoryPropertyFlags, lights.size,
         &lights.buffer, &lights.memory, lights.mapped));
-
-    std::cout << "DEBUG: CREATED LIGHTS BUFFER, SIZE = " << lights.size << "\n";
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -592,15 +594,35 @@ void Raytracer::setupLightsBuffer() {
 
     vkDestroyBuffer(*m_deviceHandler, stagingBuffer, nullptr);
     vkFreeMemory(*m_deviceHandler, stagingBufferMemory, nullptr);
+
+    updateUniformBuffers();
+
+    VkDescriptorBufferInfo lightsBufferDescriptor{this->lights.buffer, 0,
+                                                  VK_WHOLE_SIZE};
+
+    std::vector<VkWriteDescriptorSet> writeDescriptorSets = {
+        // Binding 3: Scene index buffer
+        create_info::writeDescriptorSet(descriptorSet,
+                                        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3,
+                                        &lightsBufferDescriptor),
+    };
+
+    vkUpdateDescriptorSets(*m_deviceHandler,
+                           static_cast<uint32_t>(writeDescriptorSets.size()),
+                           writeDescriptorSets.data(), 0, VK_NULL_HANDLE);
 }
 
 void Raytracer::updateLightsBuffer(std::vector<glm::vec4> newLights) {
-    this->lights.lights = std::move(newLights);
+    this->lights.lights = newLights;
     cleanupLightsBuffer();
     setupLightsBuffer();
 }
 
 void Raytracer::cleanupLightsBuffer() {
+    if (lights.buffer != VK_NULL_HANDLE) {
+        vkDestroyBuffer(*m_deviceHandler, lights.buffer, nullptr);
+    }
+
     if (lights.memory != VK_NULL_HANDLE) {
         vkUnmapMemory(*m_deviceHandler, lights.memory);
     }
@@ -835,7 +857,6 @@ void Raytracer::renderFrame() {
 }
 
 void Raytracer::Buffer::destroy() const {
-
     if (buffer != VK_NULL_HANDLE) {
         vkDestroyBuffer(device, buffer, nullptr);
     }

@@ -138,13 +138,13 @@ int main() {
 
     camera->position.y = -camera->position.y;
 
-    glm::vec4 lightPos =
+    std::vector<glm::vec4> lightPos = {
         glm::vec4(cos(glm::radians(0 * 360.0f)) * 40.0f,
                   -50.0f + sin(glm::radians(0 * 360.0f)) * 20.0f,
-                  25.0f + sin(glm::radians(0 * 360.0f)) * 5.0f, 0.0f);
+                  25.0f + sin(glm::radians(0 * 360.0f)) * 5.0f, 10.0f)};
 
     renderer.updateUniformBuffers(mats.proj, mats.view);
-    renderer.updateLightsBuffer({lightPos});
+    renderer.updateLightsBuffer(lightPos);
 
     static auto startTime = std::chrono::system_clock::now();
     auto prevTime = startTime;

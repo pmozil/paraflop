@@ -31,8 +31,6 @@ void DepthBuffer::createDepthResources(uint32_t width, uint32_t height) {
         m_findSupportedFormat(VK_IMAGE_TILING_OPTIMAL,
                               VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
-    std::cout << "RECREATE DEPTH RESOURCE\n";
-
     VkImageCreateInfo imgCreateInfo = create_info::imageCreateInfo(
         VK_IMAGE_TYPE_2D, format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     imgCreateInfo.extent.width = width;

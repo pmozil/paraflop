@@ -19,9 +19,28 @@ struct RayPayload {
 
 layout(location = 0) rayPayloadEXT RayPayload hitValue;
 
+uint hash( uint x ) {
+    x += ( x << 10u );
+    x ^= ( x >>  6u );
+    x += ( x <<  3u );
+    x ^= ( x >> 11u );
+    x += ( x << 15u );
+    return x;
+}
 
-void main() 
-{
+float random( float f ) {
+    const uint mantissaMask = 0x007FFFFFu;
+    const uint one          = 0x3F800000u;
+   
+    uint h = hash( floatBitsToUint( f ) );
+    h &= mantissaMask;
+    h |= one;
+    
+    float  r2 = uintBitsToFloat( h );
+    return r2 - 1.0;
+}
+
+void main()  {
 	const vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
 	const vec2 inUV = pixelCenter/vec2(gl_LaunchSizeEXT.xy);
 	vec2 d = inUV * 2.0 - 1.0;
@@ -43,11 +62,16 @@ void main()
 
         color += hitValue.color * reflection_coeff;
 
-		if (hitValue.distance >= 0.0F && length(hitValue.color) >= 0.2F) {
+		if (hitValue.distance >= 0.0F) {
 			const vec4 hitPos = origin + direction * hitValue.distance;
-			origin.xyz = hitPos.xyz + hitValue.normal * 0.001F;
-			direction.xyz = reflect(direction.xyz, hitValue.normal);
             reflection_coeff *= hitValue.reflector * 0.6F;
+
+			origin.xyz = hitPos.xyz + hitValue.normal * 0.001F;
+			direction.xyz = normalize(reflect(direction.xyz, hitValue.normal)) + normalize(vec3(
+                    random(direction.x),
+                    random(direction.y),
+                    random(direction.z))
+                ) * (1 - reflection_coeff);
 		} else {
             break;
         }

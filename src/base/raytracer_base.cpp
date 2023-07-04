@@ -7,7 +7,6 @@ void RaytracerBase::updateRenderPass() {
 
     vkDestroyRenderPass(*m_deviceHandler, m_swapChain->getRenderPass(),
                         nullptr);
-    std::cout << "DEBUG: " << m_swapChain->renderPassesLength();
 
     std::array<VkAttachmentDescription, 2> attachments = {};
     // Color attachment

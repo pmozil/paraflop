@@ -72,6 +72,16 @@ void main()
 	vec3 normal = normalize(v0.normal * barycentricCoords.x + v1.normal * barycentricCoords.y + v2.normal * barycentricCoords.z);
     vec2 uv = v0.uv * barycentricCoords.x + v1.uv * barycentricCoords.y + v2.uv * barycentricCoords.z;
     vec3 color = vec3(0.0F);
+    if (v0.texId.y > EPSILON && length(v0.color) > EPSILON) {
+        vec3 tex_col = texture(sampler2D(textures[uint(v0.texId.y)], samp), uv).xyz;
+	    color = tex_col * 3 + v0.color.xyz;
+    } else if (length(v0.color) > EPSILON) {
+        color = v0.color.xyz;
+    } else if (v0.texId.y > EPSILON) {
+        vec3 tex_col = texture(sampler2D(textures[uint(v0.texId.y)], samp), uv).xyz;
+	    color = tex_col * 3;
+    }
+    float lighting = 0.0F;
 
 	// Basic lighting
     for(int i = 0; i < ubo.lightsCount; i++) {
@@ -79,27 +89,23 @@ void main()
         vec4 lightPos = lights.l[i];
 	    vec3 lightVector = normalize(lightPos.xyz);
 	    float dot_product = max(dot(lightVector, normal), 0.2);
-
-        if(v0.texId.y > EPSILON && length(v0.color) > EPSILON) {
-            vec3 tex_col = texture(sampler2D(textures[uint(v0.texId.y)], samp), uv).xyz;
-	        col = (tex_col * 3 + v0.color.xyz) * dot_product;
-        } else if (length(v0.color) > EPSILON) {
-            col = v0.color.xyz * dot_product;
-        }
  
 	    // Shadow casting
 	    float tmin = 0.001;
 	    float tmax = 10000.0;
 	    vec3 origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
+        float dist = distance(origin, lightPos.xyz);
+        float light = 144 * lightPos.w / (dist * dist);
 	    shadowed = true;  
 	    // Trace shadow ray and offset indices to match shadow hit/miss shader group indices
 	    traceRayEXT(topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT, 0xFF, 0, 0, 1, origin, tmin, lightVector, tmax, 2);
 	    if (shadowed) {
-	    	col *= 0.3;
+	    	light *= 0.2F;
 	    }
 
-        color += col;
+        lighting  += light;
     }
+    color *= lighting;
 
     hitValue.color = color;
     hitValue.distance = gl_RayTmaxEXT;

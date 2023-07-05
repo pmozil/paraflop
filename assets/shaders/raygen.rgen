@@ -22,24 +22,11 @@ struct RayPayload {
 
 layout(location = 0) rayPayloadEXT RayPayload hitValue;
 
-uint hash( uint x ) {
-    x += ( x << 10u );
-    x ^= ( x >>  6u );
-    x += ( x <<  3u );
-    return x;
+float random(vec2 st)
+{
+    return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
 }
 
-float random( float f ) {
-    const uint mantissaMask = 0x007FFFFFu;
-    const uint one          = 0x3F800000u;
-   
-    uint h = hash( floatBitsToUint( f ) );
-    h &= mantissaMask;
-    h |= one;
-    
-    float  r2 = uintBitsToFloat( h );
-    return r2 - 1.0;
-}
 
 void main()  {
 	const vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
@@ -80,9 +67,9 @@ void main()  {
 
 		    	origin.xyz = hitPos.xyz + hitValue.normal * 0.001F;
 		    	tmp_dir_shift = normalize(reflect(direction.xyz, hitValue.normal)) + normalize(vec3(
-                        random(origin.x),
-                        random(origin.z),
-                        random(origin.y))
+                        random(origin.xy),
+                        random(origin.yz),
+                        random(origin.zx))
                     ) * (1 - reflection_coeff);
                 dir_shift += tmp_dir_shift;
                 tmp_dir  += tmp_dir_shift;

@@ -2,7 +2,7 @@
 #extension GL_EXT_ray_tracing : require
 #extension GL_EXT_nonuniform_qualifier : enable
 #define EPSILON 0.01F
-#define RANDOM_SAMPLES 16
+#define RANDOM_SAMPLES 4
 
 struct RayPayload {
 	vec3 color;
@@ -93,16 +93,15 @@ void main()
 	    color = tex_col * 3;
     }
 
-    float lighting = 0.15F;
+    float lighting = 0.1F;
 
 	const float tmin = 0.001;
 	const float tmax = 10000.0;
 	const vec3 origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
 
 	// Basic lighting
-    uint samples = min(RANDOM_SAMPLES, ubo.lightsCount);
-    for(int i = 0; i < samples; i++) {
-        uint idx = random(ubo.lightsCount - i) % samples;
+    for(int i = 0; i < RANDOM_SAMPLES; i++) {
+        uint idx = random(ubo.lightsCount - i) % ubo.lightsCount;
         vec3 col = vec3(0.0F);
         vec4 lightPos = lights.l[i];
 	    vec3 lightVector = normalize(lightPos.xyz);
@@ -111,19 +110,19 @@ void main()
 	    shadowed = true;  
 	    traceRayEXT(topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT, 0xFF, 0, 0, 1, origin, tmin, lightVector, tmax, 2);
         float dist = distance(origin, lightPos.xyz);
-	    if (shadowed) {
+        float light = 16 * lightPos.w / (dist * dist);
+	    if (shadowed || light < EPSILON) {
             continue;
 	    }
 
 	    // Shadow casting
 	    float dot_product = max(dot(lightVector, normal), 0.2);
-        float light = 16 * dot_product * lightPos.w / (dist * dist);
-        lighting  += light / samples;
+        lighting  += 4 * dot_product * light / RANDOM_SAMPLES;
     }
 
     hitValue.emission = vec3(lighting);
     hitValue.color = color;
     hitValue.distance = gl_RayTmaxEXT;
     hitValue.normal = normal;
-    hitValue.reflector = min(length(color) / 4.0F, 0.6F);
+    hitValue.reflector = length(color) / 9.0F;
 }

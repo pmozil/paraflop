@@ -78,19 +78,20 @@ class RaytracerBase {
 
     // Available features and properties
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR
-        rayTracingPipelineProperties; /**< Ray tracing pipeline properties. */
+        rayTracingPipelineProperties{}; /**< Ray tracing pipeline properties. */
     VkPhysicalDeviceAccelerationStructureFeaturesKHR
-        accelerationStructureFeatures; /**< Acceleration structure features. */
+        accelerationStructureFeatures{}; /**< Acceleration structure features.
+                                          */
 
     // Enabled features and properties
     VkPhysicalDeviceBufferDeviceAddressFeatures
-        enabledBufferDeviceAddresFeatures; /**< Enabled buffer device address
+        enabledBufferDeviceAddresFeatures{}; /**< Enabled buffer device address
                                               features. */
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR
-        enabledRayTracingPipelineFeatures; /**< Enabled ray tracing pipeline
+        enabledRayTracingPipelineFeatures{}; /**< Enabled ray tracing pipeline
                                               features. */
     VkPhysicalDeviceAccelerationStructureFeaturesKHR
-        enabledAccelerationStructureFeatures; /**< Enabled acceleration
+        enabledAccelerationStructureFeatures{}; /**< Enabled acceleration
                                                  structure features. */
 
     /**

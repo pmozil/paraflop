@@ -16,7 +16,7 @@ void main()
 {
     hitValue.color = vec3(0.0, 0.0, 0.2);
     hitValue.emission = vec3(0.0, 0.0, 0.0);
-    hitValue.distance = 10000;
+    hitValue.distance = 100000;
     hitValue.normal = vec3(0.0, 0.0, 0.0);
     hitValue.reflector = 0;
 }

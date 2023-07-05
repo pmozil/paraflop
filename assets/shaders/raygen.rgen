@@ -1,6 +1,6 @@
 #version 460
 #extension GL_EXT_ray_tracing : require
-#define MAX_RECURSION 4
+#define MAX_RECURSION 3
 #define SAMPLES 4
 #define EPSILON 0.01F
 
@@ -52,34 +52,34 @@ void main()  {
     vec3 col = vec3(0.0F);
 
 	for (int i = 0; i < SAMPLES; i++) {
-        dir_shift = vec3(0.0F);
+        tmp_orig = origin.xyz;
+        tmp_dir = direction.xyz;
         for (int i = 0; i < MAX_RECURSION; i++) {
-            tmp_orig = origin.xyz;
-            tmp_dir = direction.xyz;
-		    traceRayEXT(topLevelAS, rayFlags, cullMask, 0, 0, 0, tmp_orig, tmin, tmp_dir, tmax, 0);
+		    traceRayEXT(topLevelAS, rayFlags, cullMask, 0, 0, 0, origin.xyz, tmin, direction.xyz, tmax, 0);
 
-            col += hitValue.color * hitValue.emission * reflection_coeff;
+            col += hitValue.color * hitValue.emission * reflection_coeff * sqrt(length(hitValue.emission));
 
-		    if (hitValue.distance >= 0.0F) {
+            if(length(hitValue.emission) < EPSILON) {
+                break;
+            }
+
+		    if (hitValue.distance >= 0.0F && length(col) >= 0.1F) {
 		    	hitPos = origin + direction * hitValue.distance;
                 reflection_coeff *= hitValue.reflector;
 
 		    	origin.xyz = hitPos.xyz + hitValue.normal * 0.001F;
-		    	tmp_dir_shift = normalize(reflect(direction.xyz, hitValue.normal)) + normalize(vec3(
-                        random(origin.xy),
-                        random(origin.yz),
-                        random(origin.zx))
-                    ) * (1 - reflection_coeff);
-                dir_shift += tmp_dir_shift;
-                tmp_dir  += tmp_dir_shift;
+		    	direction.xyz += normalize(reflect(direction.xyz, hitValue.normal)) + normalize(vec3(
+                        random(direction.xy),
+                        random(direction.yz),
+                        random(direction.zx))
+                    ) * pow(1 - reflection_coeff, 4);
 		    } else {
                 break;
             }
         }
         color += col / SAMPLES;
-        dir_shift /= SAMPLES;
-		origin.xyz = hitPos.xyz + hitValue.normal * 0.001F;
-        direction.xyz += dir_shift;
+		origin.xyz = tmp_orig;
+        direction.xyz = tmp_dir;
 	}
 
     if (length(color) > EPSILON) {

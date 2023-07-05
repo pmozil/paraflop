@@ -769,7 +769,7 @@ void gltf_model::Model::loadAnimations(tinygltf::Model &gltfModel) {
 }
 
 void gltf_model::Model::loadFromFile(
-    std::string &filename, std::shared_ptr<device::DeviceHandler> device,
+    std::string filename, std::shared_ptr<device::DeviceHandler> device,
     std::shared_ptr<command_buffer::CommandBufferHandler> cmdBuf,
     VkQueue transferQueue, uint32_t fileLoadingFlags, float scale) {
     tinygltf::Model gltfModel;

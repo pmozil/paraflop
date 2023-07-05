@@ -268,18 +268,24 @@ void RaytracerBase::deleteStorageImage() {
 void RaytracerBase::prepare() {
     rayTracingPipelineProperties.sType =
         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+
     VkPhysicalDeviceProperties2 deviceProperties2{};
     deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
     deviceProperties2.pNext = &rayTracingPipelineProperties;
+
     vkGetPhysicalDeviceProperties2(m_deviceHandler->physicalDevice,
                                    &deviceProperties2);
+
     accelerationStructureFeatures.sType =
         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+
     VkPhysicalDeviceFeatures2 deviceFeatures2{};
     deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
     deviceFeatures2.pNext = &accelerationStructureFeatures;
+
     vkGetPhysicalDeviceFeatures2(m_deviceHandler->physicalDevice,
                                  &deviceFeatures2);
+
     // Get the function pointers required for ray tracing
     vkGetBufferDeviceAddressKHR =
         reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(vkGetDeviceProcAddr(

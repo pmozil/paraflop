@@ -22,8 +22,8 @@ void gltf_model::Primitive::setDimensions(glm::vec3 min, glm::vec3 max) {
     dimensions.max = max;
     dimensions.size = max - min;
     dimensions.center =
-        (min + max) / 2.0F; /**< Average vectors for their centroid */
-    dimensions.radius = glm::distance(min, max) / 2.0F;
+        (min + max) * HALF; /**< Average vectors for their centroid */
+    dimensions.radius = glm::distance(min, max) * HALF;
 }
 
 } // namespace gltf_model

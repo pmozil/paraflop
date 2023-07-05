@@ -73,7 +73,7 @@ class Model {
     void loadMaterials(tinygltf::Model &gltfModel);
     void loadAnimations(tinygltf::Model &gltfModel);
     void
-    loadFromFile(std::string filename,
+    loadFromFile(std::string &filename,
                  std::shared_ptr<device::DeviceHandler> device,
                  std::shared_ptr<command_buffer::CommandBufferHandler> cmdBuf,
                  VkQueue transferQueue,

@@ -17,6 +17,8 @@
 #define MAX_JOINTS 128u
 
 namespace gltf_model {
+static const float HALF = 0.5F;
+
 enum DescriptorBindingFlags {
     ImageBaseColor = 0x00000001,
     ImageNormalMap = 0x00000002

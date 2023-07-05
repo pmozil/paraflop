@@ -1,6 +1,4 @@
 #include "common.hpp"
-// #include "geometry/camera.hpp"
-#include "camera.hpp"
 #include "gltf_model/model.hpp"
 #include "interface/glfw_callbacks.hpp"
 #include "vulkan_utils/buffer.hpp"
@@ -72,9 +70,6 @@ int main() {
     GLFWwindow *window = window::initWindow(nullptr, handleKeyPress,
                                             handleCursor, handleFocus, cam);
 
-    // GLFWwindow *window =
-    //     window::initWindow(nullptr, nullptr, nullptr, nullptr, nullptr);
-
     std::unique_ptr<vk_instance::Instance> instance =
         std::make_unique<vk_instance::Instance>();
     debug::createDebugMessenger(instance->instance);
@@ -102,22 +97,13 @@ int main() {
 
     std::shared_ptr<gltf_model::Model> model =
         std::make_shared<gltf_model::Model>();
-    model->loadFromFile("assets/models/sponza/sponza.gltf", deviceHandler,
-                        commandBuffer, deviceHandler->getTransferQueue(),
-                        glTFLoadingFlags);
-    // model->loadFromFile("assets/models/FlightHelmet/glTF/FlightHelmet.gltf",
-    //                     deviceHandler, commandBuffer,
-    //                     deviceHandler->getTransferQueue(), glTFLoadingFlags);
-    // model->loadFromFile("assets/models/CesiumMan/glTF/CesiumMan.gltf",
-    //                     deviceHandler, commandBuffer,
-    //                     deviceHandler->getTransferQueue(), glTFLoadingFlags);
-    // model->loadFromFile("assets/models/retroufo_glow.gltf", deviceHandler,
-    //                     commandBuffer, deviceHandler->getTransferQueue(),
-    //                     glTFLoadingFlags);
-    // model->loadFromFile("assets/models/vulkanscene_shadow.gltf",
-    // deviceHandler,
-    //                     commandBuffer, deviceHandler->getTransferQueue(),
-    //                     glTFLoadingFlags);
+    std::string fname = "assets/model/sponza/sponza.gltf";
+    // std::string fname = "assets/model/CesiumMan/glTF/CesiumMan.gltf";
+    // std::string fname = "assets/model/FlightHelmet/glTF/FlightHelmet.gltf";
+    // std::string fname = "assets/model/retroufo_glow";
+    // std::string fname = "assets/model/vulkanscene_shadow.gltf";
+    model->loadFromFile(fname, deviceHandler, commandBuffer,
+                        deviceHandler->getTransferQueue(), glTFLoadingFlags);
 
     auto renderer =
         Raytracer(deviceHandler, swapChain, commandBuffer, model, window);
@@ -127,7 +113,7 @@ int main() {
 
     cam->camera = camera;
 
-    glm::vec3 pos = {0.0F, 3.0F, -10.0F};
+    const glm::vec3 pos = {0.0F, 3.0F, -10.0F};
     camera->moveForward(0.0F);
 
     camera->position = pos;
@@ -138,31 +124,15 @@ int main() {
 
     camera->position.y = -camera->position.y;
 
-    std::vector<glm::vec4> lightPos = {glm::vec4(40.0f, -50.0f, 25.0f, 10.0f),
-                                       glm::vec4(40.0f, -50.0f, -25.0f, 6.0f)};
+    const std::vector<glm::vec4> lightPos = {
+        glm::vec4(40.0F, -50.0F, 25.0F, 10.0F),
+        glm::vec4(40.0F, -50.0F, -25.0F, 6.0F)};
 
     renderer.updateUniformBuffers(mats.proj, mats.view);
     renderer.updateLightsBuffer(lightPos);
 
     static auto startTime = std::chrono::system_clock::now();
     auto prevTime = startTime;
-
-    // Camera camera{};
-    // camera.type = Camera::CameraType::lookat;
-    // camera.setPerspective(60.0f,
-    //                       (float)swapChain->swapChainExtent.width /
-    //                           (float)swapChain->swapChainExtent.height,
-    //                       0.1f, 512.0f);
-    // camera.setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
-    // camera.setTranslation(glm::vec3(0.0f, 3.0f, -100.0f));
-
-    // glm::vec4 lightPos =
-    //     glm::vec4(cos(glm::radians(0 * 360.0f)) * 40.0f,
-    //               -50.0f + sin(glm::radians(0 * 360.0f)) * 20.0f,
-    //               25.0f + sin(glm::radians(0 * 360.0f)) * 5.0f, 0.0f);
-
-    // renderer.updateUniformBuffers(camera.matrices.perspective,
-    //                               camera.matrices.view, lightPos);
 
     while (!static_cast<bool>(glfwWindowShouldClose(window))) {
         glfwPollEvents();
@@ -182,14 +152,6 @@ int main() {
         prevTime = currentTime;
 
         renderer.updateUniformBuffers(mats.proj, mats.view);
-
-        // camera.setPerspective(60.0f,
-        //                       (float)swapChain->swapChainExtent.width /
-        // (float)swapChain->swapChainExtent.height,
-        //                       0.1f, 512.0f);
-
-        // renderer.updateUniformBuffers(camera.matrices.perspective,
-        //                               camera.matrices.view, lightPos);
 
         renderer.renderFrame();
     }

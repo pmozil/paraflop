@@ -580,13 +580,6 @@ void gltf_model::Model::loadMaterials(tinygltf::Model &gltfModel) {
                     .source);
         }
         // Metallic roughness workflow
-        if (mat.values.find("metallicRoughnessTexture") != mat.values.end()) {
-            material.metallicRoughnessTexture =
-                getTexture(gltfModel
-                               .textures[mat.values["metallicRoughnessTexture"]
-                                             .TextureIndex()]
-                               .source);
-        }
         if (mat.values.find("roughnessFactor") != mat.values.end()) {
             material.roughnessFactor =
                 static_cast<float>(mat.values["roughnessFactor"].Factor());
@@ -634,11 +627,6 @@ void gltf_model::Model::loadMaterials(tinygltf::Model &gltfModel) {
             if (param.string_value == "MASK") {
                 material.alphaMode = Material::ALPHAMODE_MASK;
             }
-        }
-        if (mat.additionalValues.find("alphaCutoff") !=
-            mat.additionalValues.end()) {
-            material.alphaCutoff = static_cast<float>(
-                mat.additionalValues["alphaCutoff"].Factor());
         }
 
         materials.push_back(material);
@@ -781,7 +769,7 @@ void gltf_model::Model::loadAnimations(tinygltf::Model &gltfModel) {
 }
 
 void gltf_model::Model::loadFromFile(
-    std::string filename, std::shared_ptr<device::DeviceHandler> device,
+    std::string &filename, std::shared_ptr<device::DeviceHandler> device,
     std::shared_ptr<command_buffer::CommandBufferHandler> cmdBuf,
     VkQueue transferQueue, uint32_t fileLoadingFlags, float scale) {
     tinygltf::Model gltfModel;
@@ -846,7 +834,6 @@ void gltf_model::Model::loadFromFile(
             }
         }
     } else {
-        // TODO: throw
         utils::exitFatal(
             "Could not load glTF file \"" + filename + "\": " + error, -1);
         return;
@@ -1118,8 +1105,8 @@ void gltf_model::Model::getSceneDimensions() {
         getNodeDimensions(node, dimensions.min, dimensions.max);
     }
     dimensions.size = dimensions.max - dimensions.min;
-    dimensions.center = (dimensions.min + dimensions.max) / 2.0F;
-    dimensions.radius = glm::distance(dimensions.min, dimensions.max) / 2.0F;
+    dimensions.center = (dimensions.min + dimensions.max) * HALF;
+    dimensions.radius = glm::distance(dimensions.min, dimensions.max) * HALF;
 }
 
 void gltf_model::Model::updateAnimation(uint32_t index, float time) {

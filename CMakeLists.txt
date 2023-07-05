@@ -71,16 +71,3 @@ target_link_libraries(paraflop PUBLIC Vulkan::Vulkan)
 target_link_libraries(paraflop PUBLIC glfw)
 target_link_libraries(paraflop PUBLIC glm::glm)
 target_link_libraries(paraflop PUBLIC ktx)
-
-# Compile olf app
-file(GLOB OLD_SOURCE_FILES ${CMAKE_SOURCE_DIR}/src/paraflop.bak/*.cpp ${CMAKE_SOURCE_DIR}/include/*)
-
-set(OLD_APP_SOURCE_FILES ${OLD_SOURCE_FILES} CACHE INTERNAL STRINGS)
-
-add_executable(paraflop.bak ${OLD_APP_SOURCE_FILES})
-
-target_link_libraries(paraflop.bak PUBLIC base)
-target_link_libraries(paraflop.bak PUBLIC Vulkan::Vulkan)
-target_link_libraries(paraflop.bak PUBLIC glfw)
-target_link_libraries(paraflop.bak PUBLIC glm::glm)
-target_link_libraries(paraflop.bak PUBLIC ktx)

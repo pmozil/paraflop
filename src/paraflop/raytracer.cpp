@@ -220,7 +220,7 @@ void Raytracer::createTopLevelAccelerationStructure() {
                                         m_deviceHandler->graphicsQueue);
 
     deleteScratchBuffer(scratchBuffer);
-    instancesBuffer.destroy();
+    instancesBuffer.destroy(*m_deviceHandler);
 }
 
 /*
@@ -549,6 +549,7 @@ void Raytracer::setupLightsBuffer() {
     lights.usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     lights.memoryPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                                  VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    uniformData.lightsCount = lights.lights.size();
 
     VK_CHECK(m_deviceHandler->createBuffer(
         lights.usageFlags, lights.memoryPropertyFlags, lights.size,
@@ -613,7 +614,7 @@ void Raytracer::setupLightsBuffer() {
 }
 
 void Raytracer::updateLightsBuffer(std::vector<glm::vec4> newLights) {
-    this->lights.lights = newLights;
+    this->lights.lights = std::move(newLights);
     cleanupLightsBuffer();
     setupLightsBuffer();
 }
@@ -656,7 +657,6 @@ void Raytracer::updateUniformBuffers() {
     uniformData.viewInverse = glm::inverse(glm::identity<glm::mat4>());
     // Pass the vertex size to the shader for unpacking vertices
     uniformData.vertexSize = sizeof(gltf_model::Vertex);
-    uniformData.lightsCount = lights.lights.size();
     memcpy(ubo.mapped, &uniformData, sizeof(uniformData));
 }
 
@@ -856,7 +856,7 @@ void Raytracer::renderFrame() {
     curFrame = (curFrame + 1) % m_swapChain->swapChainFramebuffers.size();
 }
 
-void Raytracer::Buffer::destroy() const {
+void Raytracer::Buffer::destroy(VkDevice device) const {
     if (buffer != VK_NULL_HANDLE) {
         vkDestroyBuffer(device, buffer, nullptr);
     }

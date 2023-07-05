@@ -121,6 +121,7 @@ class Raytracer : public raytracer::RaytracerBase {
         glm::mat4 projInverse;   /**< The inverse of the projection matrix. */
         int32_t vertexSize;      /**< The vertex size. */
         int32_t lightsCount = 0; /**< The number of lights in the scene. */
+        float dTime = 0.0F;
     } uniformData;
 
     /**

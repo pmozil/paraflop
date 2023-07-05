@@ -23,6 +23,7 @@ layout(binding = 2, set = 0) uniform UBO
 	mat4 projInverse;
 	int vertexSize;
     int lightsCount;
+    float dTime;
 } ubo;
 layout(binding = 3, set = 0) buffer Lights { vec4 l[]; } lights;
 layout(binding = 4, set = 0) buffer Vertices { vec4 v[]; } vertices;
@@ -93,18 +94,20 @@ void main()
 	    color = tex_col * 3;
     }
 
-    float lighting = 0.0F;
+    // Ambient lighting
+    float lighting = 0.1F;
 
 	const float tmin = 0.001;
 	const float tmax = 10000.0;
 	const vec3 origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
 
-	// Diffuse +  Blihp-Phong lighting
+	// Diffuse +  Blihn-Phong lighting
     for(int i = 0; i < RANDOM_SAMPLES; i++) {
         uint idx = random(ubo.lightsCount - i) % ubo.lightsCount;
         vec3 col = vec3(0.0F);
         vec4 lightPos = lights.l[i];
 	    vec3 lightVector = normalize(lightPos.xyz);
+        vec3 halfway = normalize(normalize(lightPos.xyz) - normalize(gl_WorldRayOriginEXT) - normalize(gl_WorldRayDirectionEXT));
 
 	    // Trace shadow ray and offset indices to match shadow hit/miss shader group indices
 	    shadowed = true;  
@@ -116,8 +119,9 @@ void main()
 	    }
 
 	    // Shadow casting
-	    float dot_product = max(dot(lightVector, normal), 0.2);
-        lighting  += 4 * dot_product * light / RANDOM_SAMPLES;
+	    float dot_product = max(dot(lightVector, normal), 0.0F);
+	    float halfway_dot = max(dot(halfway, normal), 0.0F);
+        lighting  += 4 * (dot_product + halfway_dot) * light / RANDOM_SAMPLES;
     }
 
     hitValue.emission = vec3(lighting);

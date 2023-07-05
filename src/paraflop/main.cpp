@@ -160,6 +160,7 @@ int main() {
 
         prevTime = currentTime;
 
+        renderer.uniformData.dTime = cam->timePassed;
         renderer.updateUniformBuffers(mats.proj, mats.view);
 
         renderer.renderFrame();

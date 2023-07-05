@@ -93,13 +93,13 @@ void main()
 	    color = tex_col * 3;
     }
 
-    float lighting = 0.1F;
+    float lighting = 0.0F;
 
 	const float tmin = 0.001;
 	const float tmax = 10000.0;
 	const vec3 origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
 
-	// Basic lighting
+	// Diffuse +  Blihp-Phong lighting
     for(int i = 0; i < RANDOM_SAMPLES; i++) {
         uint idx = random(ubo.lightsCount - i) % ubo.lightsCount;
         vec3 col = vec3(0.0F);

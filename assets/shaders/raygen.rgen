@@ -57,7 +57,8 @@ void main()  {
         for (int i = 0; i < MAX_RECURSION; i++) {
 		    traceRayEXT(topLevelAS, rayFlags, cullMask, 0, 0, 0, origin.xyz, tmin, direction.xyz, tmax, 0);
 
-            col += hitValue.color * hitValue.emission * reflection_coeff * sqrt(length(hitValue.emission));
+            hitValue.emission += vec3(0.1F);
+            col += hitValue.color * hitValue.emission * reflection_coeff * pow(length(hitValue.emission), 0.6F);
 
             if(length(hitValue.emission) < EPSILON) {
                 break;

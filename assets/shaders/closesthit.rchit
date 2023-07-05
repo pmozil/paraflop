@@ -118,7 +118,7 @@ void main()
 	    // Shadow casting
 	    float dot_product = max(dot(lightVector, normal), 0.2);
         float light = 16 * dot_product * lightPos.w / (dist * dist);
-        lighting  += light * light / 30.0F;
+        lighting  += light / samples;
     }
 
     hitValue.emission = vec3(lighting);

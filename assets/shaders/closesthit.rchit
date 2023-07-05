@@ -2,6 +2,7 @@
 #extension GL_EXT_ray_tracing : require
 #extension GL_EXT_nonuniform_qualifier : enable
 #define EPSILON 0.01F
+#define RANDOM_SAMPLES 16
 
 struct RayPayload {
 	vec3 color;
@@ -60,6 +61,14 @@ Vertex unpack(uint index)
 	return v;
 }
 
+uint random(int seed) {
+    uint rand = seed;
+    for (int i = 0; i < 3; i++) {
+        rand = (1140671485 * rand + 128201163) % uint(pow(2, 23));
+    }
+    return rand;
+}
+
 void main()
 {
 	ivec3 index = ivec3(indices.i[3 * gl_PrimitiveID], indices.i[3 * gl_PrimitiveID + 1], indices.i[3 * gl_PrimitiveID + 2]);
@@ -73,6 +82,7 @@ void main()
 	vec3 normal = normalize(v0.normal * barycentricCoords.x + v1.normal * barycentricCoords.y + v2.normal * barycentricCoords.z);
     vec2 uv = v0.uv * barycentricCoords.x + v1.uv * barycentricCoords.y + v2.uv * barycentricCoords.z;
     vec3 color = vec3(0.0F);
+
     if (v0.texId.y > EPSILON && length(v0.color) > EPSILON) {
         vec3 tex_col = texture(sampler2D(textures[uint(v0.texId.y)], samp), uv).xyz;
 	    color = tex_col * 3 + v0.color.xyz;
@@ -82,29 +92,33 @@ void main()
         vec3 tex_col = texture(sampler2D(textures[uint(v0.texId.y)], samp), uv).xyz;
 	    color = tex_col * 3;
     }
-    float lighting = 0.0F;
+
+    float lighting = 0.15F;
+
+	const float tmin = 0.001;
+	const float tmax = 10000.0;
+	const vec3 origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
 
 	// Basic lighting
-    for(int i = 0; i < ubo.lightsCount; i++) {
+    uint samples = min(RANDOM_SAMPLES, ubo.lightsCount);
+    for(int i = 0; i < samples; i++) {
+        uint idx = random(ubo.lightsCount - i) % samples;
         vec3 col = vec3(0.0F);
         vec4 lightPos = lights.l[i];
 	    vec3 lightVector = normalize(lightPos.xyz);
-	    float dot_product = max(dot(lightVector, normal), 0.2);
- 
-	    // Shadow casting
-	    float tmin = 0.001;
-	    float tmax = 10000.0;
-	    vec3 origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
-        float dist = distance(origin, lightPos.xyz);
-        float light = 16 * lightPos.w / (dist * dist);
-	    shadowed = true;  
+
 	    // Trace shadow ray and offset indices to match shadow hit/miss shader group indices
+	    shadowed = true;  
 	    traceRayEXT(topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT, 0xFF, 0, 0, 1, origin, tmin, lightVector, tmax, 2);
+        float dist = distance(origin, lightPos.xyz);
 	    if (shadowed) {
-	    	light *= 0.3F;
+            continue;
 	    }
 
-        lighting  += light;
+	    // Shadow casting
+	    float dot_product = max(dot(lightVector, normal), 0.2);
+        float light = 16 * dot_product * lightPos.w / (dist * dist);
+        lighting  += light * light / 30.0F;
     }
 
     hitValue.emission = vec3(lighting);

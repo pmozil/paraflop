@@ -48,13 +48,12 @@ void main()  {
     vec3 tmp_dir = origin.xyz;
     vec3 tmp_dir_shift = vec3(0.0F);
     vec3 dir_shift = vec3(0.0F);
-    bool trace = true;
     vec4 hitPos = vec4(0.0F);
     vec3 col = vec3(0.0F);
 
-	for (int i = 0; i < MAX_RECURSION && trace; i++) {
+	for (int i = 0; i < SAMPLES; i++) {
         dir_shift = vec3(0.0F);
-        for (int i = 0; i < SAMPLES; i++) {
+        for (int i = 0; i < MAX_RECURSION; i++) {
             tmp_orig = origin.xyz;
             tmp_dir = direction.xyz;
 		    traceRayEXT(topLevelAS, rayFlags, cullMask, 0, 0, 0, tmp_orig, tmin, tmp_dir, tmax, 0);
@@ -74,7 +73,7 @@ void main()  {
                 dir_shift += tmp_dir_shift;
                 tmp_dir  += tmp_dir_shift;
 		    } else {
-                trace = false;
+                break;
             }
         }
         color += col / SAMPLES;

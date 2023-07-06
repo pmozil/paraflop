@@ -47,7 +47,7 @@ endif()
 
 # Compile the dependencies
 file(COPY 
-    ${CMAKE_SOURCE_DIR}/assets/shaders
+    # ${CMAKE_SOURCE_DIR}/assets/shaders
     ${CMAKE_SOURCE_DIR}/assets/textures
     ${CMAKE_SOURCE_DIR}/external/assets
     DESTINATION
@@ -57,17 +57,49 @@ file(GLOB BASE_SOURCES ${CMAKE_SOURCE_DIR}/src/base/*.cpp ${CMAKE_SOURCE_DIR}/in
 
 add_library(base ${BASE_SOURCES})
 
-file(GLOB GLTF_MODEL_SOURCES ${CMAKE_SOURCE_DIR}/src/gltf_model/*.cpp ${CMAKE_SOURCE_DIR}/include/gltf_model/*)
+file(GLOB GLTF_MODEL_SOURCES
+    ${CMAKE_SOURCE_DIR}/src/gltf_model/*.cpp
+    ${CMAKE_SOURCE_DIR}/include/gltf_model/*)
 
 # Complie the application
-file(GLOB SOURCE_FILES ${CMAKE_SOURCE_DIR}/src/paraflop/*.cpp ${CMAKE_SOURCE_DIR}/include/*)
+file(GLOB SOURCE_FILES
+    ${CMAKE_SOURCE_DIR}/src/paraflop/*.cpp
+    ${CMAKE_SOURCE_DIR}/include/*)
 
 set(APP_SOURCE_FILES ${SOURCE_FILES} CACHE INTERNAL STRINGS)
 
-add_executable(paraflop ${APP_SOURCE_FILES} ${GLTF_MODEL_SOURCES})
+add_executable(paraflop
+    ${APP_SOURCE_FILES}
+    ${GLTF_MODEL_SOURCES})
 
 target_link_libraries(paraflop PUBLIC base)
 target_link_libraries(paraflop PUBLIC Vulkan::Vulkan)
 target_link_libraries(paraflop PUBLIC glfw)
 target_link_libraries(paraflop PUBLIC glm::glm)
 target_link_libraries(paraflop PUBLIC ktx)
+
+# Compile shaders
+file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/shaders)
+
+file(GLOB_RECURSE GLSL_SOURCE_FILES
+    "${CMAKE_SOURCE_DIR}/assets/shaders/*.rchit"
+    "${CMAKE_SOURCE_DIR}/assets/shaders/*.rgen"
+    "${CMAKE_SOURCE_DIR}/assets/shaders/*.rmiss")
+
+foreach(GLSL ${GLSL_SOURCE_FILES})
+  get_filename_component(FILE_NAME ${GLSL} NAME)
+  set(SPIRV ${PROJECT_BINARY_DIR}/shaders/${FILE_NAME}.spv)
+  add_custom_command(
+    OUTPUT ${SPIRV}
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/shaders/"
+    COMMAND ${Vulkan_GLSC_VALIDATOR} ${GLSL} -o ${SPIRV} --target-spv=spv1.6
+    DEPENDS ${GLSL})
+  list(APPEND SPIRV_BINARY_FILES ${SPIRV})
+endforeach(GLSL)
+
+add_custom_target(
+    Shaders 
+    DEPENDS ${SPIRV_BINARY_FILES}
+    )
+
+add_dependencies(paraflop Shaders)

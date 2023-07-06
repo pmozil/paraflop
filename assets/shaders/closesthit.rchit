@@ -77,7 +77,7 @@ void main()
     }
 
     // Ambient lighting
-    float lighting = 0.1F;
+    float lighting = AMBIENT_LIGHT;
 
 	const float tmin = 0.001;
 	const float tmax = 10000.0;
@@ -89,21 +89,20 @@ void main()
         vec3 col = vec3(0.0F);
         vec4 lightPos = lights.l[i];
 	    vec3 lightVector = normalize(lightPos.xyz);
-        vec3 halfway = normalize(normalize(lightPos.xyz) - normalize(gl_WorldRayOriginEXT) - normalize(gl_WorldRayDirectionEXT));
 
 	    // Trace shadow ray and offset indices to match shadow hit/miss shader group indices
 	    shadowed = true;  
 	    traceRayEXT(topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT, 0xFF, 0, 0, 1, origin, tmin, lightVector, tmax, 2);
         float dist = distance(origin, lightPos.xyz);
-        float light = 16 * lightPos.w / (dist * dist);
+        float light = LIGHT_MULTIPLIER * lightPos.w / (dist * dist);
 	    if (shadowed || light < EPSILON) {
             continue;
 	    }
 
 	    // Shadow casting
-	    float dot_product = clamp(dot(lightVector, normal), 0.0F, 1.0F);
+        vec3 halfway = normalize(normalize(lightPos.xyz) - normalize(gl_WorldRayOriginEXT) - normalize(gl_WorldRayDirectionEXT));
 	    float halfway_dot = clamp(dot(halfway, normal), 0.0F, 1.0F);
-        lighting  += 4 * (dot_product + halfway_dot) * light / LIGHT_SAMPLES;
+        lighting  += 4 * halfway_dot * light / LIGHT_SAMPLES_SQRT;
     }
 
     hitValue.emission = vec3(lighting);

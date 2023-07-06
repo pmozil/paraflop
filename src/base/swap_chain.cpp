@@ -8,8 +8,8 @@ SwapChain::SwapChain(GLFWwindow *m_window, VkSurfaceKHR m_surface,
     : m_window(m_window), m_surface(m_surface),
       m_deviceHandler(std::move(m_deviceHandler)) {
     if (doInit) {
-        init();
         m_createSyncObjects();
+        init();
     }
 };
 
@@ -18,8 +18,8 @@ DepthBufferSwapChain::DepthBufferSwapChain(
     std::shared_ptr<device::DeviceHandler> deviceHandler)
     : SwapChain(m_window, m_surface, deviceHandler, false),
       depthBuffer(m_deviceHandler) {
-    init();
     m_createSyncObjects();
+    init();
 }
 
 void SwapChain::createImageViews() {

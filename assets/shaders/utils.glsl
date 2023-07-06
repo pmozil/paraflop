@@ -1,8 +1,11 @@
 #define EPSILON 0.01F
-#define LIGHT_SAMPLES 32
 #define MAX_REFLECTIONS 3
-#define SAMPLES 4
-#define EPSILON 0.01F
+
+#define SAMPLES 2
+#define LIGHT_SAMPLES 16
+#define LIGHT_SAMPLES_SQRT 4 // = SQRT(LIGHT_SAMPLES)
+#define AMBIENT_LIGHT 0.2F
+#define LIGHT_MULTIPLIER 81
 
 struct RayPayload {
 	vec3 color;

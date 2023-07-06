@@ -55,10 +55,9 @@ void main()  {
                 break;
             }
 
-            hitValue.emission += vec3(0.02F);
             col += hitValue.color * hitValue.emission * reflection_coeff * length(hitValue.emission);
 
-		    if (hitValue.distance >= 0.0F && length(col) >= 0.1F) {
+		    if (hitValue.distance >= 0.0F && length(col) >= 0.3F) {
 		    	hitPos = origin + direction * hitValue.distance;
                 reflection_coeff *= hitValue.reflector;
 

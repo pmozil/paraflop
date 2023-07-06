@@ -153,10 +153,8 @@ int main() {
                 currentTime - prevTime)
                 .count();
 
-        camera->position.y = -camera->position.y;
         mats = camera->transformMatrices(swapChain->swapChainExtent.width,
                                          swapChain->swapChainExtent.height);
-        camera->position.y = -camera->position.y;
 
         prevTime = currentTime;
 

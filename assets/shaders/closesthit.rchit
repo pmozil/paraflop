@@ -1,16 +1,8 @@
 #version 460
 #extension GL_EXT_ray_tracing : require
 #extension GL_EXT_nonuniform_qualifier : enable
-#define EPSILON 0.01F
-#define RANDOM_SAMPLES 4
-
-struct RayPayload {
-	vec3 color;
-    vec3 emission;
-	float distance;
-	vec3 normal;
-	float reflector;
-};
+#extension GL_GOOGLE_include_directive : require
+#include "utils.glsl"
 
 layout(location = 0) rayPayloadInEXT RayPayload hitValue;
 layout(location = 2) rayPayloadInEXT bool shadowed;
@@ -30,16 +22,6 @@ layout(binding = 4, set = 0) buffer Vertices { vec4 v[]; } vertices;
 layout(binding = 5, set = 0) buffer Indices { uint i[]; } indices;
 layout(binding = 6, set = 0) uniform sampler samp;
 layout(binding = 7, set = 0) uniform texture2D textures[];
-
-struct Vertex
-{
-  vec3 pos;
-  vec3 normal;
-  vec2 uv;
-  vec4 color;
-  vec4  texId;
-  vec4 _pad1;
- };
 
 Vertex unpack(uint index)
 {
@@ -102,7 +84,7 @@ void main()
 	const vec3 origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
 
 	// Diffuse +  Blihn-Phong lighting
-    for(int i = 0; i < RANDOM_SAMPLES; i++) {
+    for(int i = 0; i < LIGHT_SAMPLES; i++) {
         uint idx = random(ubo.lightsCount - i) % ubo.lightsCount;
         vec3 col = vec3(0.0F);
         vec4 lightPos = lights.l[i];
@@ -119,9 +101,9 @@ void main()
 	    }
 
 	    // Shadow casting
-	    float dot_product = max(dot(lightVector, normal), 0.0F);
-	    float halfway_dot = max(dot(halfway, normal), 0.0F);
-        lighting  += 4 * (dot_product + halfway_dot) * light / RANDOM_SAMPLES;
+	    float dot_product = clamp(dot(lightVector, normal), 0.0F, 1.0F);
+	    float halfway_dot = clamp(dot(halfway, normal), 0.0F, 1.0F);
+        lighting  += 4 * (dot_product + halfway_dot) * light / LIGHT_SAMPLES;
     }
 
     hitValue.emission = vec3(lighting);

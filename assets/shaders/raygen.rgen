@@ -62,11 +62,12 @@ void main()  {
                 reflection_coeff *= hitValue.reflector;
 
 		    	origin.xyz = hitPos.xyz + hitValue.normal * 0.001F;
-		    	direction.xyz += normalize(reflect(direction.xyz, hitValue.normal)) + normalize(vec3(
+		    	vec3 add_dir = normalize(reflect(direction.xyz, hitValue.normal)) + normalize(vec3(
                         random(direction.xy),
                         random(direction.yz),
                         random(direction.zx))
                     ) * pow(1 - reflection_coeff, 4);
+                direction.xyz += add_dir * sign(dot(direction.xyz, add_dir));
 		    } else {
                 break;
             }

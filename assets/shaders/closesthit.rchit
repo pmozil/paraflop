@@ -45,15 +45,12 @@ Vertex unpack(uint index)
 }
 
 uint random(int seed) {
-    uint rand = seed;
-    for (int i = 0; i < 3; i++) {
-        rand = (1140671485 * rand + 128201163) % uint(pow(2, 23));
-    }
+    uint rand = (1140671485 * seed + 128201163) % uint(pow(2, 23));
+    rand = (1140671485 * rand + 128201163) % uint(pow(2, 23));
     return rand;
 }
 
-void main()
-{
+void main() {
 	ivec3 index = ivec3(indices.i[3 * gl_PrimitiveID], indices.i[3 * gl_PrimitiveID + 1], indices.i[3 * gl_PrimitiveID + 2]);
 
 	Vertex v0 = unpack(index.x);
@@ -66,19 +63,9 @@ void main()
     vec2 uv = v0.uv * barycentricCoords.x + v1.uv * barycentricCoords.y + v2.uv * barycentricCoords.z;
     vec3 color = vec3(0.0F);
 
-    if (v0.texId.y > EPSILON && length(v0.color) > EPSILON) {
-        vec3 tex_col = texture(sampler2D(textures[uint(v0.texId.y)], samp), uv).xyz;
-	    color = tex_col * 3 + v0.color.xyz;
-    } else if (length(v0.color) > EPSILON) {
-        color = v0.color.xyz;
-    } else if (v0.texId.y > EPSILON) {
-        vec3 tex_col = texture(sampler2D(textures[uint(v0.texId.y)], samp), uv).xyz;
-	    color = tex_col * 3;
-    }
-
-    if(v0.texId.z != 0) {
-        color += texture(sampler2D(textures[uint(v0.texId.z)], samp), uv).xyz;
-    }
+    vec3 tex_col = texture(sampler2D(textures[uint(v0.texId.y)], samp), uv * int(v0.texId.y != 0)).xyz;
+    vec3 emissive_col = texture(sampler2D(textures[uint(v0.texId.z)], samp), uv * int(v0.texId.x != 0)).xyz;
+	color = tex_col * 3 + v0.color.xyz;
 
     // Ambient lighting
     float lighting = AMBIENT_LIGHT;
@@ -109,7 +96,7 @@ void main()
         lighting  += 4 * halfway_dot * light / LIGHT_SAMPLES_SQRT;
     }
 
-    hitValue.emission = vec3(lighting);
+    hitValue.emission = vec3(lighting) + emissive_col;
     hitValue.material = v0.texId.w;
     hitValue.color = color;
     hitValue.distance = gl_RayTmaxEXT;

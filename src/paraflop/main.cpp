@@ -160,6 +160,7 @@ int main() {
 
         renderer.uniformData.dTime = cam->timePassed;
         renderer.updateUniformBuffers(mats.proj, mats.view);
+        std::cout << cam->timePassed << "\n";
 
         renderer.renderFrame();
     }

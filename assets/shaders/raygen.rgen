@@ -39,48 +39,42 @@ void main()  {
 	float tmin = 0.001;
 	float tmax = 10000.0;
 
+    const vec3 tmp_orig = origin.xyz;
+    const vec3 tmp_dir = origin.xyz;
+
     vec3 color = vec3(0.0F);
     float reflection_coeff = 1.0F;
-    vec3 tmp_orig = origin.xyz;
-    vec3 tmp_dir = origin.xyz;
-    vec3 tmp_dir_shift = vec3(0.0F);
-    vec3 dir_shift = vec3(0.0F);
     vec4 hitPos = vec4(0.0F);
     vec3 col = vec3(0.0F);
     vec4 first_hit = vec4(0.0F);
     vec3 lum = vec3(0.0F);
 
 	for (int i = 0; i < SAMPLES; i++) {
-        tmp_orig = origin.xyz;
-        tmp_dir = direction.xyz;
+        reflection_coeff = 1.0F;
         for (int i = 0; i < MAX_REFLECTIONS; i++) {
 		    traceRayEXT(topLevelAS, rayFlags, cullMask, 0, 0, 0, origin.xyz, tmin, direction.xyz, tmax, 0);
-            if(length(hitValue.emission) < EPSILON) {
+            if(length(hitValue.emission) < EPSILON || hitValue.distance < 0.0F) {
                 break;
             }
 
-            col += hitValue.color * hitValue.emission * reflection_coeff * length(hitValue.emission) / SAMPLES;
+            col += hitValue.color * hitValue.emission * reflection_coeff * length(hitValue.emission);
 
-		    if (hitValue.distance >= 0.0F && length(col) >= 0.3F) {
-		    	hitPos = origin + direction * hitValue.distance;
-                reflection_coeff *= hitValue.reflector;
+		    hitPos = origin + direction * hitValue.distance;
+            reflection_coeff *= hitValue.reflector;
 
-		    	origin.xyz = hitPos.xyz + hitValue.normal * 0.001F;
-                direction.xyz = normalize(reflect(direction.xyz, hitValue.normal));
+		    origin.xyz = hitPos.xyz + hitValue.normal * 0.001F;
+            direction.xyz = normalize(reflect(direction.xyz, hitValue.normal));
 
-		    	vec3 add_dir =  normalize(vec3(
-                        random(vec2(cam.dTime)),
-                        random(vec2(cam.dTime)),
-                        random(vec2(cam.dTime)))
-                    ) * pow(1 - hitValue.reflector, 3);
+		    vec3 add_dir =  normalize(vec3(
+                    random(vec2(cam.dTime)),
+                    random(vec2(cam.dTime)),
+                    random(vec2(cam.dTime)))
+                ) * (1 - hitValue.reflector) * hitValue.reflector;
 
-                float dotp = dot(direction.xyz, add_dir);
-                direction.xyz += add_dir * sign(dotp);
-		    } else {
-                break;
-            }
+            float dotp = dot(direction.xyz, add_dir);
+            direction.xyz += add_dir * sign(dotp);
 
-            lum += hitValue.emission / MAX_REFLECTIONS / SAMPLES;
+            lum += hitValue.emission;
             first_hit.xyz = int(i == 0) * hitPos.xyz;
             first_hit.w = int(i == 0) * hitValue.material;
         }
@@ -88,6 +82,9 @@ void main()  {
 		origin.xyz = tmp_orig;
         direction.xyz = tmp_dir;
 	}
+
+    color /= SAMPLES;
+    lum /= (MAX_REFLECTIONS * SAMPLES);
 
     const uint coord = 2 * (gl_LaunchIDEXT.y * cam.width + gl_LaunchIDEXT.x);
     vec4 pixel = pixels.pixels[coord];

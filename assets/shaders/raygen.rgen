@@ -14,6 +14,7 @@ layout(binding = 2, set = 0) uniform CameraProperties
     float dTime;
     int width;
 } cam;
+
 layout(binding = 8, set=0) buffer PixelPayload { vec4 pixels[]; } pixels;
 
 layout(location = 0) rayPayloadEXT RayPayload hitValue;
@@ -46,18 +47,21 @@ void main()  {
     vec3 dir_shift = vec3(0.0F);
     vec4 hitPos = vec4(0.0F);
     vec3 col = vec3(0.0F);
+    vec4 first_hit = vec4(0.0F);
 
 	for (int i = 0; i < SAMPLES; i++) {
         tmp_orig = origin.xyz;
         tmp_dir = direction.xyz;
         for (int i = 0; i < MAX_REFLECTIONS; i++) {
 		    traceRayEXT(topLevelAS, rayFlags, cullMask, 0, 0, 0, origin.xyz, tmin, direction.xyz, tmax, 0);
+            first_hit.xyz += hitValue.emission / MAX_REFLECTIONS / SAMPLES;
+            first_hit.w = int(i == 0) * hitValue.material;
 
             if(length(hitValue.emission) < EPSILON) {
                 break;
             }
 
-            col += hitValue.color * hitValue.emission * reflection_coeff * length(hitValue.emission);
+            col += hitValue.color * hitValue.emission * reflection_coeff * length(hitValue.emission) / SAMPLES;
 
 		    if (hitValue.distance >= 0.0F && length(col) >= 0.3F) {
 		    	hitPos = origin + direction * hitValue.distance;
@@ -70,7 +74,7 @@ void main()  {
                         random(origin.xy),
                         random(origin.yz),
                         random(origin.zx))
-                    );
+                    ) * (1 - hitValue.reflector);
 
                 float dotp = dot(direction.xyz, add_dir);
                 direction.xyz += add_dir * sign(dotp);
@@ -78,23 +82,23 @@ void main()  {
                 break;
             }
         }
-        color += col / SAMPLES;
+        color += col;
 		origin.xyz = tmp_orig;
         direction.xyz = tmp_dir;
 	}
 
-    if (length(color) > EPSILON) {
-        vec4 pixel = pixels.pixels[gl_LaunchIDEXT.y * cam.width + gl_LaunchIDEXT.x];
-        if(length(pixel) < EPSILON || pixel.w > 40.0F) {
-            pixel.xyz = color;
-            pixel.w = length(color);
-        } else {
-            pixel.xyz = (pixel.xyz * pixel.w + color*length(color)) / (pixel.w + length(color));
-            pixel.w += length(color);
-        }
-        pixels.pixels[gl_LaunchIDEXT.y * cam.width + gl_LaunchIDEXT.x] = pixel;
-	    imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(pixel.xyz, 0.0));
+    uint coord = 2 * (gl_LaunchIDEXT.y * cam.width + gl_LaunchIDEXT.x);
+    vec4 pixel = pixels.pixels[coord];
+    vec4 data = pixels.pixels[coord + 1];
+    float len = length(first_hit.xyz);
+
+    if (length(pixel.xyz) > EPSILON && data.w == first_hit.w) {
+        pixel.xyz = (pixel.xyz * pixel.w + color * len) / (pixel.xyz + len);
+        pixel.w += len;
     } else {
-	    imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(0.0F, 0.0F, 0.2F, 0.0));
+        pixel.xyz = color;
+        pixel.w = len;
     }
+
+	imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(pixel.xyz, 0.0));
 }

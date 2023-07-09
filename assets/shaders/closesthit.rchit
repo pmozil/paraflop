@@ -76,6 +76,10 @@ void main()
 	    color = tex_col * 3;
     }
 
+    if(v0.texId.z != 0) {
+        color += texture(sampler2D(textures[uint(v0.texId.z)], samp), uv).xyz;
+    }
+
     // Ambient lighting
     float lighting = AMBIENT_LIGHT;
 
@@ -106,6 +110,7 @@ void main()
     }
 
     hitValue.emission = vec3(lighting);
+    hitValue.material = v0.texId.w;
     hitValue.color = color;
     hitValue.distance = gl_RayTmaxEXT;
     hitValue.normal = normal;

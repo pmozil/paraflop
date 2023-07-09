@@ -1,7 +1,7 @@
 #define EPSILON 0.01F
 #define MAX_REFLECTIONS 2
 
-#define SAMPLES 2
+#define SAMPLES 4
 #define LIGHT_SAMPLES 16
 #define LIGHT_SAMPLES_SQRT 4 // = SQRT(LIGHT_SAMPLES)
 #define AMBIENT_LIGHT 0.2F
@@ -13,6 +13,7 @@ struct RayPayload {
 	float distance;
 	vec3 normal;
 	float reflector;
+    float material;
 };
 
 struct Vertex {
@@ -20,7 +21,7 @@ struct Vertex {
   vec3 normal;
   vec2 uv;
   vec4 color;
-  vec4  texId;
+  vec4 texId;
   vec4 _pad1;
  };
 

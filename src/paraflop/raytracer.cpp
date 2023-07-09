@@ -626,7 +626,8 @@ void Raytracer::setupLightsBuffer() {
 
 void Raytracer::setupColorsBuffer(bool setupDescr) {
     colorBuffer.size = m_swapChain->swapChainExtent.width *
-                       m_swapChain->swapChainExtent.height * sizeof(glm::vec4);
+                       m_swapChain->swapChainExtent.height * sizeof(glm::vec4) *
+                       2;
 
     colorBuffer.usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     colorBuffer.memoryPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |

@@ -367,20 +367,6 @@ void gltf_model::Model::loadNode(gltf_model::Node *parent,
                 }
 
                 // Skinning
-                // Joints
-                // if (primitive.attributes.find("JOINTS_0") !=
-                //     primitive.attributes.end()) {
-                //     const tinygltf::Accessor &jointAccessor =
-                //         model.accessors[primitive.attributes.find("JOINTS_0")
-                //                             ->second];
-                //     const tinygltf::BufferView &jointView =
-                //         model.bufferViews[jointAccessor.bufferView];
-                //     bufferJoints = reinterpret_cast<const uint16_t *>(
-                //         &(model.buffers[jointView.buffer]
-                //               .data[jointAccessor.byteOffset +
-                //                     jointView.byteOffset]));
-                // }
-
                 if (primitive.attributes.find("WEIGHTS_0") !=
                     primitive.attributes.end()) {
                     const tinygltf::Accessor &uvAccessor =
@@ -430,11 +416,10 @@ void gltf_model::Model::loadNode(gltf_model::Node *parent,
                         findTexture(
                             this->materials[prim.material].baseColorTexture),
                         findTexture(
-                            this->materials[prim.material].normalTexture),
+                            this->materials[prim.material].emissiveTexture),
+                        prim.material,
                         findTexture(
                             this->materials[prim.material].diffuseTexture),
-                        findTexture(
-                            this->materials[prim.material].emissiveTexture),
                     };
 
                     vert.weight0 = hasSkin

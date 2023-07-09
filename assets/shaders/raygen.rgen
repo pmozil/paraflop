@@ -12,13 +12,15 @@ layout(binding = 2, set = 0) uniform CameraProperties
 	int vertexSize;
     int lightsCount;
     float dTime;
+    int width;
 } cam;
+layout(binding = 8, set=0) buffer PixelPayload { vec4 pixels[]; } pixels;
 
 layout(location = 0) rayPayloadEXT RayPayload hitValue;
 
 float random(vec2 st)
 {
-    return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * (43758.545312 + cam.dTime * 1000));
+    return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * (cam.dTime * 100000));
 }
 
 
@@ -62,12 +64,16 @@ void main()  {
                 reflection_coeff *= hitValue.reflector;
 
 		    	origin.xyz = hitPos.xyz + hitValue.normal * 0.001F;
-		    	vec3 add_dir = normalize(reflect(direction.xyz, hitValue.normal)) + normalize(vec3(
-                        random(direction.xy),
-                        random(direction.yz),
-                        random(direction.zx))
-                    ) * pow(1 - reflection_coeff, 4);
-                direction.xyz += add_dir * sign(dot(direction.xyz, add_dir));
+                direction.xyz = normalize(reflect(direction.xyz, hitValue.normal));
+
+		    	vec3 add_dir =  normalize(vec3(
+                        random(origin.xy),
+                        random(origin.yz),
+                        random(origin.zx))
+                    );
+
+                float dotp = dot(direction.xyz, add_dir);
+                direction.xyz += add_dir * sign(dotp);
 		    } else {
                 break;
             }
@@ -78,7 +84,16 @@ void main()  {
 	}
 
     if (length(color) > EPSILON) {
-	    imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(color, 0.0));
+        vec4 pixel = pixels.pixels[gl_LaunchIDEXT.y * cam.width + gl_LaunchIDEXT.x];
+        if(length(pixel) < EPSILON || pixel.w > 40.0F) {
+            pixel.xyz = color;
+            pixel.w = length(color);
+        } else {
+            pixel.xyz = (pixel.xyz * pixel.w + color*length(color)) / (pixel.w + length(color));
+            pixel.w += length(color);
+        }
+        pixels.pixels[gl_LaunchIDEXT.y * cam.width + gl_LaunchIDEXT.x] = pixel;
+	    imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(pixel.xyz, 0.0));
     } else {
 	    imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(0.0F, 0.0F, 0.2F, 0.0));
     }

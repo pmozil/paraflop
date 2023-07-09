@@ -1,5 +1,5 @@
 #define EPSILON 0.01F
-#define MAX_REFLECTIONS 3
+#define MAX_REFLECTIONS 2
 
 #define SAMPLES 2
 #define LIGHT_SAMPLES 16

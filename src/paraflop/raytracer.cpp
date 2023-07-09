@@ -280,6 +280,7 @@ void Raytracer::createDescriptorSets() {
         {VK_DESCRIPTOR_TYPE_SAMPLER, 1},
         {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
          static_cast<uint32_t>(scene->textures.size())},
+        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1},
     };
 
     VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{};
@@ -331,6 +332,8 @@ void Raytracer::createDescriptorSets() {
                                                  VK_WHOLE_SIZE};
     VkDescriptorBufferInfo lightsBufferDescriptor{this->lights.buffer, 0,
                                                   VK_WHOLE_SIZE};
+    VkDescriptorBufferInfo colorBufferDescriptorInfo{this->colorBuffer.buffer,
+                                                     0, VK_WHOLE_SIZE};
 
     VkSamplerCreateInfo createInfo =
         create_info::samplerCreateInfo(VK_FILTER_LINEAR);
@@ -376,6 +379,11 @@ void Raytracer::createDescriptorSets() {
         create_info::writeDescriptorSet(
             descriptorSet, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 7,
             textureDescriptors.data(), textureDescriptors.size()),
+
+        // Binding 8: Scene color buffer
+        create_info::writeDescriptorSet(descriptorSet,
+                                        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 8,
+                                        &colorBufferDescriptorInfo),
     };
 
     vkUpdateDescriptorSets(*m_deviceHandler,
@@ -424,6 +432,10 @@ void Raytracer::createRayTracingPipeline() {
         create_info::descriptorSetLayoutBinding(
             VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
             VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, 7, scene->textures.size()),
+        // // Binding 8: Color buffer
+        create_info::descriptorSetLayoutBinding(
+            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR,
+            8),
     };
 
     std::vector<VkDescriptorBindingFlags> flags(
@@ -539,11 +551,6 @@ void Raytracer::setupLightsBuffer() {
         return;
     }
 
-    std::cout << "DEBUG: LIGHT: " << lights.lights[0].x << " "
-              << lights.lights[0].y << " " << lights.lights[0].z << " "
-              << lights.lights[0].w << " "
-              << "\n";
-
     lights.size = lights.lights.size() * sizeof(glm::vec4);
 
     lights.usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
@@ -554,6 +561,10 @@ void Raytracer::setupLightsBuffer() {
     VK_CHECK(m_deviceHandler->createBuffer(
         lights.usageFlags, lights.memoryPropertyFlags, lights.size,
         &lights.buffer, &lights.memory, lights.mapped));
+
+    if (descriptorSet == VK_NULL_HANDLE) {
+        return;
+    }
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -603,7 +614,7 @@ void Raytracer::setupLightsBuffer() {
 
     std::vector<VkWriteDescriptorSet> writeDescriptorSets = {
         // Binding 3: Scene index buffer
-        create_info::writeDescriptorSet(descriptorSet,
+        create_info::writeDescriptorSet(this->descriptorSet,
                                         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3,
                                         &lightsBufferDescriptor),
     };
@@ -611,6 +622,53 @@ void Raytracer::setupLightsBuffer() {
     vkUpdateDescriptorSets(*m_deviceHandler,
                            static_cast<uint32_t>(writeDescriptorSets.size()),
                            writeDescriptorSets.data(), 0, VK_NULL_HANDLE);
+}
+
+void Raytracer::setupColorsBuffer(bool setupDescr) {
+    colorBuffer.size = m_swapChain->swapChainExtent.width *
+                       m_swapChain->swapChainExtent.height * sizeof(glm::vec4);
+
+    colorBuffer.usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    colorBuffer.memoryPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    VK_CHECK(m_deviceHandler->createBuffer(
+        colorBuffer.usageFlags, colorBuffer.memoryPropertyFlags,
+        colorBuffer.size, &colorBuffer.buffer, &colorBuffer.memory, nullptr));
+
+    if (!setupDescr) {
+        return;
+    }
+    std::cout << "SET = " << this->descriptorSet << "\n";
+
+    VkDescriptorBufferInfo colorBufferDescriptorInfo{this->colorBuffer.buffer,
+                                                     0, VK_WHOLE_SIZE};
+
+    std::vector<VkWriteDescriptorSet> writeDescriptorSets = {
+        // Binding 8: Scene color buffer
+        create_info::writeDescriptorSet(this->descriptorSet,
+                                        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 8,
+                                        &colorBufferDescriptorInfo),
+    };
+
+    vkUpdateDescriptorSets(*m_deviceHandler,
+                           static_cast<uint32_t>(writeDescriptorSets.size()),
+                           writeDescriptorSets.data(), 0, VK_NULL_HANDLE);
+    std::cout << "DEBUG: CREATED BUFFER\n";
+}
+
+void Raytracer::cleanupColorsBuffer() {
+    if (colorBuffer.buffer != VK_NULL_HANDLE) {
+        vkDestroyBuffer(*m_deviceHandler, colorBuffer.buffer, nullptr);
+    }
+
+    if (colorBuffer.memory != VK_NULL_HANDLE) {
+        vkUnmapMemory(*m_deviceHandler, colorBuffer.memory);
+    }
+
+    if (colorBuffer.buffer != VK_NULL_HANDLE) {
+        vkFreeMemory(*m_deviceHandler, colorBuffer.memory, nullptr);
+    }
 }
 
 void Raytracer::updateLightsBuffer(std::vector<glm::vec4> newLights) {
@@ -667,6 +725,7 @@ void Raytracer::updateUniformBuffers(glm::mat4 proj, glm::mat4 view) {
     };
     uniformData.projInverse = glm::inverse(proj);
     uniformData.viewInverse = glm::inverse(view * invYAxisMatrix);
+    uniformData.width = m_swapChain->swapChainExtent.width;
     // uniformData.lightPos = pos;
     // glm::vec4(cos(glm::radians(0 * 360.0F)) * 40.0F,
     //           -50.0F + sin(glm::radians(0 * 360.0F)) * 20.0F,
@@ -684,6 +743,9 @@ void Raytracer::handleResize() {
     updateRenderPass();
 
     vkDeviceWaitIdle(*m_deviceHandler);
+
+    cleanupColorsBuffer();
+    setupColorsBuffer();
 
     uint32_t width = this->m_swapChain->swapChainExtent.width;
     uint32_t height = this->m_swapChain->swapChainExtent.height;
@@ -703,6 +765,7 @@ void Raytracer::handleResize() {
     clearCommandBuffers();
     makeCommandBuffers();
     buildCommandBuffers();
+    updateUniformBuffers();
 }
 
 void Raytracer::makeCommandBuffers() {

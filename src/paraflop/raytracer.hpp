@@ -41,6 +41,7 @@ class Raytracer : public raytracer::RaytracerBase {
         createBottomLevelAccelerationStructure();
         createTopLevelAccelerationStructure();
         createUniformBuffer();
+        setupColorsBuffer(false);
 
         uint32_t width = this->m_swapChain->swapChainExtent.width;
         uint32_t height = this->m_swapChain->swapChainExtent.height;
@@ -56,6 +57,7 @@ class Raytracer : public raytracer::RaytracerBase {
         submitInfo.signalSemaphoreCount = 1;
 
         setupLightsBuffer();
+
         createRayTracingPipeline();
         createShaderBindingTables();
         createDescriptorSets();
@@ -78,6 +80,7 @@ class Raytracer : public raytracer::RaytracerBase {
         vkDestroyDescriptorSetLayout(*m_deviceHandler, descriptorSetLayout,
                                      nullptr);
         cleanupLightsBuffer();
+        cleanupColorsBuffer();
         deleteStorageImage();
         deleteAccelerationStructure(bottomLevelAS);
         deleteAccelerationStructure(topLevelAS);
@@ -122,6 +125,7 @@ class Raytracer : public raytracer::RaytracerBase {
         int32_t vertexSize;      /**< The vertex size. */
         int32_t lightsCount = 0; /**< The number of lights in the scene. */
         float dTime = 0.0F;
+        int32_t width = 0;
     } uniformData;
 
     /**
@@ -132,16 +136,26 @@ class Raytracer : public raytracer::RaytracerBase {
             lights;      /**< The vector of lights in the scene. */
         VkBuffer buffer; /**< The lights buffer. */
         VkDeviceMemory
-            memory; /**< The device memory associated with the buffer. */
-        VkDescriptorBufferInfo
-            descriptor;         /**< The descriptor for the buffer. */
-        VkDeviceSize size;      /**< The size of the buffer. */
-        VkDeviceSize alignment; /**< The alignment of the buffer. */
-        void *mapped; /**< A pointer to the mapped memory of the buffer. */
+            memory;        /**< The device memory associated with the buffer. */
+        VkDeviceSize size; /**< The size of the buffer. */
+        void *mapped;      /**< A pointer to the mapped memory of the buffer. */
         VkBufferUsageFlags usageFlags; /**< The usage flags of the buffer. */
         VkMemoryPropertyFlags memoryPropertyFlags; /**< The memory property
                                                       flags of the buffer. */
     } lights;
+
+    /**
+     * \brief The color buffer used in the raytracer.
+     */
+    struct ReSTIRColors {
+        VkBuffer buffer; /**< The lights buffer. */
+        VkDeviceMemory
+            memory;        /**< The device memory associated with the buffer. */
+        VkDeviceSize size; /**< The size of the buffer. */
+        VkBufferUsageFlags usageFlags; /**< The usage flags of the buffer. */
+        VkMemoryPropertyFlags memoryPropertyFlags; /**< The memory property
+                                                      flags of the buffer. */
+    } colorBuffer;
 
     /**
      * \brief The vector of draw command buffers.
@@ -211,6 +225,11 @@ class Raytracer : public raytracer::RaytracerBase {
     void setupLightsBuffer();
 
     /**
+     * \brief Sets up the colors buffer.
+     */
+    void setupColorsBuffer(bool setupDescr = true);
+
+    /**
      * \brief Updates the lights buffer with new lights.
      * \param newLights The vector of new lights.
      */
@@ -220,6 +239,11 @@ class Raytracer : public raytracer::RaytracerBase {
      * \brief Cleans up the lights buffer.
      */
     void cleanupLightsBuffer();
+
+    /**
+     * \brief Clean up the colors buffer.
+     */
+    void cleanupColorsBuffer();
 
     /**
      * \brief Creates the shader binding tables.

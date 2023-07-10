@@ -103,9 +103,6 @@ int main() {
     // model->loadFromFile("assets/models/FlightHelmet/glTF/FlightHelmet.gltf",
     //                     deviceHandler, commandBuffer,
     //                     deviceHandler->getTransferQueue(), glTFLoadingFlags);
-    // model->loadFromFile("assets/models/CesiumMan/glTF/CesiumMan.gltf",
-    //                     deviceHandler, commandBuffer,
-    //                     deviceHandler->getTransferQueue(), glTFLoadingFlags);
     // model->loadFromFile("assets/models/retroufo_glow.gltf", deviceHandler,
     //                     commandBuffer, deviceHandler->getTransferQueue(),
     //                     glTFLoadingFlags);

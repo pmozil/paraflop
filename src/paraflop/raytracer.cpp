@@ -640,7 +640,6 @@ void Raytracer::setupColorsBuffer(bool setupDescr) {
     if (!setupDescr) {
         return;
     }
-    std::cout << "SET = " << this->descriptorSet << "\n";
 
     VkDescriptorBufferInfo colorBufferDescriptorInfo{this->colorBuffer.buffer,
                                                      0, VK_WHOLE_SIZE};
@@ -655,7 +654,6 @@ void Raytracer::setupColorsBuffer(bool setupDescr) {
     vkUpdateDescriptorSets(*m_deviceHandler,
                            static_cast<uint32_t>(writeDescriptorSets.size()),
                            writeDescriptorSets.data(), 0, VK_NULL_HANDLE);
-    std::cout << "DEBUG: CREATED BUFFER\n";
 }
 
 void Raytracer::cleanupColorsBuffer() {

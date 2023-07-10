@@ -64,7 +64,7 @@ void main() {
     vec3 color = vec3(0.0F);
 
     vec3 tex_col = texture(sampler2D(textures[uint(v0.texId.y)], samp), uv * int(v0.texId.y != 0)).xyz;
-    vec3 emissive_col = texture(sampler2D(textures[uint(v0.texId.z)], samp), uv * int(v0.texId.x != 0)).xyz;
+    // vec3 emissive_col = texture(sampler2D(textures[uint(v0.texId.z)], samp), uv * int(v0.texId.x != 0)).xyz;
 	color = tex_col * 3 + v0.color.xyz;
 
     // Ambient lighting
@@ -96,7 +96,7 @@ void main() {
         lighting  += 4 * halfway_dot * light / LIGHT_SAMPLES_SQRT;
     }
 
-    hitValue.emission = vec3(lighting) + emissive_col;
+    hitValue.emission = vec3(lighting); // + emissive_col;
     hitValue.material = v0.texId.w;
     hitValue.color = color;
     hitValue.distance = gl_RayTmaxEXT;

@@ -1,5 +1,7 @@
 # Paraflop
 
+This project implements [NVIDIA's restir (± GI)](https://research.nvidia.com/publication/2021-06_restir-gi-path-resampling-real-time-path-tracing). Also, it uses the [VK_KHR_ray_tracing](https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VK_KHR_ray_tracing_pipeline.html) extension, so make sure [vulkan has support for your hardware](https://vulkan.gpuinfo.org/listdevicescoverage.php?extension=VK_KHR_ray_tracing_pipeline&platform=linux).
+
 ![](assets/images/pic1.png)
 ![](assets/images/pic2.png)
 

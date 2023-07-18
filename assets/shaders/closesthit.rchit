@@ -64,7 +64,7 @@ void main() {
     vec3 color = vec3(0.0F);
 
     vec3 tex_col = texture(sampler2D(textures[uint(v0.texId.y)], samp), uv * int(v0.texId.y != 0)).xyz;
-    // vec3 emissive_col = texture(sampler2D(textures[uint(v0.texId.z)], samp), uv * int(v0.texId.x != 0)).xyz;
+    vec3 emissive_col = texture(sampler2D(textures[uint(v0.texId.z)], samp), uv * int(v0.texId.z != 0)).xyz;
 	color = tex_col * 3 + v0.color.xyz;
 
     // Ambient lighting
@@ -86,7 +86,8 @@ void main() {
 	    traceRayEXT(topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT, 0xFF, 0, 0, 1, origin, tmin, lightVector, tmax, 2);
         float dist = distance(origin, lightPos.xyz);
         float light = LIGHT_MULTIPLIER * lightPos.w / (dist * dist);
-	    if (shadowed || light < EPSILON) {
+
+	    if (shadowed) {
             continue;
 	    }
 
@@ -96,10 +97,10 @@ void main() {
         lighting  += 4 * halfway_dot * light / LIGHT_SAMPLES_SQRT;
     }
 
-    hitValue.emission = vec3(lighting); // + emissive_col;
+    hitValue.emission = vec3(lighting); // + normalize(emissive_col);
     hitValue.material = v0.texId.w;
     hitValue.color = color;
     hitValue.distance = gl_RayTmaxEXT;
     hitValue.normal = normal;
-    hitValue.reflector = length(color) / 9.0F;
+    hitValue.reflector = length(color) / 16.0F;
 }

@@ -51,16 +51,18 @@ void main()  {
 
 	for (int i = 0; i < SAMPLES; i++) {
         reflection_coeff = 1.0F;
-        for (int i = 0; i < MAX_REFLECTIONS; i++) {
+        int j = 0;
+        for (j = 0; j < MAX_REFLECTIONS; j++) {
 		    traceRayEXT(topLevelAS, rayFlags, cullMask, 0, 0, 0, origin.xyz, tmin, direction.xyz, tmax, 0);
-            if(length(hitValue.emission) < EPSILON || hitValue.distance < 0.0F) {
+
+            if(length(hitValue.emission) < 0.1F || hitValue.distance < 0.0F) {
                 break;
             }
 
+            reflection_coeff *= hitValue.reflector;
             col += hitValue.color * hitValue.emission * reflection_coeff * length(hitValue.emission);
 
 		    hitPos = origin + direction * hitValue.distance;
-            reflection_coeff *= hitValue.reflector;
 
 		    origin.xyz = hitPos.xyz + hitValue.normal * 0.001F;
             direction.xyz = normalize(reflect(direction.xyz, hitValue.normal));
@@ -78,13 +80,13 @@ void main()  {
             first_hit.xyz = int(i == 0) * hitPos.xyz;
             first_hit.w = int(i == 0) * hitValue.material;
         }
-        color += col; 
+        color += col / (j+1); 
 		origin.xyz = tmp_orig;
         direction.xyz = tmp_dir;
 	}
 
     color /= SAMPLES;
-    lum /= (MAX_REFLECTIONS * SAMPLES);
+    lum /= SAMPLES;
 
     const uint coord = 2 * (gl_LaunchIDEXT.y * cam.width + gl_LaunchIDEXT.x);
     vec4 pixel = pixels.pixels[coord];

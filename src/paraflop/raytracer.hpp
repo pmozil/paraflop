@@ -75,6 +75,8 @@ class Raytracer : public raytracer::RaytracerBase {
      * and the uniform buffer.
      */
     ~Raytracer() {
+        vkDeviceWaitIdle(*m_deviceHandler);
+
         vkDestroyPipeline(*m_deviceHandler, pipeline, nullptr);
         vkDestroyPipelineLayout(*m_deviceHandler, pipelineLayout, nullptr);
         vkDestroyDescriptorSetLayout(*m_deviceHandler, descriptorSetLayout,

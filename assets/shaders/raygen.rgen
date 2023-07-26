@@ -58,9 +58,9 @@ void main()  {
             if(length(hitValue.emission) < 0.1F || hitValue.distance < 0.0F) {
                 break;
             }
-
+            
             reflection_coeff *= hitValue.reflector;
-            col += hitValue.color * hitValue.emission * reflection_coeff * length(hitValue.emission);
+            col += hitValue.color * min(hitValue.emission, vec3(1.0F)) * reflection_coeff;
 
 		    hitPos = origin + direction * hitValue.distance;
 
@@ -93,14 +93,16 @@ void main()  {
     vec4 data = pixels.pixels[coord + 1];
     float len = length(lum);
 
-    if (length(pixel.xyz) > EPSILON &&
+    if (length(pixel.xyz) > 0.2F &&
             data.w == first_hit.w) {
         pixel.w += len;
+
         if(random(vec2(cam.dTime)) <  len / pixel.w) {
             pixel.xyz = color;
         }
-        for (int i = -2; i < 3; i++) {
-            for (int j = -2; j < 3; j++) {
+
+        for (int i = -1; i < 2; i++) {
+            for (int j = -1; j < 2; j++) {
                 const uint xy = coord + i * cam.width * 2 + j * 2;
                 const vec4 px = pixels.pixels[xy];
                 const vec4 d = pixels.pixels[xy + 1];

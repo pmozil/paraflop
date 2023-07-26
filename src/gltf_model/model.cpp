@@ -417,7 +417,7 @@ void gltf_model::Model::loadNode(gltf_model::Node *parent,
                             this->materials[prim.material].baseColorTexture),
                         findTexture(
                             this->materials[prim.material].emissiveTexture),
-                        prim.material,
+                        this->materials[prim.material].roughnessFactor,
                         findTexture(
                             this->materials[prim.material].diffuseTexture),
                     };

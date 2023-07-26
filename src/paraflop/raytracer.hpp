@@ -36,6 +36,7 @@ class Raytracer : public raytracer::RaytracerBase {
                                    std::move(m_swapChain),
                                    std::move(m_commandBuffer)),
           window(window), scene(std::move(m_model)) {
+        vkDeviceWaitIdle(*this->m_deviceHandler);
 
         raytracer::RaytracerBase::prepare();
         createBottomLevelAccelerationStructure();

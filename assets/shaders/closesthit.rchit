@@ -75,10 +75,10 @@ void main() {
 	const vec3 origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
 
 	// Diffuse +  Blihn-Phong lighting
-    for(int i = 0; i < LIGHT_SAMPLES; i++) {
+    for(int i = 0; i < ubo.lightsCount; i++) {
         uint idx = random(ubo.lightsCount - i) % ubo.lightsCount;
         vec3 col = vec3(0.0F);
-        vec4 lightPos = lights.l[i];
+        vec4 lightPos = lights.l[idx];
 	    vec3 lightVector = normalize(lightPos.xyz);
 
 	    // Trace shadow ray and offset indices to match shadow hit/miss shader group indices

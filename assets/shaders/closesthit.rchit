@@ -33,6 +33,7 @@ Vertex unpack(uint index)
 	vec4 d1 = vertices.v[m * index + 1];
 	vec4 d2 = vertices.v[m * index + 2];
 	vec4 d3 = vertices.v[m * index + 3];
+	vec4 d4 = vertices.v[m * index + 4];
 
 	Vertex v;
 	v.pos = d0.xyz;
@@ -40,6 +41,7 @@ Vertex unpack(uint index)
 	v.color = vec4(d2.x, d2.y, d2.z, 1.0);
     v.uv = d1.zw;
     v.texId = vec4(d3.w, d3.x, d3.y, d3.z);
+    v.normalId = vec4(d4.x);
 
 	return v;
 }
@@ -66,6 +68,8 @@ void main() {
 
     vec3 tex_col = texture(sampler2D(textures[uint(v0.texId.y)], samp), uv * int(v0.texId.y != 0)).xyz;
     vec3 emissive_col = texture(sampler2D(textures[uint(v0.texId.z)], samp), uv * int(v0.texId.z != 0)).xyz;
+    vec3 normal_tex = texture(sampler2D(textures[uint(v0.normalId.x)], samp), uv * int(v0.normalId.x != 0)).xyz;
+
 	color = tex_col * 3 + v0.color.xyz;
     
 
@@ -99,10 +103,10 @@ void main() {
         lighting  += 4 * halfway_dot * light / LIGHT_SAMPLES_SQRT;
     }
 
-    hitValue.emission = (emissive_col + vec3(lighting)) / 2.0F;
+    hitValue.emission = vec3(lighting);
     hitValue.material = v0.texId.w;
     hitValue.color = color;
     hitValue.distance = gl_RayTmaxEXT;
-    hitValue.normal = normal;
+    hitValue.normal = normalize(normal + normal_tex);
     hitValue.reflector = v0.texId.x / 200;
 }

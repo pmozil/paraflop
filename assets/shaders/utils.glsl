@@ -5,7 +5,7 @@
 #define LIGHT_SAMPLES 32
 #define LIGHT_SAMPLES_SQRT 7 // = SQRT(LIGHT_SAMPLES)
 #define AMBIENT_LIGHT 0.2F
-#define LIGHT_MULTIPLIER 81
+#define LIGHT_MULTIPLIER 16
 
 struct RayPayload {
 	vec3 color;
@@ -22,7 +22,8 @@ struct Vertex {
   vec2 uv;
   vec4 color;
   vec4 texId;
-  vec4 _pad1;
+  vec4 normalId;
+  vec4 _pad2;
  };
 
 uint random_uint(int seed) {

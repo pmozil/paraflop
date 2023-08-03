@@ -51,27 +51,25 @@ void main()  {
 
 	for (int i = 0; i < SAMPLES; i++) {
         reflection_coeff = 1.0F;
-        int j = 0;
-        for (j = 0; j < MAX_REFLECTIONS; j++) {
+        for (int i = 0; i < MAX_REFLECTIONS; i++) {
 		    traceRayEXT(topLevelAS, rayFlags, cullMask, 0, 0, 0, origin.xyz, tmin, direction.xyz, tmax, 0);
-
-            if(length(hitValue.emission) < 0.1F || hitValue.distance < 0.0F) {
+            if(length(hitValue.emission) < EPSILON || hitValue.distance < 0.0F) {
                 break;
             }
-            
-            reflection_coeff *= hitValue.reflector;
-            col += hitValue.color * min(hitValue.emission, vec3(1.0F)) * reflection_coeff;
+
+            col += hitValue.color * hitValue.emission * reflection_coeff * length(hitValue.emission);
 
 		    hitPos = origin + direction * hitValue.distance;
+            reflection_coeff *= hitValue.reflector;
 
-		    origin.xyz = hitPos.xyz + hitValue.normal * 0.001F;
+		    origin.xyz = hitPos.xyz + hitValue.normal * 0.01F;
             direction.xyz = normalize(reflect(direction.xyz, hitValue.normal));
 
 		    vec3 add_dir =  normalize(vec3(
                     random(vec2(cam.dTime)),
                     random(vec2(cam.dTime)),
                     random(vec2(cam.dTime)))
-                ) * (1 - hitValue.reflector) * hitValue.reflector;
+                ) * (1 - hitValue.reflector) * hitValue.reflector / 4;
 
             float dotp = dot(direction.xyz, add_dir);
             direction.xyz += add_dir * sign(dotp);
@@ -80,29 +78,27 @@ void main()  {
             first_hit.xyz = int(i == 0) * hitPos.xyz;
             first_hit.w = int(i == 0) * hitValue.material;
         }
-        color += col / (j+1); 
+        color += col; 
 		origin.xyz = tmp_orig;
         direction.xyz = tmp_dir;
 	}
 
     color /= SAMPLES;
-    lum /= SAMPLES;
+    lum /= (MAX_REFLECTIONS * SAMPLES);
 
     const uint coord = 2 * (gl_LaunchIDEXT.y * cam.width + gl_LaunchIDEXT.x);
     vec4 pixel = pixels.pixels[coord];
     vec4 data = pixels.pixels[coord + 1];
     float len = length(lum);
 
-    if (length(pixel.xyz) > 0.2F &&
+    if (length(pixel.xyz) > EPSILON &&
             data.w == first_hit.w) {
         pixel.w += len;
-
         if(random(vec2(cam.dTime)) <  len / pixel.w) {
             pixel.xyz = color;
         }
-
-        for (int i = -1; i < 2; i++) {
-            for (int j = -1; j < 2; j++) {
+        for (int i = -2; i < 3; i++) {
+            for (int j = -2; j < 3; j++) {
                 const uint xy = coord + i * cam.width * 2 + j * 2;
                 const vec4 px = pixels.pixels[xy];
                 const vec4 d = pixels.pixels[xy + 1];

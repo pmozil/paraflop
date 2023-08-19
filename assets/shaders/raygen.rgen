@@ -92,17 +92,21 @@ void main()  {
     float len = length(lum);
 
     if (length(pixel.xyz) > EPSILON &&
-            data.w == first_hit.w) {
+            data.w == first_hit.w && data.w != 0) {
         pixel.w += len;
         if(random(vec2(cam.dTime)) <  len / pixel.w) {
             pixel.xyz = color;
         }
+
         for (int i = -2; i < 3; i++) {
             for (int j = -2; j < 3; j++) {
                 const uint xy = coord + i * cam.width * 2 + j * 2;
+                if (xy < 0 || xy = pixes.pixels.length / 2) {
+                    xy = 0;
+                }
                 const vec4 px = pixels.pixels[xy];
                 const vec4 d = pixels.pixels[xy + 1];
-                if(data.w == d.w) {
+                if(data.w == d.w && data.w != 0) {
                     pixel.w += px.w;
                     if(random(vec2(cam.dTime)) <  px.w / pixel.w) {
                         pixel.xyz = px.xyz;
@@ -114,9 +118,8 @@ void main()  {
     } else {
         pixel.xyz = color;
         pixel.w = len;
-        data = vec4(-10.0F);
+        data = first_hit;
     }
-
 
     pixels.pixels[coord] = pixel;
     pixels.pixels[coord+1] = data;

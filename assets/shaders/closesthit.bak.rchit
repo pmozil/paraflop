@@ -33,27 +33,27 @@ Vertex unpack(uint index)
 	vec4 d1 = vertices.v[m * index + 1];
 	vec4 d2 = vertices.v[m * index + 2];
 	vec4 d3 = vertices.v[m * index + 3];
-	vec4 d4 = vertices.v[m * index + 4];
 
 	Vertex v;
 	v.pos = d0.xyz;
 	v.normal = vec3(d0.w, d1.x, d1.y);
 	v.color = vec4(d2.x, d2.y, d2.z, 1.0);
     v.uv = d1.zw;
-    v.texId = vec4(d3.w, d3.x, d3.y, d3.z);
-    v.normalId = vec4(d4.x);
+    v.texId = vec4(d2.w, d3.x, d3.y, d3.z);
 
 	return v;
 }
 
 uint random(int seed) {
-    uint rand = 1140671485 * seed + 12820;
-    rand = 1140671485 * rand + 128201;
-    rand = 1140671485 * rand + 128201163;
+    uint rand = seed;
+    for (int i = 0; i < 3; i++) {
+        rand = (1140671485 * rand + 128201163) % uint(pow(2, 23));
+    }
     return rand;
 }
 
-void main() {
+void main()
+{
 	ivec3 index = ivec3(indices.i[3 * gl_PrimitiveID], indices.i[3 * gl_PrimitiveID + 1], indices.i[3 * gl_PrimitiveID + 2]);
 
 	Vertex v0 = unpack(index.x);
@@ -66,12 +66,19 @@ void main() {
     vec2 uv = v0.uv * barycentricCoords.x + v1.uv * barycentricCoords.y + v2.uv * barycentricCoords.z;
     vec3 color = vec3(0.0F);
 
-    vec3 tex_col = texture(sampler2D(textures[uint(v0.texId.y)], samp), uv * int(v0.texId.y != 0)).xyz;
-    vec3 emissive_col = texture(sampler2D(textures[uint(v0.texId.z)], samp), uv * int(v0.texId.z != 0)).xyz;
-    vec3 normal_tex = texture(sampler2D(textures[uint(v0.normalId.x)], samp), uv * int(v0.normalId.x != 0)).xyz;
+    if (v0.texId.y > EPSILON && length(v0.color) > EPSILON) {
+        vec3 tex_col = texture(sampler2D(textures[uint(v0.texId.y)], samp), uv).xyz;
+	    color = tex_col * 3 + v0.color.xyz;
+    } else if (length(v0.color) > EPSILON) {
+        color = v0.color.xyz;
+    } else if (v0.texId.y > EPSILON) {
+        vec3 tex_col = texture(sampler2D(textures[uint(v0.texId.y)], samp), uv).xyz;
+	    color = tex_col * 3;
+    }
 
-	color = tex_col * 3 + v0.color.xyz;
-    
+    if(v0.texId.z != 0) {
+        color += texture(sampler2D(textures[uint(v0.texId.z)], samp), uv).xyz;
+    }
 
     // Ambient lighting
     float lighting = AMBIENT_LIGHT;
@@ -81,8 +88,8 @@ void main() {
 	const vec3 origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
 
 	// Diffuse +  Blihn-Phong lighting
-    for(int i = 0; i < ubo.lightsCount; i++) {
-        uint idx = random(i + ubo.lightsCount) % ubo.lightsCount;
+    for(int i = 0; i < LIGHT_SAMPLES; i++) {
+        uint idx = random(ubo.lightsCount - i) % ubo.lightsCount;
         vec3 col = vec3(0.0F);
         vec4 lightPos = lights.l[i];
 	    vec3 lightVector = normalize(lightPos.xyz);
@@ -92,8 +99,7 @@ void main() {
 	    traceRayEXT(topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT, 0xFF, 0, 0, 1, origin, tmin, lightVector, tmax, 2);
         float dist = distance(origin, lightPos.xyz);
         float light = LIGHT_MULTIPLIER * lightPos.w / (dist * dist);
-
-	    if (shadowed) {
+	    if (shadowed || light < EPSILON) {
             continue;
 	    }
 
@@ -107,6 +113,6 @@ void main() {
     hitValue.material = v0.texId.w;
     hitValue.color = color;
     hitValue.distance = gl_RayTmaxEXT;
-    hitValue.normal = normalize(normal + normal_tex);
-    hitValue.reflector = v0.texId.x / 200;
+    hitValue.normal = normal;
+    hitValue.reflector = length(color) / 9.0F;
 }

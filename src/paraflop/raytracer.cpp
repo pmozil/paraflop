@@ -712,6 +712,7 @@ void Raytracer::createUniformBuffer() {
 void Raytracer::updateUniformBuffers() {
     uniformData.projInverse = glm::inverse(glm::identity<glm::mat4>());
     uniformData.viewInverse = glm::inverse(glm::identity<glm::mat4>());
+    uniformData.lightsCount = lights.lights.size();
     // Pass the vertex size to the shader for unpacking vertices
     uniformData.vertexSize = sizeof(gltf_model::Vertex);
     memcpy(ubo.mapped, &uniformData, sizeof(uniformData));
@@ -725,6 +726,7 @@ void Raytracer::updateUniformBuffers(glm::mat4 proj, glm::mat4 view) {
     uniformData.projInverse = glm::inverse(proj);
     uniformData.viewInverse = glm::inverse(view * invYAxisMatrix);
     uniformData.width = m_swapChain->swapChainExtent.width;
+    uniformData.lightsCount = lights.lights.size();
     // uniformData.lightPos = pos;
     // glm::vec4(cos(glm::radians(0 * 360.0F)) * 40.0F,
     //           -50.0F + sin(glm::radians(0 * 360.0F)) * 20.0F,

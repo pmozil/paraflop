@@ -65,7 +65,7 @@ void main()  {
 		    	hitPos = origin + direction * hitValue.distance;
                 reflection_coeff *= hitValue.reflector;
 
-		    	origin.xyz = hitPos.xyz + hitValue.normal;
+		    	origin.xyz = hitPos.xyz + hitValue.normal * 0.001F;
                 direction.xyz = normalize(reflect(direction.xyz, hitValue.normal));
 
 		    	vec3 add_dir =  normalize(vec3(
@@ -100,7 +100,6 @@ void main()  {
         if(random(vec2(cam.dTime)) <  len / pixel.w) {
             pixel.xyz = color;
         }
-
         for (int i = -2; i < 3; i++) {
             for (int j = -2; j < 3; j++) {
                 const uint xy = coord + i * cam.width * 2 + j * 2;

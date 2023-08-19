@@ -4,8 +4,8 @@
 #define MAX_REFLECTIONS 3
 #define LIGHT_SAMPLES 32
 #define LIGHT_SAMPLES_SQRT 7 // = SQRT(LIGHT_SAMPLES)
-#define AMBIENT_LIGHT 0.2F
-#define LIGHT_MULTIPLIER 16
+#define AMBIENT_LIGHT 0.24F
+#define LIGHT_MULTIPLIER 36
 
 struct RayPayload {
 	vec3 color;

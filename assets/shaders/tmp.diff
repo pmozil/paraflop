@@ -1,0 +1,75 @@
+41a42,44
+>     const vec3 tmp_orig = origin.xyz;
+>     const vec3 tmp_dir = origin.xyz;
+> 
+44,47d46
+<     vec3 tmp_orig = origin.xyz;
+<     vec3 tmp_dir = origin.xyz;
+<     vec3 tmp_dir_shift = vec3(0.0F);
+<     vec3 dir_shift = vec3(0.0F);
+54,55c53
+<         tmp_orig = origin.xyz;
+<         tmp_dir = direction.xyz;
+---
+>         reflection_coeff = 1.0F;
+58c56
+<             if(length(hitValue.emission) < EPSILON) {
+---
+>             if(length(hitValue.emission) < EPSILON || hitValue.distance < 0.0F) {
+62c60
+<             col += hitValue.color * hitValue.emission * reflection_coeff * length(hitValue.emission) / SAMPLES;
+---
+>             col += hitValue.color * hitValue.emission * reflection_coeff * length(hitValue.emission);
+64,66c62,63
+< 		    if (hitValue.distance >= 0.0F && length(col) >= 0.3F) {
+< 		    	hitPos = origin + direction * hitValue.distance;
+<                 reflection_coeff *= hitValue.reflector;
+---
+> 		    hitPos = origin + direction * hitValue.distance;
+>             reflection_coeff *= hitValue.reflector;
+68,69c65,66
+< 		    	origin.xyz = hitPos.xyz + hitValue.normal * 0.001F;
+<                 direction.xyz = normalize(reflect(direction.xyz, hitValue.normal));
+---
+> 		    origin.xyz = hitPos.xyz + hitValue.normal * 0.01F;
+>             direction.xyz = normalize(reflect(direction.xyz, hitValue.normal));
+71,75c68,72
+< 		    	vec3 add_dir =  normalize(vec3(
+<                         random(vec2(cam.dTime)),
+<                         random(vec2(cam.dTime)),
+<                         random(vec2(cam.dTime)))
+<                     ) * pow(1 - hitValue.reflector, 3);
+---
+> 		    vec3 add_dir =  normalize(vec3(
+>                     random(vec2(cam.dTime)),
+>                     random(vec2(cam.dTime)),
+>                     random(vec2(cam.dTime)))
+>                 ) * (1 - hitValue.reflector) * hitValue.reflector / 4;
+77,81c74,75
+<                 float dotp = dot(direction.xyz, add_dir);
+<                 direction.xyz += add_dir * sign(dotp);
+< 		    } else {
+<                 break;
+<             }
+---
+>             float dotp = dot(direction.xyz, add_dir);
+>             direction.xyz += add_dir * sign(dotp);
+83c77
+<             lum += hitValue.emission / MAX_REFLECTIONS / SAMPLES;
+---
+>             lum += hitValue.emission;
+91a86,88
+>     color /= SAMPLES;
+>     lum /= (MAX_REFLECTIONS * SAMPLES);
+> 
+108,112c105,108
+<                 if(data.w == d.w) {
+<                     pixel.w += px.w;
+<                     if(random(vec2(cam.dTime)) <  px.w / pixel.w) {
+<                         pixel.xyz = px.xyz;
+<                     }
+---
+>                 float len = pixel.w + px.w;
+>                 if(random(vec2(cam.dTime)) <  px.w / len) {
+>                     pixel.xyz = px.xyz;
+>                     pixel.w = len;

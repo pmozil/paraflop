@@ -14,14 +14,16 @@ namespace geometry {
 }
 
 void Camera::moveForward(float timePassed) {
-    position += direction * timePassed * focus;
+    position += direction * timePassed * focus * 0.1F;
 }
 
 void Camera::moveLeft(float timePassed) {
-    position += glm::cross(up, direction) * timePassed * focus;
+    position += glm::cross(up, direction) * timePassed * focus * 0.1F;
 }
 
-void Camera::moveUp(float timePassed) { position -= up * timePassed * focus; }
+void Camera::moveUp(float timePassed) {
+    position -= up * timePassed * focus * 0.1F;
+}
 
 void Camera::calcTurn(float dHoriz, float dVert) {
     calcRotation(rotationVert + sensitivity * dHoriz,

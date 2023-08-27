@@ -29,15 +29,15 @@ ELSE()
     message(STATUS ${Vulkan_LIBRARY})
 ENDIF()
 
-find_program(Vulkan_GLSC_VALIDATOR
-	NAMES glslc
-	HINTS ENV VULKAN_SDK 
-    PATH_SUFFIXES bin
-)
+# find_program(Vulkan_GLSC_VALIDATOR
+# 	NAMES glslc
+# 	HINTS ENV VULKAN_SDK 
+#     PATH_SUFFIXES bin
+# )
 
-if (NOT Vulkan_GLSC_VALIDATOR)
-    message(FATAL_ERROR glslc not found!)
-endif()
+# if (NOT Vulkan_GLSC_VALIDATOR)
+#     message(FATAL_ERROR "glslc not found!")
+# endif()
 
 if(MSVC)
     add_compile_options(/W4 /Ox)
@@ -79,23 +79,23 @@ target_link_libraries(paraflop PUBLIC glm::glm)
 target_link_libraries(paraflop PUBLIC ktx)
 
 # Compile shaders
-file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/shaders)
+# file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/shaders)
 
-file(GLOB_RECURSE GLSL_SOURCE_FILES
-    "${CMAKE_SOURCE_DIR}/assets/shaders/*.rchit"
-    "${CMAKE_SOURCE_DIR}/assets/shaders/*.rgen"
-    "${CMAKE_SOURCE_DIR}/assets/shaders/*.rmiss")
+# file(GLOB_RECURSE GLSL_SOURCE_FILES
+#     "${CMAKE_SOURCE_DIR}/assets/shaders/*.rchit"
+#     "${CMAKE_SOURCE_DIR}/assets/shaders/*.rgen"
+#     "${CMAKE_SOURCE_DIR}/assets/shaders/*.rmiss")
 
-foreach(GLSL ${GLSL_SOURCE_FILES})
-  get_filename_component(FILE_NAME ${GLSL} NAME)
-  set(SPIRV ${PROJECT_BINARY_DIR}/shaders/${FILE_NAME}.spv)
-  add_custom_command(
-    OUTPUT ${SPIRV}
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/shaders/"
-    COMMAND ${Vulkan_GLSC_VALIDATOR} ${GLSL} -o ${SPIRV} --target-spv=spv1.6 --target-env=vulkan1.3 -O -finvert-y
-    DEPENDS ${GLSL})
-  list(APPEND SPIRV_BINARY_FILES ${SPIRV})
-endforeach(GLSL)
+# foreach(GLSL ${GLSL_SOURCE_FILES})
+#   get_filename_component(FILE_NAME ${GLSL} NAME)
+#   set(SPIRV ${PROJECT_BINARY_DIR}/shaders/${FILE_NAME}.spv)
+#   add_custom_command(
+#     OUTPUT ${SPIRV}
+#     COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/shaders/"
+#     COMMAND ${Vulkan_GLSC_VALIDATOR} ${GLSL} -o ${SPIRV} --target-spv=spv1.6 --target-env=vulkan1.3 -O -finvert-y
+#     DEPENDS ${GLSL})
+#   list(APPEND SPIRV_BINARY_FILES ${SPIRV})
+# endforeach(GLSL)
 
 add_custom_target(
     Shaders 

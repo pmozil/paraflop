@@ -566,46 +566,17 @@ void Raytracer::setupLightsBuffer() {
         return;
     }
 
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-    VK_CHECK(m_deviceHandler->createBuffer(
-        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        lights.size, &stagingBuffer, &stagingBufferMemory, nullptr));
+    vkMapMemory(*m_deviceHandler, lights.memory, 0, lights.size, 0,
+                &lights.mapped);
+    memcpy(&lights.mapped, lights.lights.data(), (size_t)lights.size);
 
-    void *mem;
-    vkMapMemory(*m_deviceHandler, stagingBufferMemory, 0, lights.size, 0, &mem);
-    memcpy(mem, lights.lights.data(), (size_t)lights.size);
-    vkUnmapMemory(*m_deviceHandler, stagingBufferMemory);
-
-    VkCommandBufferAllocateInfo allocInfo =
-        create_info::commandBufferAllocInfo(m_commandBuffer->commandPool, 1);
-
-    VkCommandBuffer cmdBuffer;
-    vkAllocateCommandBuffers(*m_deviceHandler, &allocInfo, &cmdBuffer);
-
-    VkCommandBufferBeginInfo beginInfo = create_info::commandBufferBeginInfo();
-
-    vkBeginCommandBuffer(cmdBuffer, &beginInfo);
-
-    VkBufferCopy copyRegion = create_info::copyRegion(lights.size);
-    vkCmdCopyBuffer(cmdBuffer, stagingBuffer, lights.buffer, 1, &copyRegion);
-
-    vkEndCommandBuffer(cmdBuffer);
-
-    VkSubmitInfo submitInfo = create_info::submitInfo(1, &cmdBuffer);
-
-    VkQueue transferQueue = m_deviceHandler->getTransferQueue();
-
-    vkQueueSubmit(transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(transferQueue);
-
-    vkFreeCommandBuffers(*m_deviceHandler, m_commandBuffer->commandPool, 1,
-                         &cmdBuffer);
-
-    vkDestroyBuffer(*m_deviceHandler, stagingBuffer, nullptr);
-    vkFreeMemory(*m_deviceHandler, stagingBufferMemory, nullptr);
+    VkMappedMemoryRange mappedRange = {};
+    mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+    mappedRange.memory = this->lights.memory;
+    mappedRange.offset = 0;
+    mappedRange.size = this->lights.size;
+    VK_CHECK(
+        vkFlushMappedMemoryRanges(*this->m_deviceHandler, 1, &mappedRange));
 
     updateUniformBuffers();
 
@@ -671,8 +642,8 @@ void Raytracer::cleanupColorsBuffer() {
 }
 
 void Raytracer::updateLightsBuffer(std::vector<glm::vec4> newLights) {
-    this->lights.lights = std::move(newLights);
     cleanupLightsBuffer();
+    this->lights.lights = std::move(newLights);
     setupLightsBuffer();
 }
 
@@ -727,11 +698,6 @@ void Raytracer::updateUniformBuffers(glm::mat4 proj, glm::mat4 view) {
     uniformData.viewInverse = glm::inverse(view * invYAxisMatrix);
     uniformData.width = m_swapChain->swapChainExtent.width;
     uniformData.lightsCount = lights.lights.size();
-    // uniformData.lightPos = pos;
-    // glm::vec4(cos(glm::radians(0 * 360.0F)) * 40.0F,
-    //           -50.0F + sin(glm::radians(0 * 360.0F)) * 20.0F,
-    //           25.0F + sin(glm::radians(0 * 360.0F)) * 5.0F, 0.0F);
-    // Pass the vertex size to the shader for unpacking vertices
     uniformData.vertexSize = sizeof(gltf_model::Vertex);
     memcpy(ubo.mapped, &uniformData, sizeof(uniformData));
 }

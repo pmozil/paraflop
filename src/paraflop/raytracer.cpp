@@ -628,16 +628,16 @@ void Raytracer::setupColorsBuffer(bool setupDescr) {
 }
 
 void Raytracer::cleanupColorsBuffer() {
-    if (colorBuffer.buffer != VK_NULL_HANDLE) {
-        vkDestroyBuffer(*m_deviceHandler, colorBuffer.buffer, nullptr);
-    }
-
-    if (colorBuffer.memory != VK_NULL_HANDLE) {
-        vkUnmapMemory(*m_deviceHandler, colorBuffer.memory);
-    }
+    // if (colorBuffer.memory != VK_NULL_HANDLE) {
+    //     vkUnmapMemory(*m_deviceHandler, colorBuffer.memory);
+    // }
 
     if (colorBuffer.buffer != VK_NULL_HANDLE) {
         vkFreeMemory(*m_deviceHandler, colorBuffer.memory, nullptr);
+    }
+
+    if (colorBuffer.buffer != VK_NULL_HANDLE) {
+        vkDestroyBuffer(*m_deviceHandler, colorBuffer.buffer, nullptr);
     }
 }
 
@@ -848,8 +848,23 @@ void Raytracer::prepareFrame() {
 
 void Raytracer::submitFrame() {
 
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+    std::array<VkSemaphore, 1> signalSemaphores = {
+        m_swapChain->renderFinishedSemaphores[curFrame]};
+
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = signalSemaphores.data();
+
+    std::array<VkSwapchainKHR, 1> swapChains = {m_swapChain->swapChain};
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapChains.data();
+
+    presentInfo.pImageIndices = &imageIdx;
+
     VkResult result =
-        m_swapChain->queuePresent(m_deviceHandler->presentQueue, curFrame);
+        vkQueuePresentKHR(m_deviceHandler->presentQueue, &presentInfo);
     // Recreate the swapchain if it's no longer compatible with the surface
     // (OUT_OF_DATE) or no longer optimal for presentation (SUBOPTIMAL)
     if ((result == VK_ERROR_OUT_OF_DATE_KHR) || (result == VK_SUBOPTIMAL_KHR)) {
@@ -864,6 +879,7 @@ void Raytracer::submitFrame() {
 }
 
 void Raytracer::renderFrame() {
+    curFrame = (curFrame + 1) % m_swapChain->swapChainFramebuffers.size();
     prepareFrame();
 
     vkResetFences(m_deviceHandler->logicalDevice, 1,
@@ -873,17 +889,15 @@ void Raytracer::renderFrame() {
     submitInfo.pCommandBuffers = &drawCmdBuffers[curFrame];
 
     submitInfo.pWaitSemaphores =
-        &this->m_swapChain->imageAvailableSemaphores[curFrame];
+        &m_swapChain->imageAvailableSemaphores[curFrame];
 
     submitInfo.pSignalSemaphores =
-        &this->m_swapChain->renderFinishedSemaphores[curFrame];
+        &m_swapChain->renderFinishedSemaphores[curFrame];
 
     VK_CHECK(vkQueueSubmit(m_deviceHandler->graphicsQueue, 1, &submitInfo,
                            m_swapChain->inFlightFences[curFrame]));
 
     submitFrame();
-
-    curFrame = (curFrame + 1) % m_swapChain->swapChainFramebuffers.size();
 }
 
 void Raytracer::Buffer::destroy(VkDevice device) const {

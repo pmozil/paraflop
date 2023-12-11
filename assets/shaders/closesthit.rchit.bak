@@ -1,7 +1,11 @@
 #version 460
 #extension GL_EXT_ray_tracing : require
 #extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_GOOGLE_include_directive : require
+#include "utils.glsl"
 
+layout(location = 0) rayPayloadInEXT RayPayload hitValue;
+layout(location = 2) rayPayloadInEXT bool shadowed;
 hitAttributeEXT vec2 attribs;
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
@@ -9,33 +13,15 @@ layout(binding = 2, set = 0) uniform UBO
 {
 	mat4 viewInverse;
 	mat4 projInverse;
-	vec4 lightPos;
 	int vertexSize;
+    int lightsCount;
+    float dTime;
 } ubo;
-layout(binding = 3, set = 0) buffer Vertices { vec4 v[]; } vertices;
-layout(binding = 4, set = 0) buffer Indices { uint i[]; } indices;
-layout(binding = 5, set = 0) uniform sampler samp;
-layout(binding = 6, set = 0) uniform texture2D textures[];
-
-struct Vertex
-{
-  vec3 pos;
-  vec3 normal;
-  vec2 uv;
-  vec4 color;
-  vec4  texId;
-  vec4 _pad1;
- };
-
-struct RayPayload {
-	vec3 color;
-	float distance;
-	vec3 normal;
-	float reflector;
-};
-
-layout(location = 0) rayPayloadInEXT RayPayload hitValue;
-layout(location = 2) rayPayloadInEXT bool shadowed;
+layout(binding = 3, set = 0) buffer Lights { vec4 l[]; } lights;
+layout(binding = 4, set = 0) buffer Vertices { vec4 v[]; } vertices;
+layout(binding = 5, set = 0) buffer Indices { uint i[]; } indices;
+layout(binding = 6, set = 0) uniform sampler samp;
+layout(binding = 7, set = 0) uniform texture2D textures[];
 
 Vertex unpack(uint index)
 {
@@ -47,19 +33,27 @@ Vertex unpack(uint index)
 	vec4 d1 = vertices.v[m * index + 1];
 	vec4 d2 = vertices.v[m * index + 2];
 	vec4 d3 = vertices.v[m * index + 3];
+	vec4 d4 = vertices.v[m * index + 4];
 
 	Vertex v;
 	v.pos = d0.xyz;
 	v.normal = vec3(d0.w, d1.x, d1.y);
 	v.color = vec4(d2.x, d2.y, d2.z, 1.0);
     v.uv = d1.zw;
-    v.texId = vec4(d2.w, d3.x, d3.y, d3.z);
+    v.texId = vec4(d3.w, d3.x, d3.y, d3.z);
+    v.normalId = vec4(d4.x);
 
 	return v;
 }
 
-void main()
-{
+uint random(int seed) {
+    uint rand = 1140671485 * seed + 12820;
+    rand = 1140671485 * rand + 128201;
+    rand = 1140671485 * rand + 128201163;
+    return rand;
+}
+
+void main() {
 	ivec3 index = ivec3(indices.i[3 * gl_PrimitiveID], indices.i[3 * gl_PrimitiveID + 1], indices.i[3 * gl_PrimitiveID + 2]);
 
 	Vertex v0 = unpack(index.x);
@@ -70,33 +64,49 @@ void main()
 	const vec3 barycentricCoords = vec3(1.0f - attribs.x - attribs.y, attribs.x, attribs.y);
 	vec3 normal = normalize(v0.normal * barycentricCoords.x + v1.normal * barycentricCoords.y + v2.normal * barycentricCoords.z);
     vec2 uv = v0.uv * barycentricCoords.x + v1.uv * barycentricCoords.y + v2.uv * barycentricCoords.z;
+    vec3 color = vec3(0.0F);
 
-	// Basic lighting
-	vec3 lightVector = normalize(ubo.lightPos.xyz);
-	float dot_product = max(dot(lightVector, normal), 0.2);
-    vec3 c0 = texture(sampler2D(textures[uint(v0.texId.y)], samp), uv).xyz;
-    vec3 c1 = texture(sampler2D(textures[uint(v1.texId.y)], samp), uv).xyz;
-    vec3 c2 = texture(sampler2D(textures[uint(v2.texId.y)], samp), uv).xyz;
-    hitValue.color = vec3(0.0F, 0.0F, 0.15F);
+    vec3 tex_col = texture(sampler2D(textures[uint(v0.texId.y)], samp), uv * int(v0.texId.y != 0)).xyz;
+    vec3 emissive_col = texture(sampler2D(textures[uint(v0.texId.z)], samp), uv * int(v0.texId.z != 0)).xyz;
+    vec3 normal_tex = texture(sampler2D(textures[uint(v0.normalId.x)], samp), uv * int(v0.normalId.x != 0)).xyz;
 
-    if(length(c0) >= 0.01F) {
-	    hitValue.color = (c0 + c1 + c2) * dot_product;
-    } else if (length(v0.color) >= 0.01F) {
-	    hitValue.color = (v0.color.xyz + v1.color.xyz + v2.color.xyz) * dot_product;
+	color = tex_col * 3 + v0.color.xyz;
+    
+
+    // Ambient lighting
+    float lighting = AMBIENT_LIGHT;
+
+	const float tmin = 0.001;
+	const float tmax = 10000.0;
+	const vec3 origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
+
+	// Diffuse +  Blihn-Phong lighting
+    for(int i = 0; i < ubo.lightsCount; i++) {
+        // uint idx = random(i + ubo.lightsCount) % ubo.lightsCount;
+        vec3 col = vec3(0.0F);
+        vec4 lightPos = lights.l[i];
+	    vec3 lightVector = normalize(lightPos.xyz);
+
+	    // Trace shadow ray and offset indices to match shadow hit/miss shader group indices
+	    shadowed = true;  
+	    traceRayEXT(topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT, 0xFF, 0, 0, 1, origin, tmin, lightVector, tmax, 2);
+        float dist = distance(origin, lightPos.xyz);
+        float light = LIGHT_MULTIPLIER * lightPos.w / (dist * dist);
+
+	    if (shadowed) {
+            continue;
+	    }
+
+	    // Shadow casting
+        vec3 halfway = normalize(normalize(lightPos.xyz) - normalize(gl_WorldRayOriginEXT) - normalize(gl_WorldRayDirectionEXT));
+	    float halfway_dot = clamp(abs(dot(halfway, normal)), 0.0F, 1.0F);
+        lighting  += 4 * halfway_dot * light / LIGHT_SAMPLES_SQRT;
     }
 
-    hitValue.normal = normal;
+    hitValue.emission = vec3(lighting);
+    hitValue.material = v0.texId.w;
+    hitValue.color = color;
     hitValue.distance = gl_RayTmaxEXT;
-    hitValue.reflector = 1.0f;
-
-	// Shadow casting
-	float tmin = 0.001;
-	float tmax = 10000.0;
-	vec3 origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
-	shadowed = true;  
-	// Trace shadow ray and offset indices to match shadow hit/miss shader group indices
-	traceRayEXT(topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT, 0xFF, 0, 0, 1, origin, tmin, lightVector, tmax, 2);
-	if (shadowed) {
-		hitValue.color *= 0.3;
-	}
+    hitValue.normal = normalize(normal + normal_tex);
+    hitValue.reflector = v0.texId.x / 200;
 }

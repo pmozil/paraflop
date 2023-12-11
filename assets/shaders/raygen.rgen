@@ -80,7 +80,7 @@ void main()  {
                 break;
             }
 
-            lum += hitValue.emission / MAX_REFLECTIONS / SAMPLES;
+            lum += hitValue.emission / (MAX_REFLECTIONS * SAMPLES);
             first_hit.xyz = int(i == 0) * hitPos.xyz;
             first_hit.w = int(i == 0) * hitValue.material;
         }
@@ -101,8 +101,8 @@ void main()  {
             pixel.xyz = color;
         }
 
-        for (int i = -2; i < 3; i++) {
-            for (int j = -2; j < 3; j++) {
+        for (int i = -1; i < 2; i++) {
+            for (int j = -1; j < 2; j++) {
                 const uint xy = coord + i * cam.width * 2 + j * 2;
                 const vec4 px = pixels.pixels[xy];
                 const vec4 d = pixels.pixels[xy + 1];

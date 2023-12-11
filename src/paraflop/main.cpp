@@ -133,7 +133,6 @@ int main() {
     const std::vector<glm::vec4> lightPos = {
         glm::vec4(40.0F, -50.0F, 25.0F, 10.0F),
         glm::vec4(40.0F, -50.0F, -25.0F, 6.0F)};
-
     renderer.updateUniformBuffers(mats.proj, mats.view);
     renderer.updateLightsBuffer(lightPos);
 

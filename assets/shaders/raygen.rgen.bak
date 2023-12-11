@@ -65,7 +65,7 @@ void main()  {
 		    	hitPos = origin + direction * hitValue.distance;
                 reflection_coeff *= hitValue.reflector;
 
-		    	origin.xyz = hitPos.xyz + hitValue.normal * 0.001F;
+		    	origin.xyz = hitPos.xyz + hitValue.normal;
                 direction.xyz = normalize(reflect(direction.xyz, hitValue.normal));
 
 		    	vec3 add_dir =  normalize(vec3(
@@ -80,7 +80,7 @@ void main()  {
                 break;
             }
 
-            lum += hitValue.emission / MAX_REFLECTIONS / SAMPLES;
+            lum += hitValue.emission / (MAX_REFLECTIONS * SAMPLES);
             first_hit.xyz = int(i == 0) * hitPos.xyz;
             first_hit.w = int(i == 0) * hitValue.material;
         }
@@ -100,6 +100,7 @@ void main()  {
         if(random(vec2(cam.dTime)) <  len / pixel.w) {
             pixel.xyz = color;
         }
+
         for (int i = -2; i < 3; i++) {
             for (int j = -2; j < 3; j++) {
                 const uint xy = coord + i * cam.width * 2 + j * 2;

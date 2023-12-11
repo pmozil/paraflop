@@ -82,7 +82,7 @@ void main() {
 
 	// Diffuse +  Blihn-Phong lighting
     for(int i = 0; i < ubo.lightsCount; i++) {
-        uint idx = random(i + ubo.lightsCount) % ubo.lightsCount;
+        // uint idx = random(i + ubo.lightsCount) % ubo.lightsCount;
         vec3 col = vec3(0.0F);
         vec4 lightPos = lights.l[i];
 	    vec3 lightVector = normalize(lightPos.xyz);
@@ -99,7 +99,7 @@ void main() {
 
 	    // Shadow casting
         vec3 halfway = normalize(normalize(lightPos.xyz) - normalize(gl_WorldRayOriginEXT) - normalize(gl_WorldRayDirectionEXT));
-	    float halfway_dot = clamp(dot(halfway, normal), 0.0F, 1.0F);
+	    float halfway_dot = clamp(abs(dot(halfway, normal)), 0.0F, 1.0F);
         lighting  += 4 * halfway_dot * light / LIGHT_SAMPLES_SQRT;
     }
 

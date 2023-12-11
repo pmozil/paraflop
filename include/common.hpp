@@ -57,7 +57,9 @@ const std::vector<const char *> VALIDATION_LAYERS = {
 #define UNUSED(x) (void)(x)
 
 // Enable or disable validation layers based on build mode
+#ifndef NDEBUG
 #define NDEBUG
+#endif
 
 #ifdef NDEBUG
 const bool enableValidationLayers = true;

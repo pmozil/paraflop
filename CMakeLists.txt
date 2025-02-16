@@ -92,7 +92,7 @@ foreach(GLSL ${GLSL_SOURCE_FILES})
   add_custom_command(
     OUTPUT ${SPIRV}
     COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/shaders/"
-    COMMAND ${Vulkan_GLSC_VALIDATOR} ${GLSL} -o ${SPIRV} --target-spv=spv1.6 --target-env=vulkan1.3 -O -finvert-y
+    COMMAND ${Vulkan_GLSC_VALIDATOR} ${GLSL} -o ${SPIRV} --target-spv=spv1.6 --target-env=vulkan1.3 -O -finvert-y || ${Vulkan_GLSC_VALIDATOR} ${GLSL} -o ${SPIRV} --target-spv=spv1.6 --target-env=vulkan1.3 -finvert-y
     DEPENDS ${GLSL})
   list(APPEND SPIRV_BINARY_FILES ${SPIRV})
 endforeach(GLSL)
